@@ -17,6 +17,23 @@ describe("getServerEnv", () => {
     });
 
     expect(env.NODE_ENV).toBe("production");
+    expect(env.DB_TYPE).toBe("postgres");
     expect(env.NEXT_PUBLIC_APP_URL).toBe("https://www.autocashback.dev");
+  });
+
+  it("defaults to sqlite in development when postgres url is absent", () => {
+    const env = getServerEnv({
+      REDIS_URL: "redis://127.0.0.1:6379",
+      JWT_SECRET: "12345678901234567890123456789012",
+      ENCRYPTION_KEY: "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000",
+      INTERNAL_APP_URL: "http://127.0.0.1:3000",
+      NODE_ENV: "development",
+      TZ: "Asia/Shanghai",
+      DEFAULT_ADMIN_PASSWORD: "password"
+    });
+
+    expect(env.DB_TYPE).toBe("sqlite");
+    expect(env.DATABASE_PATH).toContain("autocashback.db");
   });
 });

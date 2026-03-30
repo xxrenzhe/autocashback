@@ -9,34 +9,41 @@ import type {
   ProxySettingEntry
 } from "@autocashback/domain";
 
-import { getSql } from "./client";
+import { getDbType, getSql } from "./client";
 import { decryptText, encryptText } from "./crypto";
 import { ensureDatabaseReady } from "./schema";
+import {
+  booleanValue,
+  countAsInt,
+  plusMinutesExpression,
+  successRateExpression
+} from "./sql-helpers";
 
 type DbRow = Record<string, unknown>;
 
 export async function getDashboardSummary(userId: number): Promise<DashboardSummary> {
   await ensureDatabaseReady();
   const sql = getSql();
-  const [counts] = await sql<{
+  const dbType = getDbType();
+  const [counts] = await sql.unsafe<{
     active_offers: number;
     active_tasks: number;
     warning_offers: number;
     success_rate: number;
-  }[]>`
-    SELECT
-      (SELECT COUNT(*)::int FROM offers WHERE user_id = ${userId} AND status <> 'draft') AS active_offers,
-      (SELECT COUNT(*)::int FROM link_swap_tasks WHERE user_id = ${userId} AND enabled = TRUE) AS active_tasks,
-      (SELECT COUNT(*)::int FROM offers WHERE user_id = ${userId} AND manual_recorded_commission_usd >= commission_cap_usd) AS warning_offers,
-      COALESCE((
-        SELECT ROUND(
-          100.0 * COUNT(*) FILTER (WHERE status = 'success') / NULLIF(COUNT(*), 0),
-          2
-        )
-        FROM link_swap_runs
-        WHERE offer_id IN (SELECT id FROM offers WHERE user_id = ${userId})
-      ), 0) AS success_rate
-  `;
+  }[]>(
+    `
+      SELECT
+        (SELECT ${countAsInt("COUNT(*)", dbType)} FROM offers WHERE user_id = ? AND status <> 'draft') AS active_offers,
+        (SELECT ${countAsInt("COUNT(*)", dbType)} FROM link_swap_tasks WHERE user_id = ? AND enabled = TRUE) AS active_tasks,
+        (SELECT ${countAsInt("COUNT(*)", dbType)} FROM offers WHERE user_id = ? AND manual_recorded_commission_usd >= commission_cap_usd) AS warning_offers,
+        COALESCE((
+          SELECT ${successRateExpression(dbType)}
+          FROM link_swap_runs
+          WHERE offer_id IN (SELECT id FROM offers WHERE user_id = ?)
+        ), 0) AS success_rate
+    `,
+    [userId, userId, userId, userId]
+  );
 
   return {
     activeOffers: counts?.active_offers ?? 0,
@@ -267,18 +274,29 @@ export async function updateLinkSwapTask(
 ) {
   await ensureDatabaseReady();
   const sql = getSql();
-  const rows = await sql<DbRow[]>`
-    UPDATE link_swap_tasks
-    SET enabled = ${input.enabled},
-        interval_minutes = ${input.intervalMinutes},
-        status = ${input.enabled ? "ready" : "idle"},
-        next_run_at = CASE
-          WHEN ${input.enabled} THEN NOW() + (${input.intervalMinutes} || ' minutes')::interval
-          ELSE NULL
-        END
-    WHERE user_id = ${userId} AND offer_id = ${offerId}
-    RETURNING id, user_id, offer_id, enabled, interval_minutes, status, consecutive_failures, last_run_at, next_run_at
-  `;
+  const dbType = getDbType();
+  const rows = await sql.unsafe<DbRow[]>(
+    `
+      UPDATE link_swap_tasks
+      SET enabled = ?,
+          interval_minutes = ?,
+          status = ?,
+          next_run_at = CASE
+            WHEN ? THEN ${plusMinutesExpression(input.intervalMinutes, dbType)}
+            ELSE NULL
+          END
+      WHERE user_id = ? AND offer_id = ?
+      RETURNING id, user_id, offer_id, enabled, interval_minutes, status, consecutive_failures, last_run_at, next_run_at
+    `,
+    [
+      booleanValue(input.enabled, dbType),
+      input.intervalMinutes,
+      input.enabled ? "ready" : "idle",
+      booleanValue(input.enabled, dbType),
+      userId,
+      offerId
+    ]
+  );
 
   if (!rows[0]) {
     throw new Error("换链接任务不存在");
@@ -330,8 +348,8 @@ export async function getSettings(userId: number | null, category?: string) {
     SELECT *
     FROM system_settings
     WHERE (user_id = ${userId} OR user_id IS NULL)
-      AND (${category ?? null}::text IS NULL OR category = ${category ?? null})
-    ORDER BY user_id NULLS FIRST, category, key
+      AND (${category ?? null} IS NULL OR category = ${category ?? null})
+    ORDER BY CASE WHEN user_id IS NULL THEN 0 ELSE 1 END, category, key
   `;
 
   return rows.map((row) => ({
@@ -358,9 +376,49 @@ export async function saveSettings(
 ) {
   await ensureDatabaseReady();
   const sql = getSql();
+  const dbType = getDbType();
 
   for (const update of updates) {
     const encryptedValue = update.isSensitive ? encryptText(update.value) : null;
+    if (userId === null) {
+      const updated = await sql<{ id: number }[]>`
+        UPDATE system_settings
+        SET value = ${update.isSensitive ? null : update.value},
+            encrypted_value = ${encryptedValue},
+            is_sensitive = ${booleanValue(update.isSensitive ?? false, dbType)},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE user_id IS NULL
+          AND category = ${update.category}
+          AND key = ${update.key}
+        RETURNING id
+      `;
+
+      if (!updated[0]) {
+        await sql`
+          INSERT INTO system_settings (
+            user_id,
+            category,
+            key,
+            value,
+            encrypted_value,
+            is_sensitive,
+            updated_at
+          )
+          VALUES (
+            NULL,
+            ${update.category},
+            ${update.key},
+            ${update.isSensitive ? null : update.value},
+            ${encryptedValue},
+            ${booleanValue(update.isSensitive ?? false, dbType)},
+            CURRENT_TIMESTAMP
+          )
+        `;
+      }
+
+      continue;
+    }
+
     await sql`
       INSERT INTO system_settings (
         user_id,
@@ -377,15 +435,15 @@ export async function saveSettings(
         ${update.key},
         ${update.isSensitive ? null : update.value},
         ${encryptedValue},
-        ${update.isSensitive ?? false},
-        NOW()
+        ${booleanValue(update.isSensitive ?? false, dbType)},
+        CURRENT_TIMESTAMP
       )
       ON CONFLICT (user_id, category, key)
       DO UPDATE SET
         value = EXCLUDED.value,
         encrypted_value = EXCLUDED.encrypted_value,
         is_sensitive = EXCLUDED.is_sensitive,
-        updated_at = NOW()
+        updated_at = CURRENT_TIMESTAMP
     `;
   }
 }
@@ -453,7 +511,7 @@ export async function getScriptSnapshot(token: string, campaignLabel?: string) {
     JOIN link_swap_tasks tasks ON tasks.offer_id = offers.id
     WHERE scripts.token = ${token}
       AND tasks.enabled = TRUE
-      AND (${campaignLabel ?? null}::text IS NULL OR offers.campaign_label = ${campaignLabel ?? null})
+      AND (${campaignLabel ?? null} IS NULL OR offers.campaign_label = ${campaignLabel ?? null})
     ORDER BY offers.id DESC
   `;
 
@@ -475,7 +533,7 @@ export async function getDueLinkSwapTasks() {
     FROM link_swap_tasks tasks
     JOIN offers ON offers.id = tasks.offer_id
     WHERE tasks.enabled = TRUE
-      AND (tasks.next_run_at IS NULL OR tasks.next_run_at <= NOW())
+      AND (tasks.next_run_at IS NULL OR tasks.next_run_at <= CURRENT_TIMESTAMP)
     ORDER BY tasks.id ASC
   `;
 }
@@ -508,6 +566,7 @@ export async function saveLinkSwapRun(input: {
 }) {
   await ensureDatabaseReady();
   const sql = getSql();
+  const dbType = getDbType();
 
   await sql`
     INSERT INTO link_swap_runs (
@@ -537,33 +596,41 @@ export async function saveLinkSwapRun(input: {
       UPDATE offers
       SET latest_resolved_url = ${input.resolvedUrl},
           latest_resolved_suffix = ${input.resolvedSuffix},
-          last_resolved_at = NOW()
+          last_resolved_at = CURRENT_TIMESTAMP
       WHERE id = ${input.offerId}
     `;
   }
 
-  await sql`
-    UPDATE link_swap_tasks
-    SET status = CASE
-          WHEN ${input.status === "success"} THEN 'ready'
-          WHEN consecutive_failures + 1 >= 3 THEN 'warning'
-          ELSE 'error'
-        END,
-        consecutive_failures = CASE
-          WHEN ${input.status === "success"} THEN 0
-          ELSE consecutive_failures + 1
-        END,
-        last_run_at = NOW(),
-        next_run_at = NOW() + (${input.intervalMinutes} || ' minutes')::interval
-    WHERE id = ${input.taskId}
-  `;
+  await sql.unsafe(
+    `
+      UPDATE link_swap_tasks
+      SET status = CASE
+            WHEN ? THEN 'ready'
+            WHEN consecutive_failures + 1 >= 3 THEN 'warning'
+            ELSE 'error'
+          END,
+          consecutive_failures = CASE
+            WHEN ? THEN 0
+            ELSE consecutive_failures + 1
+          END,
+          last_run_at = CURRENT_TIMESTAMP,
+          next_run_at = ${plusMinutesExpression(input.intervalMinutes, dbType)}
+      WHERE id = ?
+    `,
+    [
+      booleanValue(input.status === "success", dbType),
+      booleanValue(input.status === "success", dbType),
+      input.taskId
+    ]
+  );
 }
 
 export async function ensureLinkSwapTask(userId: number, offerId: number) {
   const sql = getSql();
+  const dbType = getDbType();
   await sql`
     INSERT INTO link_swap_tasks (user_id, offer_id, enabled, interval_minutes, status, next_run_at)
-    VALUES (${userId}, ${offerId}, TRUE, 60, 'ready', NOW())
+    VALUES (${userId}, ${offerId}, ${booleanValue(true, dbType)}, 60, 'ready', CURRENT_TIMESTAMP)
     ON CONFLICT (offer_id) DO NOTHING
   `;
 }
