@@ -10,7 +10,17 @@ on:
   workflow_dispatch:
 
 jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Actionlint
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest
+
   build:
+    needs: actionlint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

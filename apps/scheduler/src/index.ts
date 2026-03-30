@@ -16,6 +16,16 @@ type ResolutionResult = {
   proxyUrl: string | null;
 };
 
+type DueTask = {
+  id: number;
+  user_id: number;
+  offer_id: number;
+  interval_minutes: number;
+  promo_link: string;
+  brand_name: string;
+  target_country: string;
+};
+
 async function resolveOfferLink(rawUrl: string, proxyUrl: string | null): Promise<ResolutionResult> {
   try {
     const response = await axios.get(rawUrl, {
@@ -47,10 +57,10 @@ async function resolveOfferLink(rawUrl: string, proxyUrl: string | null): Promis
 
 export async function runDueLinkSwaps() {
   await ensureDatabaseReady();
-  const tasks = await getDueLinkSwapTasks();
+  const tasks = (await getDueLinkSwapTasks()) as unknown as DueTask[];
 
   for (const task of tasks) {
-    const proxies = await getProxyUrls(task.user_id);
+    const proxies = await getProxyUrls(task.user_id, String(task.target_country || ""));
     const proxyUrl = proxies[0] || null;
     const result = await resolveOfferLink(task.promo_link, proxyUrl);
     await saveLinkSwapRun({
