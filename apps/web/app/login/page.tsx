@@ -2,7 +2,7 @@ import { LoginForm } from "@/components/login-form";
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f7f4ec_0%,#fbfaf6_100%)] px-5 py-8">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fafaf9_0%,#f5f5f4_100%)] px-5 py-8">
       <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-10 lg:grid-cols-[1.05fr,0.95fr]">
         <section>
           <p className="eyebrow">AutoCashBack</p>
