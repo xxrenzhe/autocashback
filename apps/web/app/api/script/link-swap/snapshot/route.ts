@@ -1,11 +1,31 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { getScriptSnapshot } from "@autocashback/db";
+import { getScriptSnapshot, getScriptTokenOwnerId } from "@autocashback/db";
+
+import { takeScriptSnapshotRateLimit } from "@/lib/script-snapshot-security";
 
 export async function GET(request: NextRequest) {
-  const token = request.headers.get("x-script-token") || request.nextUrl.searchParams.get("token");
+  const rateLimit = await takeScriptSnapshotRateLimit(request);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too Many Requests" },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rateLimit.retryAfterSec)
+        }
+      }
+    );
+  }
+
+  const token = request.headers.get("x-script-token");
   if (!token) {
     return NextResponse.json({ error: "Missing token" }, { status: 401 });
+  }
+
+  const ownerId = await getScriptTokenOwnerId(token);
+  if (!ownerId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const campaignLabel = request.nextUrl.searchParams.get("campaignLabel") || undefined;
@@ -14,14 +34,14 @@ export async function GET(request: NextRequest) {
   if (!rows.length) {
     return NextResponse.json({
       generatedAt: new Date().toISOString(),
-      userId: null,
+      userId: ownerId,
       tasks: []
     });
   }
 
   return NextResponse.json({
     generatedAt: new Date().toISOString(),
-    userId: rows[0].user_id,
+    userId: ownerId,
     tasks: rows.map((row) => ({
       taskId: row.task_id,
       offerId: row.offer_id,
