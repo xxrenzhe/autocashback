@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  * {
+    @apply border-brand-line;
+  }
+
+  body {
+    @apply bg-brand-bg text-brand-ink antialiased;
+  }
+}
+
+@layer utilities {
+  .surface-panel {
+    @apply rounded-[28px] border border-brand-line/80 bg-white shadow-editorial;
+  }
+
+  .surface-subtle {
+    @apply rounded-3xl border border-brand-line bg-white/80 backdrop-blur;
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.24em] text-brand-emerald;
+  }
+}
