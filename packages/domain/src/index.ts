@@ -262,3 +262,12 @@ function safeGetFinalUrlSuffix(urls) {
   }
 }
 `;
+
+export function renderScriptTemplate(
+  rawTemplate: string,
+  input: { appUrl: string; scriptToken: string }
+) {
+  return rawTemplate
+    .replaceAll("__APP_URL__", input.appUrl)
+    .replaceAll("__SCRIPT_TOKEN__", input.scriptToken);
+}

@@ -51,7 +51,7 @@ const faqItems = [
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#d1fae5,transparent_28%),radial-gradient(circle_at_top_right,#fde68a,transparent_22%),linear-gradient(180deg,#f7f4ec_0%,#fbfaf6_100%)]">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#d1fae5,transparent_28%),radial-gradient(circle_at_top_right,#fde68a,transparent_22%),linear-gradient(180deg,#fafaf9_0%,#f5f5f4_100%)]">
       <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8">
         <header className="surface-subtle flex items-center justify-between px-5 py-4">
           <div>

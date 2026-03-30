@@ -32,7 +32,7 @@ export function AppShell({
   }
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f7f4ec_0%,#fbfaf6_100%)]">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#fafaf9_0%,#f5f5f4_100%)]">
       <div className="mx-auto grid min-h-screen max-w-[1600px] lg:grid-cols-[280px,1fr]">
         <aside className="border-r border-brand-line/70 bg-white/80 px-5 py-6 backdrop-blur">
           <div className="surface-subtle px-5 py-5">

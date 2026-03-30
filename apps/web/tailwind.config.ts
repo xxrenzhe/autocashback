@@ -14,12 +14,12 @@ const config: Config = {
       },
       colors: {
         brand: {
-          bg: "#f7f4ec",
+          bg: "#fafaf9",
           ink: "#0f172a",
-          emerald: "#0f766e",
-          gold: "#d97706",
+          emerald: "#059669",
+          amber: "#f59e0b",
           mist: "#ecfdf5",
-          line: "#d6d3d1"
+          line: "#e7e5e4"
         }
       },
       boxShadow: {

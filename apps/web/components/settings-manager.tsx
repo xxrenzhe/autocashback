@@ -2,13 +2,21 @@
 
 import { useEffect, useState } from "react";
 
-import type { ProxySettingEntry } from "@autocashback/domain";
+import { renderScriptTemplate, type ProxySettingEntry } from "@autocashback/domain";
 
 type SettingRow = {
   category: string;
   key: string;
   value: string;
   isSensitive?: boolean;
+};
+
+type ScriptTemplatePayload = {
+  token: string;
+  template: string;
+  rawTemplate: string;
+  defaultRawTemplate: string;
+  appUrl: string;
 };
 
 const emptyProxyEntry: ProxySettingEntry = {
@@ -52,9 +60,21 @@ export function SettingsManager() {
     custom: ""
   });
   const [scriptTemplate, setScriptTemplate] = useState("");
+  const [defaultScriptTemplate, setDefaultScriptTemplate] = useState("");
   const [scriptToken, setScriptToken] = useState("");
+  const [scriptAppUrl, setScriptAppUrl] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const missingRequiredPlaceholders = ["__APP_URL__", "__SCRIPT_TOKEN__"].filter(
+    (placeholder) => !scriptTemplate.includes(placeholder)
+  );
+  const missingRecommendedPlaceholders = ["__CAMPAIGN_LABEL__"].filter(
+    (placeholder) => !scriptTemplate.includes(placeholder)
+  );
+  const renderedScriptTemplate = renderScriptTemplate(scriptTemplate, {
+    appUrl: scriptAppUrl,
+    scriptToken
+  });
 
   async function loadSettings() {
     setLoading(true);
@@ -63,7 +83,7 @@ export function SettingsManager() {
       fetch("/api/script/link-swap/template")
     ]);
     const payload = await settingsResponse.json();
-    const scriptPayload = await scriptResponse.json();
+    const scriptPayload = (await scriptResponse.json()) as ScriptTemplatePayload;
     const normalized: Record<string, string> = {};
     for (const row of payload.settings || []) {
       normalized[`${row.category}.${row.key}`] = row.value || "";
@@ -75,8 +95,10 @@ export function SettingsManager() {
       rakuten: normalized["cashback.rakuten_notes"] || "",
       custom: normalized["cashback.custom_notes"] || ""
     });
-    setScriptTemplate(scriptPayload.template || normalized["linkSwap.script_template"] || "");
+    setScriptTemplate(scriptPayload.rawTemplate || normalized["linkSwap.script_template"] || "");
+    setDefaultScriptTemplate(scriptPayload.defaultRawTemplate || "");
     setScriptToken(scriptPayload.token || "");
+    setScriptAppUrl(scriptPayload.appUrl || "");
     setLoading(false);
   }
 
@@ -375,18 +397,41 @@ export function SettingsManager() {
             轮换 Token
           </button>
           <button
-            className="rounded-full bg-brand-emerald px-4 py-2 text-xs font-semibold text-white"
-            onClick={() => navigator.clipboard.writeText(scriptTemplate)}
+            className="rounded-full bg-brand-emerald px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+            disabled={loading || !scriptToken}
+            onClick={() => navigator.clipboard.writeText(renderedScriptTemplate)}
             type="button"
           >
             复制脚本
           </button>
+          <button
+            className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700 disabled:opacity-60"
+            disabled={loading || !defaultScriptTemplate}
+            onClick={() => setScriptTemplate(defaultScriptTemplate)}
+            type="button"
+          >
+            恢复默认模板
+          </button>
+        </div>
+
+        <div className="mt-4 space-y-2 text-sm leading-6 text-slate-600">
+          <p>这里编辑的是原始模板。复制脚本时，系统会自动注入当前站点地址和 Script Token。</p>
+          {!loading && missingRequiredPlaceholders.length ? (
+            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700">
+              缺少必需占位符：{missingRequiredPlaceholders.join(", ")}。复制时将无法自动注入对应值。
+            </p>
+          ) : null}
+          {!loading && missingRecommendedPlaceholders.length ? (
+            <p className="text-amber-700">
+              建议保留占位符：{missingRecommendedPlaceholders.join(", ")}，便于在 Google Ads 中手工绑定标签。
+            </p>
+          ) : null}
         </div>
 
         <textarea
           className="mt-5 min-h-72 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 font-mono text-xs"
-          readOnly
           value={scriptTemplate}
+          onChange={(event) => setScriptTemplate(event.target.value)}
         />
       </section>
 
