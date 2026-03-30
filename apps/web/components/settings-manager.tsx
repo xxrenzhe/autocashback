@@ -45,6 +45,7 @@ function parseProxyEntries(raw: string): ProxySettingEntry[] {
 
 export function SettingsManager() {
   const [proxyEntries, setProxyEntries] = useState<ProxySettingEntry[]>([]);
+  const [proxyValidation, setProxyValidation] = useState<Record<number, { status: "idle" | "success" | "error" | "loading"; message: string }>>({});
   const [platformNotes, setPlatformNotes] = useState({
     topcashback: "",
     rakuten: "",
@@ -165,6 +166,38 @@ export function SettingsManager() {
     setProxyEntries((current) => current.filter((_, entryIndex) => entryIndex !== index));
   }
 
+  async function validateProxyEntry(index: number, url: string) {
+    setProxyValidation((current) => ({
+      ...current,
+      [index]: { status: "loading", message: "验证中..." }
+    }));
+
+    const response = await fetch("/api/settings/proxy/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ proxy_url: url })
+    });
+    const payload = await response.json();
+
+    if (!response.ok || !payload.success) {
+      setProxyValidation((current) => ({
+        ...current,
+        [index]: { status: "error", message: payload.error || "验证失败" }
+      }));
+      return;
+    }
+
+    setProxyValidation((current) => ({
+      ...current,
+      [index]: {
+        status: "success",
+        message: payload.data?.origin
+          ? `验证成功，出口 IP: ${payload.data.origin}`
+          : "验证成功"
+      }
+    }));
+  }
+
   return (
     <div className="space-y-6">
       <section className="surface-panel p-6">
@@ -237,13 +270,35 @@ export function SettingsManager() {
                 </div>
 
                 <div className="mt-4 flex justify-end">
-                  <button
-                    className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-600"
-                    onClick={() => removeProxyEntry(index)}
-                    type="button"
-                  >
-                    删除
-                  </button>
+                  <div className="flex flex-wrap items-center justify-end gap-3">
+                    {proxyValidation[index]?.message ? (
+                      <span
+                        className={`text-xs ${
+                          proxyValidation[index]?.status === "success"
+                            ? "text-brand-emerald"
+                            : proxyValidation[index]?.status === "error"
+                              ? "text-red-600"
+                              : "text-slate-500"
+                        }`}
+                      >
+                        {proxyValidation[index]?.message}
+                      </span>
+                    ) : null}
+                    <button
+                      className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+                      onClick={() => validateProxyEntry(index, entry.url)}
+                      type="button"
+                    >
+                      验证代理
+                    </button>
+                    <button
+                      className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-600"
+                      onClick={() => removeProxyEntry(index)}
+                      type="button"
+                    >
+                      删除
+                    </button>
+                  </div>
                 </div>
               </div>
             ))
