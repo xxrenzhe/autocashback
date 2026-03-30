@@ -7,9 +7,21 @@ import { ensureDatabaseSchema } from "./migrations";
 import { countAsInt } from "./sql-helpers";
 
 let bootstrapped = false;
+const SKIP_RUNTIME_DB_INIT_ENV = "SKIP_RUNTIME_DB_INIT";
+
+function shouldTrustStartupBootstrap() {
+  return process.env[SKIP_RUNTIME_DB_INIT_ENV] === "true";
+}
+
+export function resetDatabaseReadyStateForTests() {
+  bootstrapped = false;
+}
 
 export async function ensureDatabaseReady() {
-  if (bootstrapped) return;
+  if (bootstrapped || shouldTrustStartupBootstrap()) {
+    bootstrapped = true;
+    return;
+  }
 
   await ensureDatabaseSchema();
 
