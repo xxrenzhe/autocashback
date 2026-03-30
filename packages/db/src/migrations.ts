@@ -26,19 +26,33 @@ function calculateFileHash(content: string) {
   return crypto.createHash("md5").update(content).digest("hex");
 }
 
-function getProjectRoot() {
-  return process.cwd();
+function findAncestorWithDir(startDir: string, relativeDir: string) {
+  let currentDir = path.resolve(startDir);
+
+  while (true) {
+    const candidate = path.join(currentDir, relativeDir);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir) {
+      break;
+    }
+
+    currentDir = parentDir;
+  }
+
+  throw new Error(`Migration directory not found: ${path.join(path.resolve(startDir), relativeDir)}`);
+}
+
+export function resolveMigrationsDir(dbType: DatabaseType, startDir = process.cwd()) {
+  const relativeDir = dbType === "postgres" ? POSTGRES_MIGRATIONS_DIR : SQLITE_MIGRATIONS_DIR;
+  return findAncestorWithDir(startDir, relativeDir);
 }
 
 function getMigrationsDir(dbType: DatabaseType) {
-  const relativeDir = dbType === "postgres" ? POSTGRES_MIGRATIONS_DIR : SQLITE_MIGRATIONS_DIR;
-  const absoluteDir = path.join(getProjectRoot(), relativeDir);
-
-  if (!fs.existsSync(absoluteDir)) {
-    throw new Error(`Migration directory not found: ${absoluteDir}`);
-  }
-
-  return absoluteDir;
+  return resolveMigrationsDir(dbType);
 }
 
 function getInitSchemaPath(dbType: DatabaseType) {
