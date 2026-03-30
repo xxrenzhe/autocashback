@@ -4,15 +4,15 @@ import { ArrowRight, Coins, Link2, ShieldCheck, WalletCards, Workflow } from "lu
 const workflowSteps = [
   {
     title: "录入返利网账号",
-    text: "按平台、国家和收款方式维护多个账号，统一记录邮箱、提现方式和运营备注。"
+    text: "按平台、国家和收款方式整理账号信息，把分散记录收回到统一后台。"
   },
   {
-    title: "创建 Offer 并绑定标签",
-    text: "录入推广链接、品牌、国家和 Campaign Label，把运营信息和 Google Ads 标签对齐。"
+    title: "配置 Offer 与规则",
+    text: "把链接、品牌、国家和佣金阈值放在同一条记录里，后续协作不用来回翻表。"
   },
   {
-    title: "解析终链并同步脚本",
-    text: "平台定时解析终链，MCC 脚本从 AutoCashBack 拉取快照并更新 Campaign / sitelink suffix。"
+    title: "统一更新投放链接",
+    text: "当活动链接变化时，运营团队可以在一个地方完成更新，减少错链和漏改。"
   }
 ];
 
@@ -20,32 +20,66 @@ const modules = [
   {
     icon: WalletCards,
     title: "账号管理",
-    text: "支持同平台多账号，记录注册邮箱、提现方式和手工运营备注。"
+    text: "一个平台可管理多个账号，注册信息、收款方式和运营备注都留在同一处。"
   },
   {
     icon: Coins,
     title: "Offer 管理",
-    text: "把推广链接、国家、品牌、佣金阈值和佣金进度放到同一条 Offer 记录里。"
+    text: "把品牌、国家、链接和佣金进度整合进统一记录，查找和复盘都更直接。"
   },
   {
     icon: Link2,
-    title: "换链接管理",
-    text: "定时解析终链并输出脚本快照，用户只需要直接复制脚本到 MCC 中执行。"
+    title: "链接更新",
+    text: "需要替换推广链接时，团队可以快速同步最新版本，保持投放口径一致。"
+  }
+];
+
+const platformCards = [
+  {
+    title: "TopCashback",
+    text: "统一管理账号、Offer 与佣金进度，让日常运营更清晰。"
+  },
+  {
+    title: "Rakuten",
+    text: "把平台记录、链接维护和投放协同放进同一个工作台。"
+  },
+  {
+    title: "Custom",
+    text: "适合补充更多返利平台，保持你的内部流程和命名方式不变。"
+  }
+];
+
+const valueCards = [
+  {
+    title: "统一记录",
+    text: "账号、Offer、佣金和链接更新不再散落在表格、聊天记录和临时备注里。"
+  },
+  {
+    title: "协作更顺",
+    text: "同一套后台承接日常运营动作，新人接手和多人协作都更容易。"
+  },
+  {
+    title: "风险更低",
+    text: "当链接或佣金状态变化时，团队更容易发现异常，减少遗漏与误操作。"
+  },
+  {
+    title: "上线更快",
+    text: "适合正在从零散工具切到统一后台的返利团队，部署和使用门槛都更低。"
   }
 ];
 
 const faqItems = [
   {
-    question: "为什么 Rakuten 和 TopCashback 都按手工模式处理？",
-    answer: "V1 不依赖公开 API，统一按手工录入和人工运营流程设计，避免接入不稳定导致系统不可用。"
+    question: "适合什么样的团队？",
+    answer: "适合需要同时管理多个返利账号、多个 Offer 和多个投放国家的运营团队。"
   },
   {
-    question: "达到佣金阈值后会自动停投吗？",
-    answer: "不会。AutoCashBack 只负责预警，停投决策仍由运营手工确认，避免误伤投放。"
+    question: "可以替代现有表格吗？",
+    answer: "可以。首页、后台和统一记录页的设计目标，就是把常见的表格协作场景收拢到一个系统里。"
   },
   {
-    question: "是否需要接入 Google Ads API？",
-    answer: "不需要。平台只提供快照接口，MCC 脚本通过 `X-Script-Token` 鉴权读取数据并执行更新。"
+    question: "上线后最直接的价值是什么？",
+    answer: "最直接的是少翻表、少漏改、少错链，让账号管理、Offer 维护和链接更新都有固定入口。"
   }
 ];
 
@@ -75,11 +109,11 @@ export default function HomePage() {
           <div>
             <p className="eyebrow">Editorial Cashback Ops</p>
             <h2 className="mt-5 max-w-4xl font-display text-5xl font-semibold leading-tight text-slate-900 lg:text-7xl">
-              把返利账号、Offer、佣金预警和 MCC 换链接脚本放到同一个后台。
+              返利运营，一个后台就够了。
             </h2>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              AutoCashBack 面向手工运营型返利网团队，把最容易出错的账号记录、Offer 配置、终链更新和人工预警统一管理，
-              减少重复劳动和错链风险。
+              AutoCashBack 把账号管理、Offer 配置、佣金预警和链接更新收进同一个工作台，让返利团队的日常运营更清楚、
+              更稳定，也更容易协作。
             </p>
 
             <div className="mt-8 flex flex-wrap gap-4">
@@ -100,17 +134,16 @@ export default function HomePage() {
           </div>
 
           <div className="surface-panel p-8">
-            <p className="eyebrow">平台边界</p>
+            <p className="eyebrow">适用平台</p>
             <div className="mt-6 grid gap-4">
-              {[
-                "TopCashback：手工模式，无公开 API",
-                "Rakuten：手工模式，无公开 API",
-                "Custom：预留自定义平台扩展"
-              ].map((item) => (
-                <div className="rounded-3xl bg-stone-50 p-5" key={item}>
+              {platformCards.map((item) => (
+                <div className="rounded-3xl bg-stone-50 p-5" key={item.title}>
                   <div className="flex items-center gap-3">
                     <ShieldCheck className="h-5 w-5 text-brand-emerald" />
-                    <h3 className="text-lg font-semibold text-slate-900">{item}</h3>
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-900">{item.title}</h3>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">{item.text}</p>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -153,37 +186,27 @@ export default function HomePage() {
 
         <section className="grid gap-6 pb-10 lg:grid-cols-[0.9fr,1.1fr]">
           <div className="surface-panel p-6">
-            <p className="eyebrow">脚本说明</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">MCC 只读快照架构</h3>
-            <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600">
-              <p>平台通过 `/api/script/link-swap/snapshot` 输出最新 suffix 快照。</p>
-              <p>脚本使用 `X-Script-Token` 鉴权，不需要 Google Ads API，也不需要手工修改脚本参数。</p>
-              <p>脚本会自动按 `campaignLabel` 更新匹配的 Campaign 和 sitelink，避免误伤其他广告资产。</p>
+            <div className="flex items-center gap-3">
+              <Workflow className="h-5 w-5 text-brand-emerald" />
+              <h3 className="text-2xl font-semibold text-slate-900">为什么团队更容易用起来</h3>
+            </div>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              {valueCards.map((item) => (
+                <div className="rounded-[24px] bg-stone-50 p-5" key={item.title}>
+                  <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.text}</p>
+                </div>
+              ))}
             </div>
           </div>
 
           <div className="surface-panel p-6">
-            <div className="flex items-center gap-3">
-              <Workflow className="h-5 w-5 text-brand-emerald" />
-              <h3 className="text-2xl font-semibold text-slate-900">为什么团队更容易落地</h3>
-            </div>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-[24px] bg-stone-50 p-5">
-                <p className="text-sm font-semibold text-slate-900">统一记录</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">账号、Offer、脚本和佣金阈值不再散落在表格、文档和脚本注释里。</p>
-              </div>
-              <div className="rounded-[24px] bg-stone-50 p-5">
-                <p className="text-sm font-semibold text-slate-900">人工可控</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">V1 只负责预警和换链，不自动停投，减少自动化误操作风险。</p>
-              </div>
-              <div className="rounded-[24px] bg-stone-50 p-5">
-                <p className="text-sm font-semibold text-slate-900">部署简单</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">单容器部署，最小环境变量明确，适合小团队快速上线。</p>
-              </div>
-              <div className="rounded-[24px] bg-stone-50 p-5">
-                <p className="text-sm font-semibold text-slate-900">对接轻量</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">运营侧只需直接复制脚本，不需要手工改脚本，也不需要维护额外的 Drive 文件或 Ads API 凭证。</p>
-              </div>
+            <p className="eyebrow">适合场景</p>
+            <h3 className="mt-2 text-2xl font-semibold text-slate-900">从零散协作切到统一后台</h3>
+            <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600">
+              <p>如果你的团队还在多个表格、聊天记录和临时文档之间切换，AutoCashBack 会更像一个稳定的运营中台。</p>
+              <p>它把账号、Offer、佣金和链接更新收在同一个入口里，减少重复确认，也让交接更轻松。</p>
+              <p>无论是日常维护还是活动高峰期，你都能更快看到当前状态，并把关键动作留在系统里。</p>
             </div>
           </div>
         </section>
@@ -205,10 +228,10 @@ export default function HomePage() {
             <div>
               <p className="eyebrow">Bottom CTA</p>
               <h3 className="mt-2 font-display text-4xl font-semibold text-slate-900">
-                让返利网运营从“脚本+表格”切到统一后台
+                把返利运营从零散协作带回统一后台
               </h3>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-                AutoCashBack 适合需要稳定管理多账号、多 Offer、多国家投放的返利网团队。
+                AutoCashBack 适合希望把账号、Offer、佣金和链接更新统一管理起来的返利团队。
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
