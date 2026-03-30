@@ -99,9 +99,11 @@ export const DEFAULT_SCRIPT_TEMPLATE = `/**
  * AutoCashBack MCC Link Swap Script
  *
  * 使用方式：
- * 1. 保持 API_BASE_URL 和 SCRIPT_TOKEN 为平台生成值
- * 2. 在 Google Ads 中为目标 Campaign 绑定与 Offer 一致的标签
- * 3. 复制到 Google Ads Scripts / MCC 脚本里定时执行，无需额外编辑
+ * 1. 保持 API_BASE_URL 和 SCRIPT_TOKEN 为平台后台生成值
+ * 2. SCRIPT_TOKEN 默认长期有效，同一时间只有当前这一个 token 生效
+ * 3. 如在后台更换 Token，请重新复制最新脚本，旧脚本会立即失效
+ * 4. 在 Google Ads 中为目标 Campaign 绑定与 Offer 一致的标签
+ * 5. 复制到 Google Ads Scripts / MCC 脚本里定时执行，无需额外编辑
  */
 const API_BASE_URL = "__APP_URL__";
 const SCRIPT_TOKEN = "__SCRIPT_TOKEN__";

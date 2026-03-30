@@ -16,6 +16,7 @@ export function LinkSwapManager() {
   const [intervals, setIntervals] = useState<Record<number, number>>({});
   const [script, setScript] = useState<ScriptTemplatePayload>({ template: "", token: "" });
   const [message, setMessage] = useState("");
+  const [rotatingToken, setRotatingToken] = useState(false);
 
   const offersMap = useMemo(
     () => new Map(offers.map((offer) => [offer.id, offer])),
@@ -61,6 +62,30 @@ export function LinkSwapManager() {
     const payload = await response.json();
     setMessage(response.ok ? "任务已更新" : payload.error || "任务更新失败");
     await loadAll();
+  }
+
+  async function rotateToken() {
+    setRotatingToken(true);
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/script/link-swap/rotate-token", {
+        method: "POST"
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setMessage(payload.error || "Token 更换失败");
+        return;
+      }
+
+      await loadAll();
+      setMessage("Token 已更换，旧脚本立即失效，请复制最新换链接脚本。");
+    } catch {
+      setMessage("Token 更换失败");
+    } finally {
+      setRotatingToken(false);
+    }
   }
 
   return (
@@ -157,7 +182,9 @@ export function LinkSwapManager() {
           <ol className="mt-5 space-y-3 text-sm leading-7 text-slate-600">
             <li>1. 在 Google Ads 中先为目标 Campaign 打上与 Offer 一致的 `campaignLabel`。</li>
             <li>2. 点击下方复制脚本，直接粘贴到 Google Ads Scripts / MCC 中，无需再修改脚本内容。</li>
-            <li>3. 设置定时任务执行后，脚本会从 AutoCashBack 快照接口读取最新 suffix，并同步到匹配标签的 Campaign 和 sitelink。</li>
+            <li>3. Script Token 默认长期有效，同一时间只有当前显示的这一个 Token 可用。</li>
+            <li>4. 如需更换 Token，请在这里直接更换，然后重新复制最新脚本。</li>
+            <li>5. 设置定时任务执行后，脚本会从 AutoCashBack 快照接口读取最新 suffix，并同步到匹配标签的 Campaign 和 sitelink。</li>
           </ol>
 
           <div className="mt-5 rounded-[28px] border border-brand-line bg-stone-50 p-5">
@@ -165,16 +192,24 @@ export function LinkSwapManager() {
             <p className="mt-2 font-mono text-sm text-slate-800">{script.token || "尚未生成"}</p>
             <div className="mt-4 flex flex-wrap gap-3">
               <button
+                className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700 disabled:opacity-60"
+                disabled={rotatingToken}
+                onClick={rotateToken}
+                type="button"
+              >
+                {rotatingToken ? "更换中..." : "更换 Token"}
+              </button>
+              <button
                 className="rounded-full bg-brand-emerald px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                disabled={!script.template}
+                disabled={!script.template || rotatingToken}
                 onClick={() => navigator.clipboard.writeText(script.template || "")}
                 type="button"
               >
-                复制可直接使用脚本
+                复制最新换链接脚本
               </button>
             </div>
             <p className="mt-4 text-sm leading-6 text-slate-600">
-              这份脚本已经内置当前站点地址和 Script Token。轮换 Token 后，请重新复制一次最新脚本。
+              这份脚本已经内置当前站点地址和 Script Token。Token 默认长期有效，若你更换 Token，旧 Token 会立即失效，请重新复制一次最新脚本。
             </p>
             <textarea
               className="mt-4 min-h-56 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 font-mono text-xs text-slate-700"
