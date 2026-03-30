@@ -149,3 +149,9 @@ apps/web/out
 apps/web/coverage
 coverage
 tmp
+
+# Local-only project docs
+docs/
+
+# Local runtime data
+data/
