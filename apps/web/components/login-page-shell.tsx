@@ -9,19 +9,6 @@ import { BrandMark } from "@/components/brand-mark";
 import { ContactQrDialog } from "@/components/contact-qr-dialog";
 import { LoginForm } from "@/components/login-form";
 
-const loginHighlights = [
-  {
-    label: "开通节奏",
-    value: "10 分钟",
-    text: "确认需求后即可进入后台体验"
-  },
-  {
-    label: "执行路径",
-    value: "4 步跑通",
-    text: "账号录入 -> Offer 维护 -> 佣金追踪 -> 链接更新"
-  }
-];
-
 const loginActions = [
   {
     icon: WalletCards,
@@ -85,31 +72,18 @@ export function LoginPageShell() {
         </header>
       </div>
 
-      <div className="mx-auto grid min-h-[calc(100vh-6rem)] max-w-7xl items-center gap-10 px-5 pb-10 pt-10 lg:grid-cols-[1.02fr,0.98fr] lg:px-8 lg:pt-12">
-        <section className="max-w-2xl">
+      <div className="mx-auto grid min-h-[calc(100vh-6rem)] max-w-7xl items-start gap-10 px-5 pb-10 pt-10 lg:grid-cols-[1.02fr,0.98fr] lg:items-stretch lg:px-8 lg:pt-12">
+        <section className="flex h-full max-w-2xl flex-col">
           <p className="inline-flex items-center gap-2 rounded-full border border-brand-line bg-white/80 px-4 py-2 text-sm font-semibold text-slate-700">
             <ShieldCheck className="h-4 w-4 text-brand-emerald" />
             AutoCashBack 账号入口
           </p>
-          <h1 className="mt-6 max-w-4xl font-display text-5xl font-semibold leading-tight text-slate-900 lg:text-6xl">
-            账号登录
-            <span className="block">继续你的返利运营流程</span>
-          </h1>
+          <h1 className="mt-6 max-w-4xl font-display text-5xl font-semibold leading-tight text-slate-900 lg:text-6xl">账号登录</h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
             先咨询开通试用账号，再登录使用系统。已有账号可直接进入控制台，继续管理账号、Offer、佣金与链接更新。
           </p>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {loginHighlights.map((item) => (
-              <article className="surface-panel p-6" key={item.label}>
-                <p className="text-sm font-semibold text-slate-500">{item.label}</p>
-                <p className="mt-3 text-3xl font-semibold text-slate-900">{item.value}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{item.text}</p>
-              </article>
-            ))}
-          </div>
-
-          <div className="surface-panel mt-6 p-6">
+          <div className="surface-panel mt-8 flex-1 p-6">
             <p className="text-sm font-semibold text-slate-900">登录后你可直接继续这些动作：</p>
             <div className="mt-5 grid gap-3">
               {loginActions.map((item) => {
@@ -128,9 +102,9 @@ export function LoginPageShell() {
           </div>
         </section>
 
-        <div className="w-full lg:justify-self-end">
-          <div className="mx-auto max-w-[34rem]">
-            <LoginForm onContactClick={() => setIsContactDialogOpen(true)} />
+        <div className="flex h-full w-full lg:justify-self-end">
+          <div className="mx-auto flex h-full w-full max-w-[34rem] flex-col">
+            <LoginForm className="h-full" onContactClick={() => setIsContactDialogOpen(true)} />
             <p className="mt-4 text-center text-sm text-slate-500">试用账号与正式账号均由管理员统一开通。</p>
           </div>
         </div>
