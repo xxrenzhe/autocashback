@@ -1,0 +1,44 @@
+{
+  "name": "autocashback",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm --workspace @autocashback/web run dev",
+    "build": "npm run build --workspaces --if-present",
+    "start": "npm --workspace @autocashback/web run start",
+    "start:web": "npm --workspace @autocashback/web run start",
+    "start:scheduler": "tsx apps/scheduler/src/index.ts",
+    "lint": "npm --workspace @autocashback/web run lint && eslint apps/scheduler/src packages scripts tests --ext .ts,.tsx",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "db:bootstrap": "tsx scripts/bootstrap-db.ts",
+    "env:check": "tsx scripts/check-env.ts"
+  },
+  "dependencies": {
+    "@autocashback/db": "file:packages/db",
+    "@autocashback/domain": "file:packages/domain",
+    "@autocashback/ui": "file:packages/ui",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "ioredis": "^5.4.1",
+    "node-cron": "^3.0.3",
+    "tsx": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.10.2",
+    "@types/node-cron": "^3.0.11",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@typescript-eslint/eslint-plugin": "^8.18.1",
+    "@typescript-eslint/parser": "^8.18.1",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.25",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

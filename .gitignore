@@ -141,3 +141,11 @@ vite.config.ts.timestamp-*
 # Dolt database files (added by bd init)
 .dolt/
 *.db
+
+# Workspace outputs
+**/node_modules
+apps/web/.next
+apps/web/out
+apps/web/coverage
+coverage
+tmp

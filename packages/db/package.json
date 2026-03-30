@@ -1,0 +1,14 @@
+{
+  "name": "@autocashback/db",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@autocashback/domain": "file:../domain",
+    "bcryptjs": "^2.4.3",
+    "jose": "^5.9.6",
+    "postgres": "^3.4.5",
+    "zod": "^3.24.1"
+  }
+}
