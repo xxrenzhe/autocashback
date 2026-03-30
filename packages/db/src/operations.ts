@@ -421,6 +421,19 @@ export async function rotateScriptToken(userId: number) {
   return token;
 }
 
+export async function getScriptTokenOwnerId(token: string) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const rows = await sql<{ user_id: number }[]>`
+    SELECT user_id
+    FROM script_tokens
+    WHERE token = ${token}
+    LIMIT 1
+  `;
+
+  return rows[0]?.user_id ?? null;
+}
+
 export async function getScriptSnapshot(token: string, campaignLabel?: string) {
   await ensureDatabaseReady();
   const sql = getSql();
