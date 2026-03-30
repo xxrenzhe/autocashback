@@ -3,7 +3,6 @@ import { DEFAULT_SCRIPT_TEMPLATE, PLATFORM_OPTIONS } from "@autocashback/domain"
 import { hashPassword } from "./crypto";
 import { getDbType, getSql } from "./client";
 import { getServerEnv } from "./env";
-import { ensurePostgresDatabaseExists } from "./postgres-bootstrap";
 import {
   booleanColumnDefinition,
   countAsInt,
@@ -17,11 +16,6 @@ let bootstrapped = false;
 
 export async function ensureDatabaseReady() {
   if (bootstrapped) return;
-
-  const env = getServerEnv();
-  if (env.DB_TYPE === "postgres") {
-    await ensurePostgresDatabaseExists(env.DATABASE_URL as string);
-  }
 
   const sql = getSql();
   const dbType = getDbType();
