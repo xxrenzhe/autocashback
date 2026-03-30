@@ -21,6 +21,8 @@ describe("domain defaults", () => {
     expect(DEFAULT_SCRIPT_TEMPLATE).toContain("__APP_URL__");
     expect(DEFAULT_SCRIPT_TEMPLATE).toContain("__SCRIPT_TOKEN__");
     expect(DEFAULT_SCRIPT_TEMPLATE).toContain("setFinalUrlSuffix");
+    expect(DEFAULT_SCRIPT_TEMPLATE).toContain("buildTaskMap");
+    expect(DEFAULT_SCRIPT_TEMPLATE).not.toContain("__CAMPAIGN_LABEL__");
   });
 
   it("renders runtime values into the MCC script template", () => {
@@ -31,7 +33,7 @@ describe("domain defaults", () => {
 
     expect(rendered).toContain("https://www.autocashback.dev");
     expect(rendered).toContain("token-123");
-    expect(rendered).toContain("__CAMPAIGN_LABEL__");
+    expect(rendered).toContain("fetchSnapshot()");
     expect(rendered).not.toContain("__APP_URL__");
     expect(rendered).not.toContain("__SCRIPT_TOKEN__");
   });

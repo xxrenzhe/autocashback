@@ -156,9 +156,8 @@ export function LinkSwapManager() {
           <h3 className="mt-2 text-2xl font-semibold text-slate-900">MCC 执行说明</h3>
           <ol className="mt-5 space-y-3 text-sm leading-7 text-slate-600">
             <li>1. 在 Google Ads 中先为目标 Campaign 打上与 Offer 一致的 `campaignLabel`。</li>
-            <li>2. 点击下方复制脚本，把脚本粘贴到 Google Ads Scripts / MCC 中。</li>
-            <li>3. 将脚本里的 `CAMPAIGN_LABEL` 改成对应标签，设置定时任务执行。</li>
-            <li>4. 脚本会从 AutoCashBack 快照接口读取最新 suffix，并同步到 Campaign 和 sitelink。</li>
+            <li>2. 点击下方复制脚本，直接粘贴到 Google Ads Scripts / MCC 中，无需再修改脚本内容。</li>
+            <li>3. 设置定时任务执行后，脚本会从 AutoCashBack 快照接口读取最新 suffix，并同步到匹配标签的 Campaign 和 sitelink。</li>
           </ol>
 
           <div className="mt-5 rounded-[28px] border border-brand-line bg-stone-50 p-5">
@@ -166,24 +165,22 @@ export function LinkSwapManager() {
             <p className="mt-2 font-mono text-sm text-slate-800">{script.token || "尚未生成"}</p>
             <div className="mt-4 flex flex-wrap gap-3">
               <button
-                className="rounded-full bg-brand-emerald px-4 py-2 text-xs font-semibold text-white"
+                className="rounded-full bg-brand-emerald px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                disabled={!script.template}
                 onClick={() => navigator.clipboard.writeText(script.template || "")}
                 type="button"
               >
-                复制默认脚本
-              </button>
-              <button
-                className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700"
-                onClick={() =>
-                  navigator.clipboard.writeText(
-                    `${window.location.origin}/api/script/link-swap/snapshot`
-                  )
-                }
-                type="button"
-              >
-                复制快照接口地址
+                复制可直接使用脚本
               </button>
             </div>
+            <p className="mt-4 text-sm leading-6 text-slate-600">
+              这份脚本已经内置当前站点地址和 Script Token。轮换 Token 后，请重新复制一次最新脚本。
+            </p>
+            <textarea
+              className="mt-4 min-h-56 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 font-mono text-xs text-slate-700"
+              readOnly
+              value={script.template}
+            />
           </div>
         </div>
       </section>

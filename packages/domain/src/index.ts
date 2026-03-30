@@ -100,74 +100,79 @@ export const DEFAULT_SCRIPT_TEMPLATE = `/**
  *
  * 使用方式：
  * 1. 保持 API_BASE_URL 和 SCRIPT_TOKEN 为平台生成值
- * 2. 把 CAMPAIGN_LABEL 改成你在 Google Ads 中绑定的标签名
- * 3. 复制到 Google Ads Scripts / MCC 脚本里定时执行
+ * 2. 在 Google Ads 中为目标 Campaign 绑定与 Offer 一致的标签
+ * 3. 复制到 Google Ads Scripts / MCC 脚本里定时执行，无需额外编辑
  */
 const API_BASE_URL = "__APP_URL__";
 const SCRIPT_TOKEN = "__SCRIPT_TOKEN__";
-const CAMPAIGN_LABEL = "__CAMPAIGN_LABEL__";
 const DRY_RUN = false;
 
 function main() {
   Logger.log("[AutoCashBack] script started at " + new Date().toISOString());
 
-  const snapshot = fetchSnapshot(CAMPAIGN_LABEL);
-  const tasks = snapshot.tasks || [];
+  var snapshot = fetchSnapshot();
+  var tasks = snapshot.tasks || [];
 
   if (!tasks.length) {
     Logger.log("[AutoCashBack] no tasks returned from snapshot");
     return;
   }
 
-  let updatedCampaigns = 0;
-  let updatedSitelinks = 0;
-  let skippedTasks = 0;
+  var taskMap = buildTaskMap(tasks);
+  var taskLabels = Object.keys(taskMap);
+  if (!taskLabels.length) {
+    Logger.log("[AutoCashBack] no valid tasks with campaignLabel and suffix");
+    return;
+  }
 
-  for (let index = 0; index < tasks.length; index += 1) {
-    const task = tasks[index];
+  var campaigns = AdsApp.campaigns().get();
+  var updatedCampaigns = 0;
+  var updatedSitelinks = 0;
+  var matchedCampaigns = 0;
+  var skippedCampaigns = 0;
+  var updatedSitelinkIds = {};
 
-    if (!task.finalUrlSuffix) {
-      skippedTasks += 1;
-      Logger.log("[AutoCashBack] skip task without suffix: offerId=" + task.offerId);
+  while (campaigns.hasNext()) {
+    var campaign = campaigns.next();
+    var match = findMatchedTaskForCampaign(campaign, taskMap);
+
+    if (!match) {
       continue;
     }
 
-    const campaigns = AdsApp.campaigns().get();
-    let matchedCampaign = false;
-
-    while (campaigns.hasNext()) {
-      const campaign = campaigns.next();
-      if (!entityHasLabel(campaign, task.campaignLabel)) {
-        continue;
-      }
-
-      matchedCampaign = true;
-      if (updateCampaignSuffix(campaign, task.finalUrlSuffix)) {
-        updatedCampaigns += 1;
-      }
-      updatedSitelinks += updateCampaignSitelinks(campaign, task.finalUrlSuffix);
+    if (match.skipReason) {
+      skippedCampaigns += 1;
+      Logger.log(
+        "[AutoCashBack] skip campaign " +
+          campaign.getName() +
+          ": " +
+          match.skipReason
+      );
+      continue;
     }
 
-    if (!matchedCampaign) {
-      Logger.log("[AutoCashBack] no campaign matched label: " + task.campaignLabel);
+    matchedCampaigns += 1;
+    if (updateCampaignSuffix(campaign, match.task.finalUrlSuffix, match.labelName)) {
+      updatedCampaigns += 1;
     }
+    updatedSitelinks += updateCampaignSitelinks(
+      campaign,
+      match.task.finalUrlSuffix,
+      updatedSitelinkIds
+    );
   }
 
   Logger.log(
-    "[AutoCashBack] finished. tasks=" + tasks.length +
+    "[AutoCashBack] finished. taskLabels=" + taskLabels.length +
+      ", matchedCampaigns=" + matchedCampaigns +
       ", updatedCampaigns=" + updatedCampaigns +
       ", updatedSitelinks=" + updatedSitelinks +
-      ", skippedTasks=" + skippedTasks
+      ", skippedCampaigns=" + skippedCampaigns
   );
 }
 
-function fetchSnapshot(campaignLabel) {
-  let endpoint = API_BASE_URL + "/api/script/link-swap/snapshot";
-  if (campaignLabel) {
-    endpoint += "?campaignLabel=" + encodeURIComponent(campaignLabel);
-  }
-
-  const response = UrlFetchApp.fetch(endpoint, {
+function fetchSnapshot() {
+  var response = UrlFetchApp.fetch(API_BASE_URL + "/api/script/link-swap/snapshot", {
     method: "get",
     headers: {
       "X-Script-Token": SCRIPT_TOKEN
@@ -175,8 +180,8 @@ function fetchSnapshot(campaignLabel) {
     muteHttpExceptions: true
   });
 
-  const code = response.getResponseCode();
-  const body = response.getContentText();
+  var code = response.getResponseCode();
+  var body = response.getContentText();
 
   if (code >= 400) {
     throw new Error("[AutoCashBack] snapshot request failed: " + code + " " + body);
@@ -185,9 +190,66 @@ function fetchSnapshot(campaignLabel) {
   return JSON.parse(body);
 }
 
-function updateCampaignSuffix(campaign, finalUrlSuffix) {
-  const urls = campaign.urls();
-  const current = safeGetFinalUrlSuffix(urls);
+function buildTaskMap(tasks) {
+  var taskMap = {};
+
+  for (var index = 0; index < tasks.length; index += 1) {
+    var task = tasks[index];
+
+    if (!task.campaignLabel) {
+      Logger.log("[AutoCashBack] skip task without campaignLabel: offerId=" + task.offerId);
+      continue;
+    }
+
+    if (!task.finalUrlSuffix) {
+      Logger.log("[AutoCashBack] skip task without suffix: offerId=" + task.offerId);
+      continue;
+    }
+
+    if (taskMap[task.campaignLabel]) {
+      Logger.log(
+        "[AutoCashBack] duplicate campaignLabel from snapshot, keep first: " +
+          task.campaignLabel
+      );
+      continue;
+    }
+
+    taskMap[task.campaignLabel] = task;
+  }
+
+  return taskMap;
+}
+
+function findMatchedTaskForCampaign(campaign, taskMap) {
+  var labels = campaign.labels().get();
+  var matchedLabels = [];
+
+  while (labels.hasNext()) {
+    var labelName = labels.next().getName();
+    if (taskMap[labelName]) {
+      matchedLabels.push(labelName);
+    }
+  }
+
+  if (!matchedLabels.length) {
+    return null;
+  }
+
+  if (matchedLabels.length > 1) {
+    return {
+      skipReason: "multiple matched labels: " + matchedLabels.join(", ")
+    };
+  }
+
+  return {
+    labelName: matchedLabels[0],
+    task: taskMap[matchedLabels[0]]
+  };
+}
+
+function updateCampaignSuffix(campaign, finalUrlSuffix, labelName) {
+  var urls = campaign.urls();
+  var current = safeGetFinalUrlSuffix(urls);
 
   if (current === finalUrlSuffix) {
     return false;
@@ -200,6 +262,8 @@ function updateCampaignSuffix(campaign, finalUrlSuffix) {
   Logger.log(
     "[AutoCashBack] campaign updated: " +
       campaign.getName() +
+      " label=" +
+      labelName +
       " => " +
       finalUrlSuffix
   );
@@ -207,17 +271,25 @@ function updateCampaignSuffix(campaign, finalUrlSuffix) {
   return true;
 }
 
-function updateCampaignSitelinks(campaign, finalUrlSuffix) {
-  let updated = 0;
+function updateCampaignSitelinks(campaign, finalUrlSuffix, updatedSitelinkIds) {
+  var updated = 0;
 
   try {
-    const sitelinks = campaign.extensions().sitelinks().get();
+    var sitelinks = campaign.extensions().sitelinks().get();
     while (sitelinks.hasNext()) {
-      const sitelink = sitelinks.next();
-      const urls = sitelink.urls();
-      const current = safeGetFinalUrlSuffix(urls);
+      var sitelink = sitelinks.next();
+      var sitelinkKey = getSitelinkKey(sitelink);
+      if (sitelinkKey && updatedSitelinkIds[sitelinkKey]) {
+        continue;
+      }
+
+      var urls = sitelink.urls();
+      var current = safeGetFinalUrlSuffix(urls);
 
       if (current === finalUrlSuffix) {
+        if (sitelinkKey) {
+          updatedSitelinkIds[sitelinkKey] = true;
+        }
         continue;
       }
 
@@ -226,6 +298,9 @@ function updateCampaignSitelinks(campaign, finalUrlSuffix) {
       }
 
       updated += 1;
+      if (sitelinkKey) {
+        updatedSitelinkIds[sitelinkKey] = true;
+      }
     }
   } catch (error) {
     Logger.log(
@@ -239,18 +314,13 @@ function updateCampaignSitelinks(campaign, finalUrlSuffix) {
   return updated;
 }
 
-function entityHasLabel(entity, labelName) {
-  if (!labelName) {
-    return true;
+function getSitelinkKey(sitelink) {
+  try {
+    return "id:" + sitelink.getId();
+  } catch (error) {
+    Logger.log("[AutoCashBack] unable to read sitelink id: " + error);
+    return "";
   }
-
-  const labels = entity.labels().get();
-  while (labels.hasNext()) {
-    if (labels.next().getName() === labelName) {
-      return true;
-    }
-  }
-  return false;
 }
 
 function safeGetFinalUrlSuffix(urls) {
