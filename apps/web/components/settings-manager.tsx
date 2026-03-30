@@ -238,7 +238,7 @@ export function SettingsManager() {
         </div>
 
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          参考 autobb 的代理配置方式。每条代理绑定一个国家代码，调度器会优先选择与 Offer 国家匹配的代理，未命中时回退到
+          按 AutoCashBack 的代理配置方式维护。每条代理绑定一个国家代码，调度器会优先选择与 Offer 国家匹配的代理，未命中时回退到
           `GLOBAL`。
         </p>
 
