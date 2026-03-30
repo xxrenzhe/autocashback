@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { renderScriptTemplate, type ProxySettingEntry } from "@autocashback/domain";
+import type { ProxySettingEntry } from "@autocashback/domain";
 
 type SettingRow = {
   category: string;
@@ -14,9 +14,6 @@ type SettingRow = {
 type ScriptTemplatePayload = {
   token: string;
   template: string;
-  rawTemplate: string;
-  defaultRawTemplate: string;
-  appUrl: string;
 };
 
 const emptyProxyEntry: ProxySettingEntry = {
@@ -59,22 +56,13 @@ export function SettingsManager() {
     rakuten: "",
     custom: ""
   });
-  const [scriptTemplate, setScriptTemplate] = useState("");
-  const [defaultScriptTemplate, setDefaultScriptTemplate] = useState("");
-  const [scriptToken, setScriptToken] = useState("");
+  const [script, setScript] = useState<ScriptTemplatePayload>({
+    token: "",
+    template: ""
+  });
   const [scriptAppUrl, setScriptAppUrl] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
-  const missingRequiredPlaceholders = ["__APP_URL__", "__SCRIPT_TOKEN__"].filter(
-    (placeholder) => !scriptTemplate.includes(placeholder)
-  );
-  const missingRecommendedPlaceholders = ["__CAMPAIGN_LABEL__"].filter(
-    (placeholder) => !scriptTemplate.includes(placeholder)
-  );
-  const renderedScriptTemplate = renderScriptTemplate(scriptTemplate, {
-    appUrl: scriptAppUrl,
-    scriptToken
-  });
 
   async function loadSettings() {
     setLoading(true);
@@ -95,10 +83,11 @@ export function SettingsManager() {
       rakuten: normalized["cashback.rakuten_notes"] || "",
       custom: normalized["cashback.custom_notes"] || ""
     });
-    setScriptTemplate(scriptPayload.rawTemplate || normalized["linkSwap.script_template"] || "");
-    setDefaultScriptTemplate(scriptPayload.defaultRawTemplate || "");
-    setScriptToken(scriptPayload.token || "");
-    setScriptAppUrl(scriptPayload.appUrl || "");
+    setScript({
+      token: scriptPayload.token || "",
+      template: scriptPayload.template || ""
+    });
+    setScriptAppUrl(window.location.origin);
     setLoading(false);
   }
 
@@ -138,11 +127,6 @@ export function SettingsManager() {
         category: "cashback",
         key: "custom_notes",
         value: platformNotes.custom
-      },
-      {
-        category: "linkSwap",
-        key: "script_template",
-        value: scriptTemplate
       }
     ];
 
@@ -162,9 +146,9 @@ export function SettingsManager() {
     const response = await fetch("/api/script/link-swap/rotate-token", {
       method: "POST"
     });
-    const payload = await response.json();
-    setScriptToken(payload.token || "");
-    await loadSettings();
+    if (response.ok) {
+      await loadSettings();
+    }
   }
 
   function updateProxyEntry(index: number, next: Partial<ProxySettingEntry>) {
@@ -379,12 +363,13 @@ export function SettingsManager() {
             <p className="eyebrow">换链接配置</p>
             <h3 className="mt-2 text-2xl font-semibold text-slate-900">默认 MCC 脚本</h3>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              平台通过快照接口提供只读数据。你只需要复制脚本、填入 Google Ads 标签、配置定时执行。
+              系统已经把站点地址和 Script Token 注入到脚本里。你只需要复制后粘贴到 Google Ads Scripts / MCC，
+              并确保对应 Campaign 已绑定好 Offer 的 `campaignLabel`。
             </p>
           </div>
           <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-3">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Script Token</p>
-            <p className="mt-2 font-mono text-sm text-slate-800">{scriptToken || "尚未生成"}</p>
+            <p className="mt-2 font-mono text-sm text-slate-800">{script.token || "尚未生成"}</p>
           </div>
         </div>
 
@@ -398,40 +383,23 @@ export function SettingsManager() {
           </button>
           <button
             className="rounded-full bg-brand-emerald px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
-            disabled={loading || !scriptToken}
-            onClick={() => navigator.clipboard.writeText(renderedScriptTemplate)}
+            disabled={loading || !script.template}
+            onClick={() => navigator.clipboard.writeText(script.template)}
             type="button"
           >
-            复制脚本
-          </button>
-          <button
-            className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700 disabled:opacity-60"
-            disabled={loading || !defaultScriptTemplate}
-            onClick={() => setScriptTemplate(defaultScriptTemplate)}
-            type="button"
-          >
-            恢复默认模板
+            复制可直接使用脚本
           </button>
         </div>
 
         <div className="mt-4 space-y-2 text-sm leading-6 text-slate-600">
-          <p>这里编辑的是原始模板。复制脚本时，系统会自动注入当前站点地址和 Script Token。</p>
-          {!loading && missingRequiredPlaceholders.length ? (
-            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700">
-              缺少必需占位符：{missingRequiredPlaceholders.join(", ")}。复制时将无法自动注入对应值。
-            </p>
-          ) : null}
-          {!loading && missingRecommendedPlaceholders.length ? (
-            <p className="text-amber-700">
-              建议保留占位符：{missingRecommendedPlaceholders.join(", ")}，便于在 Google Ads 中手工绑定标签。
-            </p>
-          ) : null}
+          <p>复制后无需再修改脚本内容。若你轮换 Token，需要重新复制一次最新脚本。</p>
+          <p>快照接口地址：<span className="font-mono text-xs text-slate-700">{scriptAppUrl}/api/script/link-swap/snapshot</span></p>
         </div>
 
         <textarea
           className="mt-5 min-h-72 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 font-mono text-xs"
-          value={scriptTemplate}
-          onChange={(event) => setScriptTemplate(event.target.value)}
+          readOnly
+          value={script.template}
         />
       </section>
 

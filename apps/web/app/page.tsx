@@ -30,7 +30,7 @@ const modules = [
   {
     icon: Link2,
     title: "换链接管理",
-    text: "定时解析终链并输出脚本快照，用户只需要复制默认脚本到 MCC 中执行。"
+    text: "定时解析终链并输出脚本快照，用户只需要直接复制脚本到 MCC 中执行。"
   }
 ];
 
@@ -157,8 +157,8 @@ export default function HomePage() {
             <h3 className="mt-2 text-2xl font-semibold text-slate-900">MCC 只读快照架构</h3>
             <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600">
               <p>平台通过 `/api/script/link-swap/snapshot` 输出最新 suffix 快照。</p>
-              <p>脚本使用 `X-Script-Token` 鉴权，不需要 Google Ads API。</p>
-              <p>脚本只更新匹配 `campaignLabel` 的 Campaign 和 sitelink，避免误伤其他广告资产。</p>
+              <p>脚本使用 `X-Script-Token` 鉴权，不需要 Google Ads API，也不需要手工修改脚本参数。</p>
+              <p>脚本会自动按 `campaignLabel` 更新匹配的 Campaign 和 sitelink，避免误伤其他广告资产。</p>
             </div>
           </div>
 
@@ -182,7 +182,7 @@ export default function HomePage() {
               </div>
               <div className="rounded-[24px] bg-stone-50 p-5">
                 <p className="text-sm font-semibold text-slate-900">对接轻量</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">运营侧只需复制默认脚本，不需要维护额外的 Drive 文件或 Ads API 凭证。</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">运营侧只需直接复制脚本，不需要手工改脚本，也不需要维护额外的 Drive 文件或 Ads API 凭证。</p>
               </div>
             </div>
           </div>
