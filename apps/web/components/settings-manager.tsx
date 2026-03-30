@@ -63,6 +63,7 @@ export function SettingsManager() {
   const [scriptAppUrl, setScriptAppUrl] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [rotatingToken, setRotatingToken] = useState(false);
 
   async function loadSettings() {
     setLoading(true);
@@ -143,11 +144,26 @@ export function SettingsManager() {
   }
 
   async function rotateToken() {
-    const response = await fetch("/api/script/link-swap/rotate-token", {
-      method: "POST"
-    });
-    if (response.ok) {
+    setRotatingToken(true);
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/script/link-swap/rotate-token", {
+        method: "POST"
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setMessage(payload.error || "Token 更换失败");
+        return;
+      }
+
       await loadSettings();
+      setMessage("Token 已更换，旧脚本立即失效，请重新复制最新换链接脚本。");
+    } catch {
+      setMessage("Token 更换失败");
+    } finally {
+      setRotatingToken(false);
     }
   }
 
@@ -363,8 +379,8 @@ export function SettingsManager() {
             <p className="eyebrow">换链接配置</p>
             <h3 className="mt-2 text-2xl font-semibold text-slate-900">默认 MCC 脚本</h3>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              系统已经把站点地址和 Script Token 注入到脚本里。你只需要复制后粘贴到 Google Ads Scripts / MCC，
-              并确保对应 Campaign 已绑定好 Offer 的 `campaignLabel`。
+              系统已经把站点地址和 Script Token 注入到脚本里。Script Token 默认长期有效，同一时间只有当前这一枚 token 生效。
+              你只需要复制后粘贴到 Google Ads Scripts / MCC，并确保对应 Campaign 已绑定好 Offer 的 `campaignLabel`。
             </p>
           </div>
           <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-3">
@@ -376,23 +392,24 @@ export function SettingsManager() {
         <div className="mt-5 flex flex-wrap gap-3">
           <button
             className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+            disabled={rotatingToken}
             onClick={rotateToken}
             type="button"
           >
-            轮换 Token
+            {rotatingToken ? "更换中..." : "更换 Token"}
           </button>
           <button
             className="rounded-full bg-brand-emerald px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
-            disabled={loading || !script.template}
+            disabled={loading || !script.template || rotatingToken}
             onClick={() => navigator.clipboard.writeText(script.template)}
             type="button"
           >
-            复制可直接使用脚本
+            复制最新换链接脚本
           </button>
         </div>
 
         <div className="mt-4 space-y-2 text-sm leading-6 text-slate-600">
-          <p>复制后无需再修改脚本内容。若你轮换 Token，需要重新复制一次最新脚本。</p>
+          <p>复制后无需再修改脚本内容。若你更换 Token，旧 Token 会立即失效，你需要重新复制一次最新脚本。</p>
           <p>快照接口地址：<span className="font-mono text-xs text-slate-700">{scriptAppUrl}/api/script/link-swap/snapshot</span></p>
         </div>
 
