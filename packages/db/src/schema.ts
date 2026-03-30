@@ -159,8 +159,18 @@ async function ensureDefaultSettings() {
   const defaults = [
     {
       category: "cashback",
-      key: "platform_notes",
-      value: "TopCashback、Rakuten 与 Custom 均按手工模式管理"
+      key: "topcashback_notes",
+      value: "TopCashback 按手工模式运营，账号、Offer、佣金进度均在 AutoCashBack 内部维护。"
+    },
+    {
+      category: "cashback",
+      key: "rakuten_notes",
+      value: "Rakuten 按手工模式运营，不依赖公开 API。"
+    },
+    {
+      category: "cashback",
+      key: "custom_notes",
+      value: "Custom 平台用于录入无法标准化接入的返利网。"
     },
     {
       category: "linkSwap",

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     token,
     template: DEFAULT_SCRIPT_TEMPLATE
-      .replace("https://www.autocashback.dev", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000")
-      .replace("replace-me", token)
+      .replaceAll("__APP_URL__", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000")
+      .replaceAll("__SCRIPT_TOKEN__", token)
   });
 }

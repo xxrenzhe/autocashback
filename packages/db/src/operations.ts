@@ -5,7 +5,8 @@ import type {
   DashboardSummary,
   LinkSwapRunRecord,
   LinkSwapTaskRecord,
-  OfferRecord
+  OfferRecord,
+  ProxySettingEntry
 } from "@autocashback/domain";
 
 import { getSql } from "./client";
@@ -87,6 +88,44 @@ export async function createAccount(
   return toAccountRecord(rows[0]);
 }
 
+export async function updateAccount(
+  userId: number,
+  accountId: number,
+  input: Omit<CashbackAccount, "id" | "userId" | "createdAt">
+) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const rows = await sql<DbRow[]>`
+    UPDATE cashback_accounts
+    SET platform_code = ${input.platformCode},
+        account_name = ${input.accountName},
+        register_email = ${input.registerEmail},
+        payout_method = ${input.payoutMethod},
+        notes = ${input.notes},
+        status = ${input.status}
+    WHERE id = ${accountId} AND user_id = ${userId}
+    RETURNING id, user_id, platform_code, account_name, register_email, payout_method, notes, status, created_at
+  `;
+
+  if (!rows[0]) {
+    throw new Error("返利网账号不存在");
+  }
+
+  return toAccountRecord(rows[0]);
+}
+
+export async function deleteAccount(userId: number, accountId: number) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const rows = await sql<{ id: number }[]>`
+    DELETE FROM cashback_accounts
+    WHERE id = ${accountId} AND user_id = ${userId}
+    RETURNING id
+  `;
+
+  return Boolean(rows[0]);
+}
+
 export async function listOffers(userId: number): Promise<OfferRecord[]> {
   await ensureDatabaseReady();
   const sql = getSql();
@@ -138,7 +177,7 @@ export async function createOffer(
       ${input.campaignLabel},
       ${input.commissionCapUsd},
       ${input.manualRecordedCommissionUsd},
-      ${input.manualRecordedCommissionUsd >= input.commissionCapUsd ? "warning" : "active"}
+      ${computeOfferStatus(input)}
     )
     RETURNING *
   `;
@@ -146,6 +185,56 @@ export async function createOffer(
   const offer = rows[0];
   await ensureLinkSwapTask(userId, Number(offer.id));
   return toOfferRecord(offer);
+}
+
+export async function updateOffer(
+  userId: number,
+  offerId: number,
+  input: Omit<
+    OfferRecord,
+    | "id"
+    | "userId"
+    | "latestResolvedUrl"
+    | "latestResolvedSuffix"
+    | "lastResolvedAt"
+    | "status"
+    | "createdAt"
+  >
+) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const rows = await sql<DbRow[]>`
+    UPDATE offers
+    SET platform_code = ${input.platformCode},
+        cashback_account_id = ${input.cashbackAccountId},
+        promo_link = ${input.promoLink},
+        target_country = ${input.targetCountry},
+        brand_name = ${input.brandName},
+        campaign_label = ${input.campaignLabel},
+        commission_cap_usd = ${input.commissionCapUsd},
+        manual_recorded_commission_usd = ${input.manualRecordedCommissionUsd},
+        status = ${computeOfferStatus(input)}
+    WHERE id = ${offerId} AND user_id = ${userId}
+    RETURNING *
+  `;
+
+  if (!rows[0]) {
+    throw new Error("Offer 不存在");
+  }
+
+  return toOfferRecord(rows[0]);
+}
+
+export async function deleteOffer(userId: number, offerId: number) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const rows = await sql<{ id: number }[]>`
+    DELETE FROM offers
+    WHERE id = ${offerId} AND user_id = ${userId}
+    RETURNING id
+  `;
+
+  return Boolean(rows[0]);
 }
 
 export async function listLinkSwapTasks(userId: number): Promise<LinkSwapTaskRecord[]> {
@@ -182,12 +271,30 @@ export async function updateLinkSwapTask(
     UPDATE link_swap_tasks
     SET enabled = ${input.enabled},
         interval_minutes = ${input.intervalMinutes},
-        next_run_at = NOW() + (${input.intervalMinutes} || ' minutes')::interval
+        status = ${input.enabled ? "ready" : "idle"},
+        next_run_at = CASE
+          WHEN ${input.enabled} THEN NOW() + (${input.intervalMinutes} || ' minutes')::interval
+          ELSE NULL
+        END
     WHERE user_id = ${userId} AND offer_id = ${offerId}
     RETURNING id, user_id, offer_id, enabled, interval_minutes, status, consecutive_failures, last_run_at, next_run_at
   `;
 
-  return rows[0];
+  if (!rows[0]) {
+    throw new Error("换链接任务不存在");
+  }
+
+  return {
+    id: Number(rows[0].id),
+    userId: Number(rows[0].user_id),
+    offerId: Number(rows[0].offer_id),
+    enabled: Boolean(rows[0].enabled),
+    intervalMinutes: Number(rows[0].interval_minutes),
+    status: String(rows[0].status) as LinkSwapTaskRecord["status"],
+    consecutiveFailures: Number(rows[0].consecutive_failures),
+    lastRunAt: rows[0].last_run_at ? String(rows[0].last_run_at) : null,
+    nextRunAt: rows[0].next_run_at ? String(rows[0].next_run_at) : null
+  };
 }
 
 export async function listLinkSwapRuns(userId: number): Promise<LinkSwapRunRecord[]> {
@@ -350,7 +457,8 @@ export async function getDueLinkSwapTasks() {
       tasks.offer_id,
       tasks.interval_minutes,
       offers.promo_link,
-      offers.brand_name
+      offers.brand_name,
+      offers.target_country
     FROM link_swap_tasks tasks
     JOIN offers ON offers.id = tasks.offer_id
     WHERE tasks.enabled = TRUE
@@ -359,15 +467,19 @@ export async function getDueLinkSwapTasks() {
   `;
 }
 
-export async function getProxyUrls(userId: number) {
+export async function getProxyUrls(userId: number, targetCountry?: string) {
   const settings = await getSettings(userId, "proxy");
   const raw = settings.find((item) => item.key === "proxy_urls")?.value || "[]";
+  const entries = normalizeProxyEntries(raw);
+  const country = String(targetCountry || "").trim().toUpperCase();
 
-  try {
-    return JSON.parse(raw) as string[];
-  } catch {
-    return [];
+  if (!country) {
+    return entries.filter((entry) => entry.active).map((entry) => entry.url);
   }
+
+  const matched = entries.filter((entry) => entry.active && entry.country === country);
+  const fallbacks = entries.filter((entry) => entry.active && entry.country === "GLOBAL");
+  return [...matched, ...fallbacks].map((entry) => entry.url);
 }
 
 export async function saveLinkSwapRun(input: {
@@ -407,17 +519,23 @@ export async function saveLinkSwapRun(input: {
     )
   `;
 
-  await sql`
-    UPDATE offers
-    SET latest_resolved_url = ${input.resolvedUrl},
-        latest_resolved_suffix = ${input.resolvedSuffix},
-        last_resolved_at = NOW()
-    WHERE id = ${input.offerId}
-  `;
+  if (input.status === "success" && input.resolvedUrl && input.resolvedSuffix) {
+    await sql`
+      UPDATE offers
+      SET latest_resolved_url = ${input.resolvedUrl},
+          latest_resolved_suffix = ${input.resolvedSuffix},
+          last_resolved_at = NOW()
+      WHERE id = ${input.offerId}
+    `;
+  }
 
   await sql`
     UPDATE link_swap_tasks
-    SET status = ${input.status === "success" ? "ready" : "error"},
+    SET status = CASE
+          WHEN ${input.status === "success"} THEN 'ready'
+          WHEN consecutive_failures + 1 >= 3 THEN 'warning'
+          ELSE 'error'
+        END,
         consecutive_failures = CASE
           WHEN ${input.status === "success"} THEN 0
           ELSE consecutive_failures + 1
@@ -449,6 +567,46 @@ function toAccountRecord(row: DbRow): CashbackAccount {
     status: String(row.status) as CashbackAccount["status"],
     createdAt: String(row.created_at)
   };
+}
+
+function computeOfferStatus(input: {
+  commissionCapUsd: number;
+  manualRecordedCommissionUsd: number;
+}) {
+  return input.manualRecordedCommissionUsd >= input.commissionCapUsd ? "warning" : "active";
+}
+
+function normalizeProxyEntries(raw: string): ProxySettingEntry[] {
+  try {
+    const parsed = JSON.parse(raw) as Array<string | Record<string, unknown>>;
+
+    return parsed
+      .map((entry, index) => {
+        if (typeof entry === "string") {
+          return {
+            label: `Proxy ${index + 1}`,
+            country: "GLOBAL",
+            url: entry,
+            active: true
+          };
+        }
+
+        const url = String(entry.url || "").trim();
+        if (!url) {
+          return null;
+        }
+
+        return {
+          label: String(entry.label || `Proxy ${index + 1}`),
+          country: String(entry.country || "GLOBAL").trim().toUpperCase(),
+          url,
+          active: entry.active === false ? false : true
+        };
+      })
+      .filter((entry): entry is ProxySettingEntry => Boolean(entry));
+  } catch {
+    return [];
+  }
 }
 
 function toOfferRecord(row: DbRow): OfferRecord {
