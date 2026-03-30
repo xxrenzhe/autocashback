@@ -15,6 +15,7 @@
     "lint": "npm --workspace @autocashback/web run lint && eslint apps/scheduler/src packages scripts tests --ext .ts,.tsx",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
+    "db:migrate": "tsx scripts/migrate-db.ts",
     "db:bootstrap": "tsx scripts/bootstrap-db.ts",
     "env:check": "tsx scripts/check-env.ts"
   },
