@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "autocashback",
+  "project_id": "5f20e37f-2876-44e5-ab4f-8bd112970905"
+}
