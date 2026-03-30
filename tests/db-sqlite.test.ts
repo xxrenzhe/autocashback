@@ -10,6 +10,7 @@ import {
   createOffer,
   createUser,
   ensureDatabaseReady,
+  getSql,
   getDashboardSummary,
   getSettings,
   listLinkSwapTasks,
@@ -44,6 +45,21 @@ describe.sequential("sqlite database bootstrap", () => {
 
     const users = await listUsers();
     expect(users.some((user) => user.role === "admin")).toBe(true);
+
+    const migrations = await getSql()<{
+      migration_name: string;
+      file_hash: string | null;
+    }[]>`
+      SELECT migration_name, file_hash
+      FROM migration_history
+      ORDER BY migration_name ASC
+    `;
+    expect(migrations.some((row) => row.migration_name === "000_init_schema_consolidated.sqlite.sql"))
+      .toBe(true);
+    expect(
+      migrations.find((row) => row.migration_name === "000_init_schema_consolidated.sqlite.sql")
+        ?.file_hash
+    ).toBeTruthy();
 
     const settings = await getSettings(null, "linkSwap");
     expect(settings.find((item) => item.key === "script_template")?.value).toContain(
