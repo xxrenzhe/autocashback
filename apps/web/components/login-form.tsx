@@ -4,7 +4,10 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
-export function LoginForm(props: { onContactClick: () => void }) {
+export function LoginForm(props: {
+  className?: string;
+  onContactClick: () => void;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [username, setUsername] = useState("");
@@ -34,7 +37,7 @@ export function LoginForm(props: { onContactClick: () => void }) {
   };
 
   return (
-    <form className="surface-panel overflow-hidden p-0" onSubmit={handleSubmit}>
+    <form className={`surface-panel overflow-hidden p-0 ${props.className ?? ""}`.trim()} onSubmit={handleSubmit}>
       <div className="border-b border-brand-line/80 px-8 py-8">
         <p className="eyebrow">账号登录</p>
         <h2 className="mt-4 font-display text-4xl font-semibold text-slate-900">欢迎回来</h2>
