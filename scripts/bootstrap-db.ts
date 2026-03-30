@@ -1,3 +1,5 @@
+import "./load-env";
+
 import { ensureDatabaseReady, getServerEnv } from "@autocashback/db";
 
 async function main() {

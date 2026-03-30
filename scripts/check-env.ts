@@ -1,3 +1,5 @@
+import "./load-env";
+
 import { getServerEnv } from "@autocashback/db";
 
 try {
