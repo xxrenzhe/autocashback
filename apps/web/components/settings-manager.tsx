@@ -56,6 +56,15 @@ export function SettingsManager() {
     rakuten: "",
     custom: ""
   });
+  const [googleAdsConfig, setGoogleAdsConfig] = useState({
+    clientId: "",
+    clientSecret: "",
+    developerToken: "",
+    loginCustomerId: "",
+    hasRefreshToken: false,
+    tokenExpiresAt: "",
+    lastVerifiedAt: ""
+  });
   const [script, setScript] = useState<ScriptTemplatePayload>({
     token: "",
     template: ""
@@ -67,12 +76,14 @@ export function SettingsManager() {
 
   async function loadSettings() {
     setLoading(true);
-    const [settingsResponse, scriptResponse] = await Promise.all([
+    const [settingsResponse, scriptResponse, googleAdsResponse] = await Promise.all([
       fetch("/api/settings"),
-      fetch("/api/script/link-swap/template")
+      fetch("/api/script/link-swap/template"),
+      fetch("/api/google-ads/credentials")
     ]);
     const payload = await settingsResponse.json();
     const scriptPayload = (await scriptResponse.json()) as ScriptTemplatePayload;
+    const googleAdsPayload = await googleAdsResponse.json();
     const normalized: Record<string, string> = {};
     for (const row of payload.settings || []) {
       normalized[`${row.category}.${row.key}`] = row.value || "";
@@ -87,6 +98,15 @@ export function SettingsManager() {
     setScript({
       token: scriptPayload.token || "",
       template: scriptPayload.template || ""
+    });
+    setGoogleAdsConfig({
+      clientId: googleAdsPayload.credentials?.clientId || "",
+      clientSecret: googleAdsPayload.credentials?.clientSecret || "",
+      developerToken: googleAdsPayload.credentials?.developerToken || "",
+      loginCustomerId: googleAdsPayload.credentials?.loginCustomerId || "",
+      hasRefreshToken: Boolean(googleAdsPayload.credentials?.hasRefreshToken),
+      tokenExpiresAt: googleAdsPayload.credentials?.tokenExpiresAt || "",
+      lastVerifiedAt: googleAdsPayload.credentials?.lastVerifiedAt || ""
     });
     setScriptAppUrl(window.location.origin);
     setLoading(false);
@@ -164,6 +184,73 @@ export function SettingsManager() {
       setMessage("Token 更换失败");
     } finally {
       setRotatingToken(false);
+    }
+  }
+
+  async function saveGoogleAdsConfig() {
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/google-ads/credentials", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientId: googleAdsConfig.clientId,
+          clientSecret: googleAdsConfig.clientSecret,
+          developerToken: googleAdsConfig.developerToken,
+          loginCustomerId: googleAdsConfig.loginCustomerId
+        })
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setMessage(payload.error || "Google Ads 配置保存失败");
+        return;
+      }
+
+      await loadSettings();
+      setMessage("Google Ads 配置已保存");
+    } catch {
+      setMessage("Google Ads 配置保存失败");
+    }
+  }
+
+  async function verifyGoogleAdsConfig() {
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/google-ads/credentials/verify", {
+        method: "POST"
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setMessage(payload.error || "Google Ads 配置验证失败");
+        return;
+      }
+
+      await loadSettings();
+      setMessage(`Google Ads 配置验证成功，已同步 ${payload.accountCount || 0} 个账号`);
+    } catch {
+      setMessage("Google Ads 配置验证失败");
+    }
+  }
+
+  async function clearGoogleAdsConfig() {
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/google-ads/credentials", {
+        method: "DELETE"
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setMessage(payload.error || "Google Ads 配置清除失败");
+        return;
+      }
+
+      await loadSettings();
+      setMessage("Google Ads 配置已清除");
+    } catch {
+      setMessage("Google Ads 配置清除失败");
     }
   }
 
@@ -329,6 +416,126 @@ export function SettingsManager() {
               还没有代理配置。建议至少录入一个 `GLOBAL` 代理，确保终链解析任务可执行。
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="surface-panel p-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="eyebrow">Google Ads API</p>
+            <h3 className="mt-2 text-2xl font-semibold text-slate-900">OAuth 凭证配置</h3>
+          </div>
+          <button
+            className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+            onClick={() => {
+              window.location.href = "/google-ads";
+            }}
+            type="button"
+          >
+            打开账号页
+          </button>
+        </div>
+
+        <p className="mt-3 text-sm leading-6 text-slate-600">
+          这里保存 Google Ads OAuth 基础参数。保存后请发起授权，获得 Refresh Token，并同步可访问账号。
+        </p>
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <label className="block text-sm font-medium text-slate-700">
+            Client ID
+            <input
+              className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+              value={googleAdsConfig.clientId}
+              onChange={(event) =>
+                setGoogleAdsConfig((current) => ({
+                  ...current,
+                  clientId: event.target.value
+                }))
+              }
+            />
+          </label>
+
+          <label className="block text-sm font-medium text-slate-700">
+            Client Secret
+            <input
+              className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+              value={googleAdsConfig.clientSecret}
+              onChange={(event) =>
+                setGoogleAdsConfig((current) => ({
+                  ...current,
+                  clientSecret: event.target.value
+                }))
+              }
+            />
+          </label>
+
+          <label className="block text-sm font-medium text-slate-700">
+            Developer Token
+            <input
+              className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+              value={googleAdsConfig.developerToken}
+              onChange={(event) =>
+                setGoogleAdsConfig((current) => ({
+                  ...current,
+                  developerToken: event.target.value
+                }))
+              }
+            />
+          </label>
+
+          <label className="block text-sm font-medium text-slate-700">
+            Login Customer ID
+            <input
+              className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 font-mono"
+              placeholder="1234567890"
+              value={googleAdsConfig.loginCustomerId}
+              onChange={(event) =>
+                setGoogleAdsConfig((current) => ({
+                  ...current,
+                  loginCustomerId: event.target.value
+                }))
+              }
+            />
+          </label>
+        </div>
+
+        <div className="mt-5 grid gap-3 rounded-[28px] border border-brand-line bg-stone-50 p-5 text-sm text-slate-600 lg:grid-cols-3">
+          <p>Refresh Token：{googleAdsConfig.hasRefreshToken ? "已连接" : "未授权"}</p>
+          <p>最近验证：{googleAdsConfig.lastVerifiedAt || "尚未验证"}</p>
+          <p>Token 过期：{googleAdsConfig.tokenExpiresAt || "未获取"}</p>
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button
+            className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white"
+            onClick={saveGoogleAdsConfig}
+            type="button"
+          >
+            保存 Google Ads 配置
+          </button>
+          <button
+            className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700"
+            onClick={() => {
+              window.location.href = "/api/auth/google-ads/authorize";
+            }}
+            type="button"
+          >
+            发起 OAuth 授权
+          </button>
+          <button
+            className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700"
+            onClick={verifyGoogleAdsConfig}
+            type="button"
+          >
+            验证并同步
+          </button>
+          <button
+            className="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-600"
+            onClick={clearGoogleAdsConfig}
+            type="button"
+          >
+            清除配置
+          </button>
         </div>
       </section>
 

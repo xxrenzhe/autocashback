@@ -6,3 +6,6 @@ export * from "./schema";
 export * from "./sql-splitter";
 export * from "./users";
 export * from "./operations";
+export * from "./google-ads";
+export * from "./google-ads-client";
+export * from "./click-farm";

@@ -2,7 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Link2, Settings, Shield, UserCircle2, Users2, WalletCards } from "lucide-react";
+import {
+  Boxes,
+  LayoutDashboard,
+  Link2,
+  Settings,
+  Shield,
+  Target,
+  UserCircle2,
+  Users2,
+  WalletCards
+} from "lucide-react";
 
 import { cn } from "@autocashback/ui";
 import type { CurrentUser } from "@autocashback/domain";
@@ -12,6 +22,8 @@ const userLinks = [
   { href: "/accounts", label: "账号管理", icon: Users2 },
   { href: "/offers", label: "Offer 管理", icon: WalletCards },
   { href: "/link-swap", label: "换链接管理", icon: Link2 },
+  { href: "/google-ads", label: "Google Ads", icon: Target },
+  { href: "/click-farm", label: "补点击任务", icon: Boxes },
   { href: "/settings", label: "系统设置", icon: Settings }
 ];
 

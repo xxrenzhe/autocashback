@@ -248,29 +248,66 @@ export async function listLinkSwapTasks(userId: number): Promise<LinkSwapTaskRec
   await ensureDatabaseReady();
   const sql = getSql();
   const rows = await sql<DbRow[]>`
-    SELECT id, user_id, offer_id, enabled, interval_minutes, status, consecutive_failures, last_run_at, next_run_at
+    SELECT
+      id,
+      user_id,
+      offer_id,
+      enabled,
+      interval_minutes,
+      duration_days,
+      mode,
+      google_customer_id,
+      google_campaign_id,
+      status,
+      consecutive_failures,
+      last_run_at,
+      next_run_at
     FROM link_swap_tasks
     WHERE user_id = ${userId}
     ORDER BY id DESC
   `;
 
-  return rows.map((row) => ({
-    id: Number(row.id),
-    userId: Number(row.user_id),
-    offerId: Number(row.offer_id),
-    enabled: Boolean(row.enabled),
-    intervalMinutes: Number(row.interval_minutes),
-    status: String(row.status) as LinkSwapTaskRecord["status"],
-    consecutiveFailures: Number(row.consecutive_failures),
-    lastRunAt: row.last_run_at ? String(row.last_run_at) : null,
-    nextRunAt: row.next_run_at ? String(row.next_run_at) : null
-  }));
+  return rows.map(toLinkSwapTaskRecord);
+}
+
+export async function getLinkSwapTaskByOfferId(userId: number, offerId: number) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const rows = await sql<DbRow[]>`
+    SELECT
+      id,
+      user_id,
+      offer_id,
+      enabled,
+      interval_minutes,
+      duration_days,
+      mode,
+      google_customer_id,
+      google_campaign_id,
+      status,
+      consecutive_failures,
+      last_run_at,
+      next_run_at
+    FROM link_swap_tasks
+    WHERE user_id = ${userId}
+      AND offer_id = ${offerId}
+    LIMIT 1
+  `;
+
+  return rows[0] ? toLinkSwapTaskRecord(rows[0]) : null;
 }
 
 export async function updateLinkSwapTask(
   userId: number,
   offerId: number,
-  input: { enabled: boolean; intervalMinutes: number }
+  input: {
+    enabled: boolean;
+    intervalMinutes: number;
+    durationDays: number;
+    mode: LinkSwapTaskRecord["mode"];
+    googleCustomerId: string | null;
+    googleCampaignId: string | null;
+  }
 ) {
   await ensureDatabaseReady();
   const sql = getSql();
@@ -280,17 +317,38 @@ export async function updateLinkSwapTask(
       UPDATE link_swap_tasks
       SET enabled = ?,
           interval_minutes = ?,
+          duration_days = ?,
+          mode = ?,
+          google_customer_id = ?,
+          google_campaign_id = ?,
           status = ?,
           next_run_at = CASE
             WHEN ? THEN ${plusMinutesExpression(input.intervalMinutes, dbType)}
             ELSE NULL
           END
       WHERE user_id = ? AND offer_id = ?
-      RETURNING id, user_id, offer_id, enabled, interval_minutes, status, consecutive_failures, last_run_at, next_run_at
+      RETURNING
+        id,
+        user_id,
+        offer_id,
+        enabled,
+        interval_minutes,
+        duration_days,
+        mode,
+        google_customer_id,
+        google_campaign_id,
+        status,
+        consecutive_failures,
+        last_run_at,
+        next_run_at
     `,
     [
       booleanValue(input.enabled, dbType),
       input.intervalMinutes,
+      input.durationDays,
+      input.mode,
+      input.googleCustomerId,
+      input.googleCampaignId,
       input.enabled ? "ready" : "idle",
       booleanValue(input.enabled, dbType),
       userId,
@@ -302,17 +360,7 @@ export async function updateLinkSwapTask(
     throw new Error("换链接任务不存在");
   }
 
-  return {
-    id: Number(rows[0].id),
-    userId: Number(rows[0].user_id),
-    offerId: Number(rows[0].offer_id),
-    enabled: Boolean(rows[0].enabled),
-    intervalMinutes: Number(rows[0].interval_minutes),
-    status: String(rows[0].status) as LinkSwapTaskRecord["status"],
-    consecutiveFailures: Number(rows[0].consecutive_failures),
-    lastRunAt: rows[0].last_run_at ? String(rows[0].last_run_at) : null,
-    nextRunAt: rows[0].next_run_at ? String(rows[0].next_run_at) : null
-  };
+  return toLinkSwapTaskRecord(rows[0]);
 }
 
 export async function listLinkSwapRuns(userId: number): Promise<LinkSwapRunRecord[]> {
@@ -336,6 +384,8 @@ export async function listLinkSwapRuns(userId: number): Promise<LinkSwapRunRecor
     resolvedSuffix: row.resolved_suffix ? String(row.resolved_suffix) : null,
     proxyUrl: row.proxy_url ? String(row.proxy_url) : null,
     status: String(row.status) as LinkSwapRunRecord["status"],
+    applyStatus: String(row.apply_status || "not_applicable") as LinkSwapRunRecord["applyStatus"],
+    applyErrorMessage: row.apply_error_message ? String(row.apply_error_message) : null,
     errorMessage: row.error_message ? String(row.error_message) : null,
     createdAt: String(row.created_at)
   }));
@@ -511,6 +561,7 @@ export async function getScriptSnapshot(token: string, campaignLabel?: string) {
     JOIN link_swap_tasks tasks ON tasks.offer_id = offers.id
     WHERE scripts.token = ${token}
       AND tasks.enabled = TRUE
+      AND tasks.mode = ${"script"}
       AND (${campaignLabel ?? null} IS NULL OR offers.campaign_label = ${campaignLabel ?? null})
     ORDER BY offers.id DESC
   `;
@@ -527,6 +578,10 @@ export async function getDueLinkSwapTasks() {
       tasks.user_id,
       tasks.offer_id,
       tasks.interval_minutes,
+      tasks.duration_days,
+      tasks.mode,
+      tasks.google_customer_id,
+      tasks.google_campaign_id,
       offers.promo_link,
       offers.brand_name,
       offers.target_country
@@ -561,6 +616,8 @@ export async function saveLinkSwapRun(input: {
   resolvedSuffix: string | null;
   proxyUrl: string | null;
   status: "success" | "failed";
+  applyStatus: LinkSwapRunRecord["applyStatus"];
+  applyErrorMessage: string | null;
   errorMessage: string | null;
   intervalMinutes: number;
 }) {
@@ -577,6 +634,8 @@ export async function saveLinkSwapRun(input: {
       resolved_suffix,
       proxy_url,
       status,
+      apply_status,
+      apply_error_message,
       error_message
     )
     VALUES (
@@ -587,11 +646,13 @@ export async function saveLinkSwapRun(input: {
       ${input.resolvedSuffix},
       ${input.proxyUrl},
       ${input.status},
+      ${input.applyStatus},
+      ${input.applyErrorMessage},
       ${input.errorMessage}
     )
   `;
 
-  if (input.status === "success" && input.resolvedUrl && input.resolvedSuffix) {
+  if (input.resolvedUrl && input.resolvedSuffix) {
     await sql`
       UPDATE offers
       SET latest_resolved_url = ${input.resolvedUrl},
@@ -629,8 +690,26 @@ export async function ensureLinkSwapTask(userId: number, offerId: number) {
   const sql = getSql();
   const dbType = getDbType();
   await sql`
-    INSERT INTO link_swap_tasks (user_id, offer_id, enabled, interval_minutes, status, next_run_at)
-    VALUES (${userId}, ${offerId}, ${booleanValue(true, dbType)}, 60, 'ready', CURRENT_TIMESTAMP)
+    INSERT INTO link_swap_tasks (
+      user_id,
+      offer_id,
+      enabled,
+      interval_minutes,
+      duration_days,
+      mode,
+      status,
+      next_run_at
+    )
+    VALUES (
+      ${userId},
+      ${offerId},
+      ${booleanValue(true, dbType)},
+      60,
+      -1,
+      ${"script"},
+      'ready',
+      CURRENT_TIMESTAMP
+    )
     ON CONFLICT (offer_id) DO NOTHING
   `;
 }
@@ -706,5 +785,23 @@ function toOfferRecord(row: DbRow): OfferRecord {
     lastResolvedAt: row.last_resolved_at ? String(row.last_resolved_at) : null,
     status: String(row.status) as OfferRecord["status"],
     createdAt: String(row.created_at)
+  };
+}
+
+function toLinkSwapTaskRecord(row: DbRow): LinkSwapTaskRecord {
+  return {
+    id: Number(row.id),
+    userId: Number(row.user_id),
+    offerId: Number(row.offer_id),
+    enabled: Boolean(row.enabled),
+    intervalMinutes: Number(row.interval_minutes),
+    durationDays: Number(row.duration_days ?? -1),
+    mode: String(row.mode || "script") as LinkSwapTaskRecord["mode"],
+    googleCustomerId: row.google_customer_id ? String(row.google_customer_id) : null,
+    googleCampaignId: row.google_campaign_id ? String(row.google_campaign_id) : null,
+    status: String(row.status) as LinkSwapTaskRecord["status"],
+    consecutiveFailures: Number(row.consecutive_failures),
+    lastRunAt: row.last_run_at ? String(row.last_run_at) : null,
+    nextRunAt: row.next_run_at ? String(row.next_run_at) : null
   };
 }

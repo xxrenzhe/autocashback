@@ -25,6 +25,7 @@
     "@autocashback/ui": "file:packages/ui",
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.5",
+    "google-ads-api": "^21.0.1",
     "ioredis": "^5.4.1",
     "node-cron": "^3.0.3",
     "tsx": "^4.19.2"

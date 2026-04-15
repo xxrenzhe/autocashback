@@ -6,15 +6,20 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import {
   closeDatabase,
+  createClickFarmTask,
   createAccount,
   createOffer,
   createUser,
   ensureDatabaseReady,
+  getClickFarmTaskByOfferId,
+  getGoogleAdsCredentialStatus,
+  getScriptSnapshot,
   getSql,
   getDashboardSummary,
   getSettings,
   listLinkSwapTasks,
   listUsers,
+  saveGoogleAdsCredentials,
   saveSettings
 } from "@autocashback/db";
 
@@ -132,5 +137,100 @@ describe.sequential("sqlite database bootstrap", () => {
 
     expect(matches).toHaveLength(1);
     expect(matches[0]?.value).toBe("https://proxy-2.example.com");
+  });
+
+  it("supports Google Ads credentials, click-farm tasks, and script-only snapshots", async () => {
+    const user = await createUser({
+      username: "sqlite-user-advanced",
+      email: "sqlite-user-advanced@example.com",
+      password: "password",
+      role: "user"
+    });
+
+    const account = await createAccount(user.id, {
+      platformCode: "topcashback",
+      accountName: "Advanced Cashback Account",
+      registerEmail: "sqlite-user-advanced@example.com",
+      payoutMethod: "paypal",
+      notes: "advanced test account"
+    });
+
+    const offer = await createOffer(user.id, {
+      platformCode: "topcashback",
+      cashbackAccountId: account.id,
+      promoLink: "https://example.com/advanced-offer",
+      targetCountry: "US",
+      brandName: "Brand B",
+      campaignLabel: "Campaign B",
+      commissionCapUsd: 180,
+      manualRecordedCommissionUsd: 10
+    });
+
+    await saveGoogleAdsCredentials(user.id, {
+      clientId: "client-id",
+      clientSecret: "client-secret",
+      developerToken: "developer-token",
+      loginCustomerId: "1234567890"
+    });
+
+    const credentials = await getGoogleAdsCredentialStatus(user.id);
+    expect(credentials.hasCredentials).toBe(true);
+    expect(credentials.hasRefreshToken).toBe(false);
+
+    const [task] = await listLinkSwapTasks(user.id);
+    expect(task).toBeTruthy();
+
+    await getSql()`
+      UPDATE link_swap_tasks
+      SET mode = ${"google_ads_api"},
+          google_customer_id = ${"1111111111"},
+          google_campaign_id = ${"2222222222"},
+          duration_days = ${14}
+      WHERE id = ${task?.id || 0}
+    `;
+
+    const updatedTasks = await listLinkSwapTasks(user.id);
+    expect(updatedTasks[0]?.mode).toBe("google_ads_api");
+    expect(updatedTasks[0]?.googleCustomerId).toBe("1111111111");
+    expect(updatedTasks[0]?.googleCampaignId).toBe("2222222222");
+
+    const scriptToken = "script-token-for-test";
+    await getSql()`
+      INSERT INTO script_tokens (user_id, token)
+      VALUES (${user.id}, ${scriptToken})
+      ON CONFLICT (user_id) DO UPDATE SET token = EXCLUDED.token
+    `;
+
+    expect(await getScriptSnapshot(scriptToken)).toHaveLength(0);
+
+    await getSql()`
+      UPDATE link_swap_tasks
+      SET mode = ${"script"}
+      WHERE id = ${task?.id || 0}
+    `;
+
+    const scriptSnapshot = await getScriptSnapshot(scriptToken);
+    expect(scriptSnapshot).toHaveLength(1);
+
+    const clickFarmTask = await createClickFarmTask(user.id, {
+      offerId: offer.id,
+      dailyClickCount: 120,
+      startTime: "06:00",
+      endTime: "24:00",
+      durationDays: 14,
+      scheduledStartDate: "2026-04-16",
+      hourlyDistribution: Array.from({ length: 24 }, (_, hour) => (hour >= 6 ? 6 : 0)),
+      refererConfig: {
+        type: "random"
+      }
+    });
+
+    expect(clickFarmTask.offerId).toBe(offer.id);
+    expect(clickFarmTask.status).toBe("pending");
+    expect(clickFarmTask.timezone).toBe("America/New_York");
+
+    const storedClickFarmTask = await getClickFarmTaskByOfferId(user.id, offer.id);
+    expect(storedClickFarmTask?.id).toBe(clickFarmTask.id);
+    expect(storedClickFarmTask?.refererConfig?.type).toBe("random");
   });
 });

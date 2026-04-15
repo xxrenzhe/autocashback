@@ -5,6 +5,9 @@ export type PlatformCode = "topcashback" | "rakuten" | "custom";
 export type PayoutMethod = "paypal" | "ach" | "giftCard";
 
 export type LinkSwapStatus = "idle" | "ready" | "warning" | "error";
+export type LinkSwapMode = "script" | "google_ads_api";
+export type LinkSwapApplyStatus = "not_applicable" | "success" | "failed";
+export type ClickFarmTaskStatus = "pending" | "running" | "paused" | "stopped" | "completed";
 
 export interface CurrentUser {
   id: number;
@@ -57,6 +60,10 @@ export interface LinkSwapTaskRecord {
   offerId: number;
   enabled: boolean;
   intervalMinutes: number;
+  durationDays: number;
+  mode: LinkSwapMode;
+  googleCustomerId: string | null;
+  googleCampaignId: string | null;
   status: LinkSwapStatus;
   consecutiveFailures: number;
   lastRunAt: string | null;
@@ -72,8 +79,81 @@ export interface LinkSwapRunRecord {
   resolvedSuffix: string | null;
   proxyUrl: string | null;
   status: "success" | "failed";
+  applyStatus: LinkSwapApplyStatus;
+  applyErrorMessage: string | null;
   errorMessage: string | null;
   createdAt: string;
+}
+
+export interface GoogleAdsCredentialStatus {
+  hasCredentials: boolean;
+  hasRefreshToken: boolean;
+  clientId: string | null;
+  clientSecret: string | null;
+  developerToken: string | null;
+  loginCustomerId: string | null;
+  tokenExpiresAt: string | null;
+  lastVerifiedAt: string | null;
+}
+
+export interface GoogleAdsAccountRecord {
+  id: number;
+  userId: number;
+  customerId: string;
+  descriptiveName: string | null;
+  currencyCode: string | null;
+  timeZone: string | null;
+  manager: boolean;
+  testAccount: boolean;
+  status: string | null;
+  lastSyncAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClickFarmTask {
+  id: number;
+  userId: number;
+  offerId: number;
+  dailyClickCount: number;
+  startTime: string;
+  endTime: string;
+  durationDays: number;
+  scheduledStartDate: string;
+  hourlyDistribution: number[];
+  timezone: string;
+  refererConfig: {
+    type: "none" | "random" | "specific" | "custom";
+    referer?: string;
+  } | null;
+  status: ClickFarmTaskStatus;
+  pauseReason: "no_proxy" | "manual" | null;
+  pauseMessage: string | null;
+  pausedAt: string | null;
+  progress: number;
+  totalClicks: number;
+  successClicks: number;
+  failedClicks: number;
+  dailyHistory: Array<{
+    date: string;
+    target: number;
+    actual: number;
+    success: number;
+    failed: number;
+    hourlyBreakdown: Array<{
+      target: number;
+      actual: number;
+      success: number;
+      failed: number;
+    }>;
+  }>;
+  startedAt: string | null;
+  completedAt: string | null;
+  nextRunAt: string | null;
+  isDeleted: boolean;
+  deletedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ProxySettingEntry {
@@ -94,6 +174,29 @@ export const PAYOUT_OPTIONS: Array<{ value: PayoutMethod; label: string }> = [
   { value: "ach", label: "银行转账 (ACH)" },
   { value: "giftCard", label: "礼品卡兑换" }
 ];
+
+const COUNTRY_TIMEZONE_MAP: Record<string, string> = {
+  AU: "Australia/Sydney",
+  CA: "America/Toronto",
+  CN: "Asia/Shanghai",
+  DE: "Europe/Berlin",
+  ES: "Europe/Madrid",
+  FR: "Europe/Paris",
+  GB: "Europe/London",
+  HK: "Asia/Hong_Kong",
+  IT: "Europe/Rome",
+  JP: "Asia/Tokyo",
+  KR: "Asia/Seoul",
+  SG: "Asia/Singapore",
+  TW: "Asia/Taipei",
+  UK: "Europe/London",
+  US: "America/New_York"
+};
+
+export function getTimezoneForCountry(country: string) {
+  const normalized = String(country || "").trim().toUpperCase();
+  return COUNTRY_TIMEZONE_MAP[normalized] || "UTC";
+}
 
 export const DEFAULT_SCRIPT_TEMPLATE = `/**
  * AutoCashBack MCC Link Swap Script

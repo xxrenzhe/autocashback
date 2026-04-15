@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import type { LinkSwapRunRecord, LinkSwapTaskRecord, OfferRecord } from "@autocashback/domain";
+
+import { LinkSwapTaskDialog } from "@/components/link-swap-task-dialog";
 
 type ScriptTemplatePayload = {
   template: string;
@@ -10,6 +13,9 @@ type ScriptTemplatePayload = {
 };
 
 export function LinkSwapManager() {
+  const searchParams = useSearchParams();
+  const selectedOfferId = Number(searchParams.get("offerId") || 0);
+
   const [tasks, setTasks] = useState<LinkSwapTaskRecord[]>([]);
   const [runs, setRuns] = useState<LinkSwapRunRecord[]>([]);
   const [offers, setOffers] = useState<OfferRecord[]>([]);
@@ -17,6 +23,7 @@ export function LinkSwapManager() {
   const [script, setScript] = useState<ScriptTemplatePayload>({ template: "", token: "" });
   const [message, setMessage] = useState("");
   const [rotatingToken, setRotatingToken] = useState(false);
+  const [activeOffer, setActiveOffer] = useState<OfferRecord | null>(null);
 
   const offersMap = useMemo(
     () => new Map(offers.map((offer) => [offer.id, offer])),
@@ -47,6 +54,17 @@ export function LinkSwapManager() {
     loadAll();
   }, []);
 
+  useEffect(() => {
+    if (!selectedOfferId || !offers.length) {
+      return;
+    }
+
+    const matchedOffer = offers.find((offer) => offer.id === selectedOfferId) || null;
+    if (matchedOffer) {
+      setActiveOffer(matchedOffer);
+    }
+  }, [offers, selectedOfferId]);
+
   async function saveTask(task: LinkSwapTaskRecord, enabled: boolean) {
     setMessage("");
     const response = await fetch("/api/link-swap/tasks", {
@@ -55,7 +73,11 @@ export function LinkSwapManager() {
       body: JSON.stringify({
         offerId: task.offerId,
         enabled,
-        intervalMinutes: Number(intervals[task.id] || task.intervalMinutes)
+        intervalMinutes: Number(intervals[task.id] || task.intervalMinutes),
+        durationDays: task.durationDays,
+        mode: task.mode,
+        googleCustomerId: task.googleCustomerId,
+        googleCampaignId: task.googleCampaignId
       })
     });
 
@@ -106,22 +128,31 @@ export function LinkSwapManager() {
             {tasks.length ? (
               tasks.map((task) => {
                 const offer = offersMap.get(task.offerId);
+                const isSelected = offer?.id === selectedOfferId;
+
                 return (
-                  <div className="rounded-[28px] border border-brand-line bg-stone-50 p-5" key={task.id}>
+                  <div
+                    className={`rounded-[28px] border p-5 ${
+                      isSelected
+                        ? "border-brand-emerald bg-brand-mist/40"
+                        : "border-brand-line bg-stone-50"
+                    }`}
+                    key={task.id}
+                  >
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">
                           {offer?.brandName || `Offer #${task.offerId}`}
                         </p>
                         <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">
-                          {offer?.campaignLabel || "未绑定标签"} · {offer?.targetCountry || "--"}
+                          {offer?.campaignLabel || "未绑定标签"} · {offer?.targetCountry || "--"} · {task.mode}
                         </p>
                         <p className="mt-3 max-w-2xl break-all font-mono text-xs text-slate-600">
                           {offer?.latestResolvedSuffix || "尚未解析到可用 suffix"}
                         </p>
                       </div>
 
-                      <div className="grid gap-3 sm:grid-cols-2 lg:w-[360px]">
+                      <div className="grid gap-3 sm:grid-cols-2 lg:w-[420px]">
                         <label className="text-sm font-medium text-slate-700">
                           执行间隔（分钟）
                           <input
@@ -139,6 +170,15 @@ export function LinkSwapManager() {
                           />
                         </label>
                         <div className="flex items-end gap-2">
+                          {offer ? (
+                            <button
+                              className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-xs font-semibold text-slate-700"
+                              onClick={() => setActiveOffer(offer)}
+                              type="button"
+                            >
+                              编辑任务
+                            </button>
+                          ) : null}
                           <button
                             className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-xs font-semibold text-slate-700"
                             onClick={() => saveTask(task, task.enabled)}
@@ -162,8 +202,20 @@ export function LinkSwapManager() {
                     <div className="mt-4 grid gap-3 sm:grid-cols-4">
                       <p className="text-sm text-slate-600">状态：{task.status}</p>
                       <p className="text-sm text-slate-600">当前间隔：{task.intervalMinutes} 分钟</p>
-                      <p className="text-sm text-slate-600">连续失败：{task.consecutiveFailures}</p>
+                      <p className="text-sm text-slate-600">
+                        持续天数：{task.durationDays === -1 ? "不限期" : `${task.durationDays} 天`}
+                      </p>
                       <p className="text-sm text-slate-600">下次执行：{task.nextRunAt || "待调度"}</p>
+                    </div>
+
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                      <p className="text-sm text-slate-600">连续失败：{task.consecutiveFailures}</p>
+                      <p className="text-sm text-slate-600">
+                        Customer ID：{task.googleCustomerId || "--"}
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        Campaign ID：{task.googleCampaignId || "--"}
+                      </p>
                     </div>
                   </div>
                 );
@@ -184,7 +236,7 @@ export function LinkSwapManager() {
             <li>2. 点击下方复制脚本，直接粘贴到 Google Ads Scripts / MCC 中，无需再修改脚本内容。</li>
             <li>3. Script Token 默认长期有效，同一时间只有当前显示的这一个 Token 可用。</li>
             <li>4. 如需更换 Token，请在这里直接更换，然后重新复制最新脚本。</li>
-            <li>5. 设置定时任务执行后，脚本会从 AutoCashBack 快照接口读取最新 suffix，并同步到匹配标签的 Campaign 和 sitelink。</li>
+            <li>5. Script 模式下，脚本会从快照接口读取 suffix；Google Ads API 模式则由平台直接更新目标 Campaign。</li>
           </ol>
 
           <div className="mt-5 rounded-[28px] border border-brand-line bg-stone-50 p-5">
@@ -248,6 +300,10 @@ export function LinkSwapManager() {
                   <p className="mt-3 break-all font-mono text-xs text-slate-700">
                     {run.resolvedSuffix || run.errorMessage || "无 suffix"}
                   </p>
+                  <p className="mt-2 text-xs text-slate-500">
+                    应用结果：{run.applyStatus}
+                    {run.applyErrorMessage ? ` · ${run.applyErrorMessage}` : ""}
+                  </p>
                 </div>
               );
             })
@@ -258,6 +314,13 @@ export function LinkSwapManager() {
           )}
         </div>
       </section>
+
+      <LinkSwapTaskDialog
+        offer={activeOffer}
+        open={Boolean(activeOffer)}
+        onClose={() => setActiveOffer(null)}
+        onSaved={loadAll}
+      />
     </div>
   );
 }

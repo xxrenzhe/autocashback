@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   PLATFORM_OPTIONS,
   type CashbackAccount,
   type OfferRecord
 } from "@autocashback/domain";
+
+import { ClickFarmTaskDialog } from "@/components/click-farm-task-dialog";
+import { LinkSwapTaskDialog } from "@/components/link-swap-task-dialog";
 
 type OfferFormState = {
   promoLink: string;
@@ -33,6 +37,7 @@ const initialForm: OfferFormState = {
 const platformLabelMap = Object.fromEntries(PLATFORM_OPTIONS.map((option) => [option.value, option.label]));
 
 export function OffersManager() {
+  const router = useRouter();
   const [offers, setOffers] = useState<OfferRecord[]>([]);
   const [accounts, setAccounts] = useState<CashbackAccount[]>([]);
   const [form, setForm] = useState<OfferFormState>(initialForm);
@@ -41,6 +46,8 @@ export function OffersManager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [activeClickFarmOffer, setActiveClickFarmOffer] = useState<OfferRecord | null>(null);
+  const [activeLinkSwapOffer, setActiveLinkSwapOffer] = useState<OfferRecord | null>(null);
 
   const filteredAccounts = useMemo(
     () => accounts.filter((account) => account.platformCode === form.platformCode),
@@ -154,6 +161,23 @@ export function OffersManager() {
         <p className="mt-3 text-sm leading-6 text-slate-600">
           录入推广链接、绑定返利网账号，并手工维护佣金进度。达到阈值后系统会自动标记为预警。
         </p>
+
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button
+            className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+            onClick={() => router.push("/google-ads")}
+            type="button"
+          >
+            查看 Google Ads 账号
+          </button>
+          <button
+            className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+            onClick={() => router.push("/link-swap")}
+            type="button"
+          >
+            查看换链接总览
+          </button>
+        </div>
 
         <div className="mt-6 space-y-4">
           <label className="block text-sm font-medium text-slate-700">
@@ -384,11 +408,25 @@ export function OffersManager() {
                             编辑
                           </button>
                           <button
+                            className="rounded-full border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+                            onClick={() => setActiveClickFarmOffer(offer)}
+                            type="button"
+                          >
+                            补点击任务
+                          </button>
+                          <button
+                            className="rounded-full border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+                            onClick={() => setActiveLinkSwapOffer(offer)}
+                            type="button"
+                          >
+                            换链接任务
+                          </button>
+                          <button
                             className="rounded-full border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600"
                             onClick={() => handleDelete(offer.id)}
                             type="button"
                           >
-                            删除
+                            删除 Offer
                           </button>
                         </div>
                       </td>
@@ -406,6 +444,19 @@ export function OffersManager() {
           </table>
         </div>
       </div>
+
+      <ClickFarmTaskDialog
+        offer={activeClickFarmOffer}
+        open={Boolean(activeClickFarmOffer)}
+        onClose={() => setActiveClickFarmOffer(null)}
+        onSaved={loadAll}
+      />
+      <LinkSwapTaskDialog
+        offer={activeLinkSwapOffer}
+        open={Boolean(activeLinkSwapOffer)}
+        onClose={() => setActiveLinkSwapOffer(null)}
+        onSaved={loadAll}
+      />
     </div>
   );
 }
