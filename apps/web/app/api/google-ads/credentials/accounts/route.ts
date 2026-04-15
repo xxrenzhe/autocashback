@@ -1,6 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { listGoogleAdsAccounts, syncGoogleAdsAccounts } from "@autocashback/db";
+import {
+  getGoogleAdsCredentialStatus,
+  listGoogleAdsAccounts,
+  syncGoogleAdsAccounts
+} from "@autocashback/db";
 
 import { getRequestUser } from "@/lib/api-auth";
 
@@ -13,17 +17,20 @@ export async function GET(request: NextRequest) {
   const refresh = request.nextUrl.searchParams.get("refresh") === "true";
 
   try {
-    const accounts = refresh
-      ? await syncGoogleAdsAccounts(user.id)
-      : await listGoogleAdsAccounts(user.id);
+    if (refresh) {
+      const credentials = await getGoogleAdsCredentialStatus(user.id);
+      if (!credentials.hasRefreshToken) {
+        return NextResponse.json({ error: "Google Ads 未完成 OAuth 授权" }, { status: 400 });
+      }
 
-    if (!accounts.length && !refresh) {
       return NextResponse.json({
         accounts: await syncGoogleAdsAccounts(user.id)
       });
     }
 
-    return NextResponse.json({ accounts });
+    return NextResponse.json({
+      accounts: await listGoogleAdsAccounts(user.id)
+    });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Google Ads 账号同步失败";
     return NextResponse.json({ error: message }, { status: 400 });

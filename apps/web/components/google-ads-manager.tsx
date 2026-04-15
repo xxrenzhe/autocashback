@@ -12,27 +12,37 @@ export function GoogleAdsManager() {
   const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState("");
 
-  async function loadAll(refreshAccounts = false) {
+  async function loadAll(options?: { refreshAccounts?: boolean; preserveMessage?: boolean }) {
+    const refreshAccounts = Boolean(options?.refreshAccounts);
     setLoading(true);
-    setMessage("");
+    if (!options?.preserveMessage) {
+      setMessage("");
+    }
 
     try {
-      const [credentialsResponse, accountsResponse] = await Promise.all([
-        fetch("/api/google-ads/credentials"),
-        fetch(`/api/google-ads/credentials/accounts${refreshAccounts ? "?refresh=true" : ""}`)
-      ]);
+      const credentialsResponse = await fetch("/api/google-ads/credentials");
       const credentialsPayload = await credentialsResponse.json();
-      const accountsPayload = await accountsResponse.json();
 
       if (!credentialsResponse.ok) {
         throw new Error(credentialsPayload.error || "加载 Google Ads 配置失败");
       }
 
+      const nextCredentials = (credentialsPayload.credentials || null) as GoogleAdsCredentialStatus | null;
+      setCredentials(nextCredentials);
+
+      if (!nextCredentials?.hasRefreshToken && !refreshAccounts) {
+        setAccounts([]);
+        return;
+      }
+
+      const accountsResponse = await fetch(
+        `/api/google-ads/credentials/accounts${refreshAccounts ? "?refresh=true" : ""}`
+      );
+      const accountsPayload = await accountsResponse.json();
       if (!accountsResponse.ok) {
         throw new Error(accountsPayload.error || "加载 Google Ads 账号失败");
       }
 
-      setCredentials(credentialsPayload.credentials || null);
       setAccounts(accountsPayload.accounts || []);
     } catch (error: unknown) {
       setMessage(error instanceof Error ? error.message : "加载 Google Ads 数据失败");
@@ -51,8 +61,13 @@ export function GoogleAdsManager() {
     const error = url.searchParams.get("error");
 
     if (success === "oauth_connected") {
-      setMessage("Google Ads OAuth 已连接，账号列表已刷新。");
-      loadAll(true);
+      void (async () => {
+        await loadAll({
+          refreshAccounts: true,
+          preserveMessage: true
+        });
+        setMessage("Google Ads OAuth 已连接，账号列表已刷新。");
+      })();
     } else if (error) {
       setMessage(`Google Ads 授权失败：${error}`);
     }
@@ -71,7 +86,10 @@ export function GoogleAdsManager() {
         throw new Error(verifyPayload.error || "验证失败");
       }
 
-      await loadAll(refresh);
+      await loadAll({
+        refreshAccounts: refresh,
+        preserveMessage: true
+      });
       setMessage(`Google Ads 配置验证成功，已同步 ${verifyPayload.accountCount || 0} 个账号。`);
     } catch (error: unknown) {
       setMessage(error instanceof Error ? error.message : "Google Ads 验证失败");

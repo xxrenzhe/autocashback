@@ -69,6 +69,7 @@ ALTER TABLE link_swap_tasks ADD COLUMN IF NOT EXISTS mode TEXT NOT NULL DEFAULT 
 ALTER TABLE link_swap_tasks ADD COLUMN IF NOT EXISTS google_customer_id TEXT;
 ALTER TABLE link_swap_tasks ADD COLUMN IF NOT EXISTS google_campaign_id TEXT;
 ALTER TABLE link_swap_tasks ADD COLUMN IF NOT EXISTS duration_days INTEGER NOT NULL DEFAULT -1;
+ALTER TABLE link_swap_tasks ADD COLUMN IF NOT EXISTS activation_started_at TIMESTAMPTZ;
 
 ALTER TABLE link_swap_runs ADD COLUMN IF NOT EXISTS apply_status TEXT NOT NULL DEFAULT 'not_applicable';
 ALTER TABLE link_swap_runs ADD COLUMN IF NOT EXISTS apply_error_message TEXT;

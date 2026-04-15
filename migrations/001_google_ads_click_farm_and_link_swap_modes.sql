@@ -69,6 +69,7 @@ ALTER TABLE link_swap_tasks ADD COLUMN mode TEXT NOT NULL DEFAULT 'script';
 ALTER TABLE link_swap_tasks ADD COLUMN google_customer_id TEXT;
 ALTER TABLE link_swap_tasks ADD COLUMN google_campaign_id TEXT;
 ALTER TABLE link_swap_tasks ADD COLUMN duration_days INTEGER NOT NULL DEFAULT -1;
+ALTER TABLE link_swap_tasks ADD COLUMN activation_started_at TEXT;
 
 ALTER TABLE link_swap_runs ADD COLUMN apply_status TEXT NOT NULL DEFAULT 'not_applicable';
 ALTER TABLE link_swap_runs ADD COLUMN apply_error_message TEXT;

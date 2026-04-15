@@ -25,32 +25,63 @@ export async function saveGoogleAdsCredentials(
 ) {
   await ensureDatabaseReady();
   const sql = getSql();
+  const existing = await getGoogleAdsCredentials(userId);
+
+  if (!existing) {
+    await sql`
+      INSERT INTO google_ads_credentials (
+        user_id,
+        client_id,
+        client_secret,
+        developer_token,
+        login_customer_id,
+        updated_at
+      )
+      VALUES (
+        ${userId},
+        ${encryptText(input.clientId)},
+        ${encryptText(input.clientSecret)},
+        ${encryptText(input.developerToken)},
+        ${input.loginCustomerId},
+        CURRENT_TIMESTAMP
+      )
+    `;
+
+    return getGoogleAdsCredentialStatus(userId);
+  }
+
+  const credentialsChanged =
+    existing.clientId !== input.clientId ||
+    existing.clientSecret !== input.clientSecret ||
+    existing.developerToken !== input.developerToken ||
+    existing.loginCustomerId !== input.loginCustomerId;
 
   await sql`
-    INSERT INTO google_ads_credentials (
-      user_id,
-      client_id,
-      client_secret,
-      developer_token,
-      login_customer_id,
-      updated_at
-    )
-    VALUES (
-      ${userId},
-      ${encryptText(input.clientId)},
-      ${encryptText(input.clientSecret)},
-      ${encryptText(input.developerToken)},
-      ${input.loginCustomerId},
-      CURRENT_TIMESTAMP
-    )
-    ON CONFLICT (user_id)
-    DO UPDATE SET
-      client_id = EXCLUDED.client_id,
-      client_secret = EXCLUDED.client_secret,
-      developer_token = EXCLUDED.developer_token,
-      login_customer_id = EXCLUDED.login_customer_id,
-      updated_at = CURRENT_TIMESTAMP
+    UPDATE google_ads_credentials
+    SET client_id = ${encryptText(input.clientId)},
+        client_secret = ${encryptText(input.clientSecret)},
+        developer_token = ${encryptText(input.developerToken)},
+        login_customer_id = ${input.loginCustomerId},
+        updated_at = CURRENT_TIMESTAMP
+    WHERE user_id = ${userId}
   `;
+
+  if (credentialsChanged) {
+    await sql`
+      UPDATE google_ads_credentials
+      SET access_token = ${null},
+          refresh_token = ${null},
+          token_expires_at = ${null},
+          last_verified_at = ${null},
+          updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = ${userId}
+    `;
+
+    await sql`
+      DELETE FROM google_ads_accounts
+      WHERE user_id = ${userId}
+    `;
+  }
 
   return getGoogleAdsCredentialStatus(userId);
 }

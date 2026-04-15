@@ -312,6 +312,23 @@ export async function updateLinkSwapTask(
   await ensureDatabaseReady();
   const sql = getSql();
   const dbType = getDbType();
+  const existingRows = await sql<DbRow[]>`
+    SELECT enabled, activation_started_at, created_at
+    FROM link_swap_tasks
+    WHERE user_id = ${userId} AND offer_id = ${offerId}
+    LIMIT 1
+  `;
+
+  if (!existingRows[0]) {
+    throw new Error("换链接任务不存在");
+  }
+
+  const activationStartedAt = input.enabled
+    ? Boolean(existingRows[0].enabled)
+      ? String(existingRows[0].activation_started_at || existingRows[0].created_at || new Date().toISOString())
+      : new Date().toISOString()
+    : null;
+
   const rows = await sql.unsafe<DbRow[]>(
     `
       UPDATE link_swap_tasks
@@ -321,6 +338,7 @@ export async function updateLinkSwapTask(
           mode = ?,
           google_customer_id = ?,
           google_campaign_id = ?,
+          activation_started_at = ?,
           status = ?,
           next_run_at = CASE
             WHEN ? THEN ${plusMinutesExpression(input.intervalMinutes, dbType)}
@@ -349,6 +367,7 @@ export async function updateLinkSwapTask(
       input.mode,
       input.googleCustomerId,
       input.googleCampaignId,
+      activationStartedAt,
       input.enabled ? "ready" : "idle",
       booleanValue(input.enabled, dbType),
       userId,
@@ -582,6 +601,8 @@ export async function getDueLinkSwapTasks() {
       tasks.mode,
       tasks.google_customer_id,
       tasks.google_campaign_id,
+      tasks.activation_started_at,
+      tasks.created_at,
       offers.promo_link,
       offers.brand_name,
       offers.target_country
@@ -590,6 +611,21 @@ export async function getDueLinkSwapTasks() {
     WHERE tasks.enabled = TRUE
       AND (tasks.next_run_at IS NULL OR tasks.next_run_at <= CURRENT_TIMESTAMP)
     ORDER BY tasks.id ASC
+  `;
+}
+
+export async function expireLinkSwapTask(taskId: number) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const dbType = getDbType();
+
+  await sql`
+    UPDATE link_swap_tasks
+    SET enabled = ${booleanValue(false, dbType)},
+        status = ${"idle"},
+        next_run_at = ${null},
+        activation_started_at = ${null}
+    WHERE id = ${taskId}
   `;
 }
 
@@ -697,6 +733,7 @@ export async function ensureLinkSwapTask(userId: number, offerId: number) {
       interval_minutes,
       duration_days,
       mode,
+      activation_started_at,
       status,
       next_run_at
     )
@@ -707,6 +744,7 @@ export async function ensureLinkSwapTask(userId: number, offerId: number) {
       60,
       -1,
       ${"script"},
+      CURRENT_TIMESTAMP,
       'ready',
       CURRENT_TIMESTAMP
     )

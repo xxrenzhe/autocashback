@@ -7,6 +7,7 @@ import cron from "node-cron";
 import {
   completeClickFarmTask,
   ensureDatabaseReady,
+  expireLinkSwapTask,
   getDueClickFarmTasks,
   getDueLinkSwapTasks,
   getProxyUrls,
@@ -33,6 +34,8 @@ type DueTask = {
   mode: "script" | "google_ads_api";
   google_customer_id: string | null;
   google_campaign_id: string | null;
+  activation_started_at: string | null;
+  created_at: string;
   promo_link: string;
   brand_name: string;
   target_country: string;
@@ -138,6 +141,19 @@ function addMinutes(date: Date, minutes: number) {
   return new Date(date.getTime() + minutes * 60_000).toISOString();
 }
 
+function isLinkSwapExpired(task: DueTask, now: Date) {
+  if (task.duration_days === -1) {
+    return false;
+  }
+
+  const startedAt = Date.parse(task.activation_started_at || task.created_at);
+  if (!Number.isFinite(startedAt)) {
+    return false;
+  }
+
+  return now.getTime() >= startedAt + task.duration_days * 86_400_000;
+}
+
 function resolveReferer(task: ClickFarmDueTask) {
   const config = task.refererConfig;
   if (!config || config.type === "none") {
@@ -217,8 +233,14 @@ async function performClickFarmRequest(task: ClickFarmDueTask, proxyUrl: string 
 export async function runDueLinkSwaps() {
   await ensureDatabaseReady();
   const tasks = (await getDueLinkSwapTasks()) as unknown as DueTask[];
+  const now = new Date();
 
   for (const task of tasks) {
+    if (isLinkSwapExpired(task, now)) {
+      await expireLinkSwapTask(task.id);
+      continue;
+    }
+
     const proxies = await getProxyUrls(task.user_id, String(task.target_country || ""));
     const proxyUrl = proxies[0] || null;
     const result = await resolveOfferLink(task.promo_link, proxyUrl);

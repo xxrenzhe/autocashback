@@ -26,11 +26,14 @@
   },
   "include": [
     "apps/web/next-env.d.ts",
+    "apps/**/*.d.ts",
     "apps/**/*.ts",
     "apps/**/*.tsx",
+    "packages/**/*.d.ts",
     "packages/**/*.ts",
     "packages/**/*.tsx",
     "scripts/**/*.ts",
+    "tests/**/*.d.ts",
     "tests/**/*.ts"
   ],
   "exclude": [

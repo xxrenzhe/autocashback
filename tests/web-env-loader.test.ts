@@ -3,6 +3,9 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("web env loader", async () => {
+  // `env-loader.mjs` is intentionally plain ESM for Next runtime loading.
+  // Root `tsc` does not resolve its declaration on this relative dynamic import.
+  // @ts-expect-error test-only import of ESM helper
   const { getEnvCandidates } = await import("../apps/web/env-loader.mjs");
 
   it("checks workspace env files before root env files", () => {

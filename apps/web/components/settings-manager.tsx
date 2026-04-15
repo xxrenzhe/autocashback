@@ -208,7 +208,11 @@ export function SettingsManager() {
       }
 
       await loadSettings();
-      setMessage("Google Ads 配置已保存");
+      setMessage(
+        payload.credentials?.hasRefreshToken
+          ? "Google Ads 配置已保存"
+          : "Google Ads 配置已保存，请重新发起 OAuth 授权"
+      );
     } catch {
       setMessage("Google Ads 配置保存失败");
     }
@@ -437,7 +441,8 @@ export function SettingsManager() {
         </div>
 
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          这里保存 Google Ads OAuth 基础参数。保存后请发起授权，获得 Refresh Token，并同步可访问账号。
+          这里保存 Google Ads OAuth 基础参数。首次保存后请发起授权；如果你修改了基础参数，系统会清除旧授权状态，需重新获取
+          Refresh Token 并同步账号。
         </p>
 
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
