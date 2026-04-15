@@ -9,6 +9,20 @@ import { getTimezoneForCountry } from "@autocashback/domain";
 
 import { getRequestUser } from "@/lib/api-auth";
 
+function normalizePositiveNumber(value: unknown, fallback: number) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function normalizeDurationDays(value: unknown) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return 14;
+  }
+
+  return parsed === -1 ? -1 : parsed > 0 ? parsed : 14;
+}
+
 function normalizeDistribution(value: unknown, dailyClickCount: number) {
   if (Array.isArray(value) && value.length === 24) {
     return value.map((item) => Number(item || 0));
@@ -38,13 +52,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const dailyClickCount = Number(body.dailyClickCount || 216);
+    const dailyClickCount = normalizePositiveNumber(body.dailyClickCount, 216);
     const task = await createClickFarmTask(user.id, {
       offerId: Number(body.offerId),
       dailyClickCount,
       startTime: String(body.startTime || "06:00"),
       endTime: String(body.endTime || "24:00"),
-      durationDays: Number(body.durationDays || 14),
+      durationDays: normalizeDurationDays(body.durationDays),
       scheduledStartDate: String(
         body.scheduledStartDate || new Date().toISOString().slice(0, 10)
       ),
@@ -68,13 +82,13 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const dailyClickCount = Number(body.dailyClickCount || 216);
+    const dailyClickCount = normalizePositiveNumber(body.dailyClickCount, 216);
     const task = await updateClickFarmTask(user.id, Number(body.id), {
       offerId: Number(body.offerId),
       dailyClickCount,
       startTime: String(body.startTime || "06:00"),
       endTime: String(body.endTime || "24:00"),
-      durationDays: Number(body.durationDays || 14),
+      durationDays: normalizeDurationDays(body.durationDays),
       scheduledStartDate: String(
         body.scheduledStartDate || new Date().toISOString().slice(0, 10)
       ),
