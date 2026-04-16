@@ -11,6 +11,10 @@ import {
 
 import { ClickFarmTaskDialog } from "@/components/click-farm-task-dialog";
 import { LinkSwapTaskDialog } from "@/components/link-swap-task-dialog";
+import {
+  resolveClickFarmTaskMode,
+  resolveLinkSwapTaskMode
+} from "@/lib/task-modal-helpers";
 
 type OfferFormState = {
   promoLink: string;
@@ -48,6 +52,7 @@ export function OffersManager() {
   const [message, setMessage] = useState("");
   const [activeClickFarmOffer, setActiveClickFarmOffer] = useState<OfferRecord | null>(null);
   const [activeLinkSwapOffer, setActiveLinkSwapOffer] = useState<OfferRecord | null>(null);
+  const [taskActionLoading, setTaskActionLoading] = useState<string | null>(null);
 
   const filteredAccounts = useMemo(
     () => accounts.filter((account) => account.platformCode === form.platformCode),
@@ -151,6 +156,34 @@ export function OffersManager() {
 
     setMessage("Offer 已删除");
     await loadAll();
+  }
+
+  async function openClickFarmTask(offer: OfferRecord) {
+    setTaskActionLoading(`click-farm-${offer.id}`);
+
+    try {
+      const { infoMessage } = await resolveClickFarmTaskMode(offer.id);
+      if (infoMessage) {
+        setMessage(infoMessage);
+      }
+      setActiveClickFarmOffer(offer);
+    } finally {
+      setTaskActionLoading(null);
+    }
+  }
+
+  async function openLinkSwapTask(offer: OfferRecord) {
+    setTaskActionLoading(`link-swap-${offer.id}`);
+
+    try {
+      const { infoMessage } = await resolveLinkSwapTaskMode(offer.id);
+      if (infoMessage) {
+        setMessage(infoMessage);
+      }
+      setActiveLinkSwapOffer(offer);
+    } finally {
+      setTaskActionLoading(null);
+    }
   }
 
   return (
@@ -409,17 +442,19 @@ export function OffersManager() {
                           </button>
                           <button
                             className="rounded-full border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-slate-700"
-                            onClick={() => setActiveClickFarmOffer(offer)}
+                            disabled={taskActionLoading === `click-farm-${offer.id}`}
+                            onClick={() => void openClickFarmTask(offer)}
                             type="button"
                           >
-                            补点击任务
+                            {taskActionLoading === `click-farm-${offer.id}` ? "加载中..." : "补点击任务"}
                           </button>
                           <button
                             className="rounded-full border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-slate-700"
-                            onClick={() => setActiveLinkSwapOffer(offer)}
+                            disabled={taskActionLoading === `link-swap-${offer.id}`}
+                            onClick={() => void openLinkSwapTask(offer)}
                             type="button"
                           >
-                            换链接任务
+                            {taskActionLoading === `link-swap-${offer.id}` ? "加载中..." : "换链接任务"}
                           </button>
                           <button
                             className="rounded-full border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600"

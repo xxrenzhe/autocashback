@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   clearGoogleAdsCredentials,
   getGoogleAdsCredentialStatus,
-  saveGoogleAdsCredentials
+  saveGoogleAdsCredentials,
+  validateGoogleAdsCredentialInput
 } from "@autocashback/db";
 
 import { getRequestUser } from "@/lib/api-auth";
@@ -26,21 +27,18 @@ export async function PUT(request: NextRequest) {
   }
 
   const body = await request.json();
-  const clientId = String(body.clientId || "").trim();
-  const clientSecret = String(body.clientSecret || "").trim();
-  const developerToken = String(body.developerToken || "").trim();
-  const loginCustomerId = String(body.loginCustomerId || "").trim();
+  const validation = validateGoogleAdsCredentialInput({
+    clientId: String(body.clientId || ""),
+    clientSecret: String(body.clientSecret || ""),
+    developerToken: String(body.developerToken || ""),
+    loginCustomerId: String(body.loginCustomerId || "")
+  });
 
-  if (!clientId || !clientSecret || !developerToken || !loginCustomerId) {
-    return NextResponse.json({ error: "Google Ads 配置不完整" }, { status: 400 });
+  if (!validation.valid) {
+    return NextResponse.json({ error: validation.message }, { status: 400 });
   }
 
-  const credentials = await saveGoogleAdsCredentials(user.id, {
-    clientId,
-    clientSecret,
-    developerToken,
-    loginCustomerId
-  });
+  const credentials = await saveGoogleAdsCredentials(user.id, validation.normalizedInput);
 
   return NextResponse.json({ credentials });
 }

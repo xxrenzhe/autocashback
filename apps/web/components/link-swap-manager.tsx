@@ -3,7 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import type { LinkSwapRunRecord, LinkSwapTaskRecord, OfferRecord } from "@autocashback/domain";
+import {
+  LINK_SWAP_ALLOWED_INTERVALS_MINUTES,
+  LINK_SWAP_INTERVAL_OPTIONS,
+  type LinkSwapRunRecord,
+  type LinkSwapTaskRecord,
+  type OfferRecord
+} from "@autocashback/domain";
 
 import { LinkSwapTaskDialog } from "@/components/link-swap-task-dialog";
 
@@ -11,6 +17,24 @@ type ScriptTemplatePayload = {
   template: string;
   token: string;
 };
+
+function getIntervalOptions(currentValue: number) {
+  if (LINK_SWAP_INTERVAL_OPTIONS.some((option) => option.value === currentValue)) {
+    return LINK_SWAP_INTERVAL_OPTIONS;
+  }
+
+  if (LINK_SWAP_ALLOWED_INTERVALS_MINUTES.includes(currentValue)) {
+    return [
+      ...LINK_SWAP_INTERVAL_OPTIONS,
+      {
+        value: currentValue,
+        label: `${currentValue} 分钟（旧值）`
+      }
+    ];
+  }
+
+  return LINK_SWAP_INTERVAL_OPTIONS;
+}
 
 export function LinkSwapManager() {
   const searchParams = useSearchParams();
@@ -67,13 +91,21 @@ export function LinkSwapManager() {
 
   async function saveTask(task: LinkSwapTaskRecord, enabled: boolean) {
     setMessage("");
+    const intervalMinutes = Number(intervals[task.id] || task.intervalMinutes);
+    if (!LINK_SWAP_ALLOWED_INTERVALS_MINUTES.includes(intervalMinutes)) {
+      setMessage(
+        `换链接间隔必须是以下值之一：${LINK_SWAP_ALLOWED_INTERVALS_MINUTES.join(", ")} 分钟`
+      );
+      return;
+    }
+
     const response = await fetch("/api/link-swap/tasks", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         offerId: task.offerId,
         enabled,
-        intervalMinutes: Number(intervals[task.id] || task.intervalMinutes),
+        intervalMinutes,
         durationDays: task.durationDays,
         mode: task.mode,
         googleCustomerId: task.googleCustomerId,
@@ -155,11 +187,8 @@ export function LinkSwapManager() {
                       <div className="grid gap-3 sm:grid-cols-2 lg:w-[420px]">
                         <label className="text-sm font-medium text-slate-700">
                           执行间隔（分钟）
-                          <input
+                          <select
                             className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 font-mono"
-                            min={1}
-                            step={1}
-                            type="number"
                             value={intervals[task.id] ?? task.intervalMinutes}
                             onChange={(event) =>
                               setIntervals((current) => ({
@@ -167,7 +196,13 @@ export function LinkSwapManager() {
                                 [task.id]: Number(event.target.value)
                               }))
                             }
-                          />
+                          >
+                            {getIntervalOptions(intervals[task.id] ?? task.intervalMinutes).map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
                         </label>
                         <div className="flex items-end gap-2">
                           {offer ? (

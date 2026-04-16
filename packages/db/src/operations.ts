@@ -146,6 +146,20 @@ export async function listOffers(userId: number): Promise<OfferRecord[]> {
   return rows.map(toOfferRecord);
 }
 
+export async function getOfferById(userId: number, offerId: number): Promise<OfferRecord | null> {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const rows = await sql<DbRow[]>`
+    SELECT *
+    FROM offers
+    WHERE user_id = ${userId}
+      AND id = ${offerId}
+    LIMIT 1
+  `;
+
+  return rows[0] ? toOfferRecord(rows[0]) : null;
+}
+
 export async function createOffer(
   userId: number,
   input: Omit<

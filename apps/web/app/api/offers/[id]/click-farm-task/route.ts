@@ -18,7 +18,12 @@ export async function GET(
     return NextResponse.json({ error: "无效的 Offer ID" }, { status: 400 });
   }
 
+  const task = await getClickFarmTaskByOfferId(user.id, offerId);
+
   return NextResponse.json({
-    task: await getClickFarmTaskByOfferId(user.id, offerId)
+    success: true,
+    data: task,
+    task,
+    message: task ? "已找到补点击任务" : "该 Offer 没有关联的补点击任务"
   });
 }

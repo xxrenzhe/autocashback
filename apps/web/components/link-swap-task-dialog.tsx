@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 
-import type { LinkSwapTaskRecord, OfferRecord } from "@autocashback/domain";
+import {
+  LINK_SWAP_ALLOWED_INTERVALS_MINUTES,
+  LINK_SWAP_INTERVAL_OPTIONS,
+  type LinkSwapTaskRecord,
+  type OfferRecord
+} from "@autocashback/domain";
 
 import { ModalFrame } from "@/components/modal-frame";
 
@@ -31,6 +36,24 @@ const initialForm: FormState = {
   googleCampaignId: ""
 };
 
+function getIntervalOptions(currentValue: number) {
+  if (LINK_SWAP_INTERVAL_OPTIONS.some((option) => option.value === currentValue)) {
+    return LINK_SWAP_INTERVAL_OPTIONS;
+  }
+
+  if (LINK_SWAP_ALLOWED_INTERVALS_MINUTES.includes(currentValue)) {
+    return [
+      ...LINK_SWAP_INTERVAL_OPTIONS,
+      {
+        value: currentValue,
+        label: `${currentValue} 分钟（旧值）`
+      }
+    ];
+  }
+
+  return LINK_SWAP_INTERVAL_OPTIONS;
+}
+
 export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
   const { offer, onClose, onSaved, open } = props;
   const [task, setTask] = useState<LinkSwapTaskRecord | null>(null);
@@ -38,6 +61,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [proxyWarning, setProxyWarning] = useState("");
 
   useEffect(() => {
     if (!open || !offer) {
@@ -50,6 +74,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
     async function loadTask() {
       setLoading(true);
       setMessage("");
+      setProxyWarning("");
 
       try {
         const response = await fetch(`/api/offers/${currentOffer.id}/link-swap-task`);
@@ -72,6 +97,20 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
           googleCustomerId: nextTask?.googleCustomerId || "",
           googleCampaignId: nextTask?.googleCampaignId || ""
         });
+
+        const proxyResponse = await fetch(
+          `/api/settings/proxy?country=${encodeURIComponent(currentOffer.targetCountry)}`
+        );
+        const proxyPayload = await proxyResponse.json().catch(() => null);
+        if (cancelled) {
+          return;
+        }
+        const proxyUrl = proxyPayload?.data?.proxy_url || null;
+        setProxyWarning(
+          proxyUrl
+            ? ""
+            : `未配置 ${currentOffer.targetCountry} 国家的代理。请先前往设置页面补齐代理，否则换链接任务无法执行。`
+        );
       } catch (error: unknown) {
         if (!cancelled) {
           setMessage(error instanceof Error ? error.message : "加载换链接任务失败");
@@ -99,6 +138,18 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
       (!form.googleCustomerId.trim() || !form.googleCampaignId.trim())
     ) {
       setMessage("Google Ads API 模式必须填写 Customer ID 和 Campaign ID");
+      return;
+    }
+
+    if (!LINK_SWAP_ALLOWED_INTERVALS_MINUTES.includes(Number(form.intervalMinutes))) {
+      setMessage(
+        `换链接间隔必须是以下值之一：${LINK_SWAP_ALLOWED_INTERVALS_MINUTES.join(", ")} 分钟`
+      );
+      return;
+    }
+
+    if (proxyWarning) {
+      setMessage(proxyWarning);
       return;
     }
 
@@ -153,6 +204,21 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
             </p>
           </div>
 
+          {proxyWarning ? (
+            <div className="rounded-[28px] border border-red-200 bg-red-50 p-5 text-sm leading-6 text-red-700">
+              <p>{proxyWarning}</p>
+              <button
+                className="mt-3 rounded-full border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-700"
+                onClick={() => {
+                  window.location.href = "/settings";
+                }}
+                type="button"
+              >
+                前往设置
+              </button>
+            </div>
+          ) : null}
+
           {loading ? (
             <p className="rounded-2xl bg-stone-50 px-4 py-5 text-sm text-slate-500">正在加载任务...</p>
           ) : (
@@ -177,11 +243,8 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
 
                 <label className="block text-sm font-medium text-slate-700">
                   执行间隔（分钟）
-                  <input
+                  <select
                     className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 font-mono"
-                    min={1}
-                    step={1}
-                    type="number"
                     value={form.intervalMinutes}
                     onChange={(event) =>
                       setForm((current) => ({
@@ -189,7 +252,13 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
                         intervalMinutes: Number(event.target.value)
                       }))
                     }
-                  />
+                  >
+                    {getIntervalOptions(form.intervalMinutes).map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </label>
               </div>
 

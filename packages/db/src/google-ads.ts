@@ -13,11 +13,130 @@ export type GoogleAdsCredentialInput = {
   loginCustomerId: string;
 };
 
+export type GoogleAdsCredentialValidationResult =
+  | {
+      valid: true;
+      normalizedInput: GoogleAdsCredentialInput;
+    }
+  | {
+      valid: false;
+      message: string;
+    };
+
 export type GoogleAdsTokenUpdate = {
   accessToken: string;
   refreshToken: string;
   tokenExpiresAt: string | null;
 };
+
+function looksLikeOAuthClientId(value: string) {
+  return value.includes(".apps.googleusercontent.com");
+}
+
+function looksLikeOAuthClientSecret(value: string) {
+  return /^GOCSPX[-_]?/i.test(value.trim());
+}
+
+function looksLikeOAuthAccessToken(value: string) {
+  return /^ya29\./i.test(value.trim());
+}
+
+export function normalizeGoogleAdsCredentialInput(
+  input: GoogleAdsCredentialInput
+): GoogleAdsCredentialInput {
+  return {
+    clientId: String(input.clientId || "").trim(),
+    clientSecret: String(input.clientSecret || "").trim(),
+    developerToken: String(input.developerToken || "").trim(),
+    loginCustomerId: String(input.loginCustomerId || "")
+      .replaceAll("-", "")
+      .replace(/\s+/g, "")
+      .trim()
+  };
+}
+
+export function validateGoogleAdsCredentialInput(
+  input: GoogleAdsCredentialInput
+): GoogleAdsCredentialValidationResult {
+  const normalizedInput = normalizeGoogleAdsCredentialInput(input);
+
+  if (
+    !normalizedInput.clientId ||
+    !normalizedInput.clientSecret ||
+    !normalizedInput.developerToken ||
+    !normalizedInput.loginCustomerId
+  ) {
+    return {
+      valid: false,
+      message: "Google Ads 配置不完整"
+    };
+  }
+
+  if (!looksLikeOAuthClientId(normalizedInput.clientId)) {
+    return {
+      valid: false,
+      message: "Client ID 格式不正确，应包含 .apps.googleusercontent.com"
+    };
+  }
+
+  if (normalizedInput.clientSecret.length < 20) {
+    return {
+      valid: false,
+      message: "Client Secret 格式不正确，长度过短"
+    };
+  }
+
+  if (normalizedInput.developerToken === normalizedInput.clientSecret) {
+    return {
+      valid: false,
+      message:
+        "Developer Token 与 Client Secret 相同，疑似误填。Developer Token 需从 Google Ads API Center 获取。"
+    };
+  }
+
+  if (looksLikeOAuthClientId(normalizedInput.developerToken)) {
+    return {
+      valid: false,
+      message:
+        "Developer Token 看起来像 Client ID（包含 .apps.googleusercontent.com），请填写 Google Ads Developer Token。"
+    };
+  }
+
+  if (looksLikeOAuthClientSecret(normalizedInput.developerToken)) {
+    return {
+      valid: false,
+      message:
+        "Developer Token 看起来像 Client Secret（以 GOCSPX- 开头），请在 Google Ads API Center 获取正确的 Developer Token。"
+    };
+  }
+
+  if (looksLikeOAuthAccessToken(normalizedInput.developerToken)) {
+    return {
+      valid: false,
+      message:
+        "Developer Token 看起来像 Access Token（以 ya29. 开头），请填写 Google Ads Developer Token。"
+    };
+  }
+
+  if (normalizedInput.developerToken.length < 20) {
+    return {
+      valid: false,
+      message: "Developer Token 格式不正确，长度过短"
+    };
+  }
+
+  if (!/^\d{10}$/.test(normalizedInput.loginCustomerId)) {
+    return {
+      valid: false,
+      message: "Login Customer ID 格式不正确，应为 10 位数字"
+    };
+  }
+
+  return {
+    valid: true,
+    normalizedInput
+  };
+}
 
 export async function saveGoogleAdsCredentials(
   userId: number,
