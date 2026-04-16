@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 
-import type { QueueStats, QueueTaskRecord, QueueTaskStatus, QueueTaskType } from "@autocashback/domain";
+import type {
+  QueueStats,
+  QueueSystemConfig,
+  QueueTaskRecord,
+  QueueTaskStatus,
+  QueueTaskType
+} from "@autocashback/domain";
 
 const emptyStats: QueueStats = {
   total: 0,
@@ -58,6 +64,19 @@ type SchedulerStatusPayload = {
   };
 };
 
+type QueueConfigPayload = {
+  config: QueueSystemConfig;
+  configSource: "database" | "default";
+  note: string;
+};
+
+const queueConfigTaskLabels: Array<{ key: QueueTaskType; label: string }> = [
+  { key: "click-farm-trigger", label: "补点击触发" },
+  { key: "click-farm-batch", label: "补点击批次" },
+  { key: "click-farm", label: "补点击执行" },
+  { key: "url-swap", label: "换链接执行" }
+];
+
 function formatDateTime(value: string | null) {
   if (!value) {
     return "--";
@@ -94,6 +113,11 @@ export function QueueMonitor() {
   const [schedulerError, setSchedulerError] = useState("");
   const [schedulerLoading, setSchedulerLoading] = useState(false);
   const [schedulerCollapsed, setSchedulerCollapsed] = useState(true);
+  const [config, setConfig] = useState<QueueConfigPayload | null>(null);
+  const [configLoading, setConfigLoading] = useState(false);
+  const [configSaving, setConfigSaving] = useState(false);
+  const [configMessage, setConfigMessage] = useState("");
+  const [configError, setConfigError] = useState("");
 
   async function loadQueueData() {
     try {
@@ -172,9 +196,106 @@ export function QueueMonitor() {
     }
   }
 
+  async function loadQueueConfig() {
+    try {
+      setConfigLoading(true);
+      const response = await fetch("/api/queue/config");
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.error || "加载队列配置失败");
+      }
+
+      setConfig({
+        config: payload.config,
+        configSource: payload.configSource || "default",
+        note: payload.note || ""
+      });
+      setConfigError("");
+    } catch (error: unknown) {
+      setConfigError(error instanceof Error ? error.message : "加载队列配置失败");
+    } finally {
+      setConfigLoading(false);
+    }
+  }
+
+  async function saveQueueConfig() {
+    if (!config) {
+      return;
+    }
+
+    try {
+      setConfigSaving(true);
+      setConfigMessage("");
+      setConfigError("");
+
+      const response = await fetch("/api/queue/config", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(config.config)
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.error || "保存队列配置失败");
+      }
+
+      setConfig({
+        config: payload.config,
+        configSource: "database",
+        note: "配置保存到数据库后，独立 scheduler 进程会在 60 秒内自动拉取并应用"
+      });
+      setConfigMessage(payload.message || "队列配置已保存");
+    } catch (error: unknown) {
+      setConfigError(error instanceof Error ? error.message : "保存队列配置失败");
+    } finally {
+      setConfigSaving(false);
+    }
+  }
+
+  function updateConfigField(
+    field: "globalConcurrency" | "pollIntervalMs" | "staleTimeoutMs",
+    value: number
+  ) {
+    setConfig((current) =>
+      current
+        ? {
+            ...current,
+            config: {
+              ...current.config,
+              [field]: value
+            }
+          }
+        : current
+    );
+  }
+
+  function updatePerTypeConcurrency(type: QueueTaskType, value: number) {
+    setConfig((current) =>
+      current
+        ? {
+            ...current,
+            config: {
+              ...current.config,
+              perTypeConcurrency: {
+                ...current.config.perTypeConcurrency,
+                [type]: value
+              }
+            }
+          }
+        : current
+    );
+  }
+
   useEffect(() => {
     void loadQueueData();
   }, [status, type]);
+
+  useEffect(() => {
+    void loadQueueConfig();
+  }, []);
 
   useEffect(() => {
     if (schedulerCollapsed) {
@@ -212,6 +333,72 @@ export function QueueMonitor() {
         <StatCard label="运行中" value={stats.running} />
         <StatCard label="已完成" value={stats.completed} />
         <StatCard label="失败" value={stats.failed} />
+      </section>
+
+      <section className="surface-panel p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="eyebrow">队列配置</p>
+            <h3 className="mt-2 text-2xl font-semibold text-slate-900">统一调度参数</h3>
+            <p className="mt-2 text-sm text-slate-600">
+              复用 autobb 的持久化配置思路，参数保存到数据库后由独立 scheduler 进程自动拉取。
+            </p>
+          </div>
+          <button
+            className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+            disabled={configLoading || configSaving || !config}
+            onClick={saveQueueConfig}
+            type="button"
+          >
+            {configSaving ? "保存中..." : "保存配置"}
+          </button>
+        </div>
+
+        {configLoading && !config ? (
+          <p className="mt-4 rounded-2xl bg-stone-50 px-4 py-5 text-sm text-slate-500">正在加载队列配置...</p>
+        ) : null}
+
+        {config ? (
+          <>
+            <div className="mt-5 grid gap-4 md:grid-cols-3">
+              <ConfigInput
+                label="全局并发"
+                value={config.config.globalConcurrency}
+                onChange={(value) => updateConfigField("globalConcurrency", value)}
+              />
+              <ConfigInput
+                label="轮询间隔(ms)"
+                value={config.config.pollIntervalMs}
+                onChange={(value) => updateConfigField("pollIntervalMs", value)}
+              />
+              <ConfigInput
+                label="僵尸任务超时(ms)"
+                value={config.config.staleTimeoutMs}
+                onChange={(value) => updateConfigField("staleTimeoutMs", value)}
+              />
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {queueConfigTaskLabels.map((item) => (
+                <ConfigInput
+                  key={item.key}
+                  label={`${item.label}并发`}
+                  value={config.config.perTypeConcurrency[item.key]}
+                  onChange={(value) => updatePerTypeConcurrency(item.key, value)}
+                />
+              ))}
+            </div>
+
+            <div className="mt-5 grid gap-3 text-sm text-slate-600 sm:grid-cols-2 xl:grid-cols-3">
+              <p>配置来源：{config.configSource === "database" ? "数据库" : "默认值"}</p>
+              <p>当前说明：{config.note || "--"}</p>
+              <p>生效范围：补点击与换链接统一队列</p>
+            </div>
+          </>
+        ) : null}
+
+        {configMessage ? <p className="mt-4 text-sm text-slate-600">{configMessage}</p> : null}
+        {configError ? <p className="mt-4 text-sm text-red-700">{configError}</p> : null}
       </section>
 
       <section className="surface-panel p-6">
@@ -390,6 +577,25 @@ function StatCard(props: { label: string; value: number }) {
       <p className="text-sm text-slate-500">{props.label}</p>
       <p className="mt-3 font-mono text-3xl font-semibold text-slate-900">{props.value}</p>
     </div>
+  );
+}
+
+function ConfigInput(props: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="grid gap-2 text-sm text-slate-600">
+      <span>{props.label}</span>
+      <input
+        className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm text-slate-900"
+        min={1}
+        onChange={(event) => props.onChange(Number(event.target.value || 0))}
+        type="number"
+        value={props.value}
+      />
+    </label>
   );
 }
 

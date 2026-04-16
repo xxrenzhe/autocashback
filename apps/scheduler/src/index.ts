@@ -2,7 +2,7 @@ import "../../../scripts/load-env";
 
 import cron from "node-cron";
 
-import { ensureDatabaseReady } from "@autocashback/db";
+import { ensureDatabaseReady, getQueueSystemConfig } from "@autocashback/db";
 
 import {
   executeClickFarmBatch,
@@ -28,8 +28,14 @@ queue.registerExecutor("click-farm-batch", executeClickFarmBatch);
 queue.registerExecutor("click-farm", executeClickFarmClick);
 queue.registerExecutor("url-swap", executeLinkSwapTask);
 
+async function applyLatestQueueConfig() {
+  const config = await getQueueSystemConfig();
+  await queue.updateConfig(config);
+}
+
 async function main() {
   await ensureDatabaseReady();
+  await applyLatestQueueConfig();
   await queue.start();
   await runOrchestratorTick();
   await updateSchedulerHeartbeatOnly();
@@ -39,7 +45,7 @@ async function main() {
   });
 
   cron.schedule("*/1 * * * *", async () => {
-    await updateSchedulerHeartbeatOnly();
+    await Promise.all([updateSchedulerHeartbeatOnly(), applyLatestQueueConfig()]);
   });
 
   console.log("[scheduler] AutoCashBack unified scheduler started");

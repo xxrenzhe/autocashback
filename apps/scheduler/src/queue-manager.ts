@@ -8,7 +8,12 @@ import {
   resetStaleRunningQueueTasks,
   retryQueueTask
 } from "@autocashback/db";
-import type { QueueTaskPriority, QueueTaskRecord, QueueTaskType } from "@autocashback/domain";
+import type {
+  QueueSystemConfig,
+  QueueTaskPriority,
+  QueueTaskRecord,
+  QueueTaskType
+} from "@autocashback/domain";
 
 type QueueExecutor = (task: QueueTaskRecord) => Promise<void>;
 
@@ -29,10 +34,10 @@ const DEFAULT_PER_TYPE_CONCURRENCY: Record<QueueTaskType, number> = {
 export class UnifiedTaskQueueManager {
   private readonly workerId = `scheduler-${randomUUID()}`;
   private readonly executors = new Map<QueueTaskType, QueueExecutor>();
-  private readonly pollIntervalMs: number;
-  private readonly staleTimeoutMs: number;
-  private readonly globalConcurrency: number;
-  private readonly perTypeConcurrency: Record<QueueTaskType, number>;
+  private pollIntervalMs: number;
+  private staleTimeoutMs: number;
+  private globalConcurrency: number;
+  private perTypeConcurrency: Record<QueueTaskType, number>;
   private readonly activeTaskIds = new Set<string>();
   private readonly activeTypeCounts = new Map<QueueTaskType, number>();
 
@@ -52,6 +57,36 @@ export class UnifiedTaskQueueManager {
 
   registerExecutor(type: QueueTaskType, executor: QueueExecutor) {
     this.executors.set(type, executor);
+  }
+
+  getConfig(): QueueSystemConfig {
+    return {
+      globalConcurrency: this.globalConcurrency,
+      pollIntervalMs: this.pollIntervalMs,
+      staleTimeoutMs: this.staleTimeoutMs,
+      perTypeConcurrency: {
+        ...this.perTypeConcurrency
+      }
+    };
+  }
+
+  async updateConfig(config: QueueManagerConfig) {
+    this.pollIntervalMs = Math.max(100, config.pollIntervalMs || this.pollIntervalMs);
+    this.staleTimeoutMs = Math.max(60_000, config.staleTimeoutMs || this.staleTimeoutMs);
+    this.globalConcurrency = Math.max(1, config.globalConcurrency || this.globalConcurrency);
+    this.perTypeConcurrency = {
+      ...DEFAULT_PER_TYPE_CONCURRENCY,
+      ...this.perTypeConcurrency,
+      ...(config.perTypeConcurrency || {})
+    };
+
+    if (this.running) {
+      const staleBefore = new Date(Date.now() - this.staleTimeoutMs).toISOString();
+      await resetStaleRunningQueueTasks(staleBefore);
+      this.schedulePump(0);
+    }
+
+    return this.getConfig();
   }
 
   async enqueue(input: {

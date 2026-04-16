@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import type {
+  QueueSystemConfig,
   QueueStats,
   QueueTaskPriority,
   QueueTaskRecord,
@@ -13,6 +14,83 @@ import { getSettings, saveSettings } from "./operations";
 import { ensureDatabaseReady } from "./schema";
 
 type DbRow = Record<string, unknown>;
+type QueueSystemConfigInput = Partial<Omit<QueueSystemConfig, "perTypeConcurrency">> & {
+  perTypeConcurrency?: Partial<Record<QueueTaskType, number>>;
+};
+
+const DEFAULT_QUEUE_SYSTEM_CONFIG: QueueSystemConfig = {
+  globalConcurrency: 12,
+  pollIntervalMs: 250,
+  staleTimeoutMs: 15 * 60_000,
+  perTypeConcurrency: {
+    "click-farm-trigger": 2,
+    "click-farm-batch": 2,
+    "click-farm": 8,
+    "url-swap": 2
+  }
+};
+
+function clampNumber(value: unknown, min: number, max: number, fallback: number) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+
+  return Math.min(max, Math.max(min, parsed));
+}
+
+function normalizeQueueSystemConfig(
+  input?: QueueSystemConfigInput | Record<string, unknown> | null
+): QueueSystemConfig {
+  const perTypeInput = input?.perTypeConcurrency as Partial<Record<QueueTaskType, number>> | undefined;
+
+  return {
+    globalConcurrency: clampNumber(
+      input?.globalConcurrency,
+      1,
+      200,
+      DEFAULT_QUEUE_SYSTEM_CONFIG.globalConcurrency
+    ),
+    pollIntervalMs: clampNumber(
+      input?.pollIntervalMs,
+      100,
+      30_000,
+      DEFAULT_QUEUE_SYSTEM_CONFIG.pollIntervalMs
+    ),
+    staleTimeoutMs: clampNumber(
+      input?.staleTimeoutMs,
+      60_000,
+      24 * 60 * 60_000,
+      DEFAULT_QUEUE_SYSTEM_CONFIG.staleTimeoutMs
+    ),
+    perTypeConcurrency: {
+      "click-farm-trigger": clampNumber(
+        perTypeInput?.["click-farm-trigger"],
+        1,
+        100,
+        DEFAULT_QUEUE_SYSTEM_CONFIG.perTypeConcurrency["click-farm-trigger"]
+      ),
+      "click-farm-batch": clampNumber(
+        perTypeInput?.["click-farm-batch"],
+        1,
+        100,
+        DEFAULT_QUEUE_SYSTEM_CONFIG.perTypeConcurrency["click-farm-batch"]
+      ),
+      "click-farm": clampNumber(
+        perTypeInput?.["click-farm"],
+        1,
+        200,
+        DEFAULT_QUEUE_SYSTEM_CONFIG.perTypeConcurrency["click-farm"]
+      ),
+      "url-swap": clampNumber(
+        perTypeInput?.["url-swap"],
+        1,
+        50,
+        DEFAULT_QUEUE_SYSTEM_CONFIG.perTypeConcurrency["url-swap"]
+      )
+    }
+  };
+}
 
 function parsePayload(value: unknown) {
   if (!value) {
@@ -331,6 +409,69 @@ export async function getQueueStats(): Promise<QueueStats> {
       "url-swap": Number(row.url_swap_running || 0)
     }
   };
+}
+
+export function getDefaultQueueSystemConfig(): QueueSystemConfig {
+  return {
+    ...DEFAULT_QUEUE_SYSTEM_CONFIG,
+    perTypeConcurrency: {
+      ...DEFAULT_QUEUE_SYSTEM_CONFIG.perTypeConcurrency
+    }
+  };
+}
+
+export async function getQueueSystemConfigState(): Promise<{
+  config: QueueSystemConfig;
+  source: "database" | "default";
+}> {
+  const settings = await getSettings(null, "queue");
+  const rawConfig = settings.find((item) => item.key === "config")?.value || "";
+
+  if (!rawConfig) {
+    return {
+      config: getDefaultQueueSystemConfig(),
+      source: "default"
+    };
+  }
+
+  try {
+    return {
+      config: normalizeQueueSystemConfig(JSON.parse(rawConfig) as Record<string, unknown>),
+      source: "database"
+    };
+  } catch {
+    return {
+      config: getDefaultQueueSystemConfig(),
+      source: "default"
+    };
+  }
+}
+
+export async function getQueueSystemConfig(): Promise<QueueSystemConfig> {
+  const state = await getQueueSystemConfigState();
+  return state.config;
+}
+
+export async function saveQueueSystemConfig(input: QueueSystemConfigInput) {
+  const existing = await getQueueSystemConfig();
+  const merged = normalizeQueueSystemConfig({
+    ...existing,
+    ...input,
+    perTypeConcurrency: {
+      ...existing.perTypeConcurrency,
+      ...(input.perTypeConcurrency || {})
+    }
+  });
+
+  await saveSettings(null, [
+    {
+      category: "queue",
+      key: "config",
+      value: JSON.stringify(merged)
+    }
+  ]);
+
+  return merged;
 }
 
 export async function resetStaleRunningQueueTasks(olderThanIso: string) {

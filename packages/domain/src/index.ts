@@ -195,6 +195,13 @@ export interface QueueStats {
   byTypeRunning: Record<QueueTaskType, number>;
 }
 
+export interface QueueSystemConfig {
+  globalConcurrency: number;
+  pollIntervalMs: number;
+  staleTimeoutMs: number;
+  perTypeConcurrency: Record<QueueTaskType, number>;
+}
+
 function toQueueScheduleKey(value: string | null | undefined) {
   if (!value) {
     return "0";
