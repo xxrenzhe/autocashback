@@ -2,19 +2,15 @@ import "../../../scripts/load-env";
 
 import cron from "node-cron";
 
-import {
-  ensureDatabaseReady,
-  getDueClickFarmTasks,
-  getDueLinkSwapTasks
-} from "@autocashback/db";
+import { ensureDatabaseReady } from "@autocashback/db";
 
 import {
   executeClickFarmBatch,
   executeClickFarmClick,
-  executeClickFarmTrigger,
-  orchestrateClickFarmTriggerTask
+  executeClickFarmTrigger
 } from "./click-farm-queue";
-import { executeLinkSwapTask, orchestrateLinkSwapQueueTask } from "./link-swap-queue";
+import { executeLinkSwapTask } from "./link-swap-queue";
+import { runOrchestratorTick, updateSchedulerHeartbeatOnly } from "./orchestrator";
 import { UnifiedTaskQueueManager } from "./queue-manager";
 
 const queue = new UnifiedTaskQueueManager({
@@ -32,48 +28,18 @@ queue.registerExecutor("click-farm-batch", executeClickFarmBatch);
 queue.registerExecutor("click-farm", executeClickFarmClick);
 queue.registerExecutor("url-swap", executeLinkSwapTask);
 
-export async function orchestrateDueLinkSwaps() {
-  await ensureDatabaseReady();
-  const tasks = await getDueLinkSwapTasks();
-
-  for (const task of tasks as Array<Record<string, unknown>>) {
-    await queue.enqueue(
-      orchestrateLinkSwapQueueTask({
-        userId: Number(task.user_id),
-        taskId: Number(task.id),
-        nextRunAt: task.next_run_at ? String(task.next_run_at) : null
-      })
-    );
-  }
-}
-
-export async function orchestrateDueClickFarmTasks() {
-  await ensureDatabaseReady();
-  const tasks = await getDueClickFarmTasks();
-
-  for (const task of tasks) {
-    await queue.enqueue(
-      await orchestrateClickFarmTriggerTask({
-        userId: task.userId,
-        taskId: task.id,
-        nextRunAt: task.nextRunAt
-      })
-    );
-  }
-}
-
-async function runOrchestratorTick() {
-  await orchestrateDueLinkSwaps();
-  await orchestrateDueClickFarmTasks();
-}
-
 async function main() {
   await ensureDatabaseReady();
   await queue.start();
   await runOrchestratorTick();
+  await updateSchedulerHeartbeatOnly();
 
   cron.schedule("* * * * *", async () => {
     await runOrchestratorTick();
+  });
+
+  cron.schedule("*/1 * * * *", async () => {
+    await updateSchedulerHeartbeatOnly();
   });
 
   console.log("[scheduler] AutoCashBack unified scheduler started");

@@ -8,7 +8,8 @@ import type {
   QueueTaskType
 } from "@autocashback/domain";
 
-import { getSql } from "./client";
+import { getDbType, getSql } from "./client";
+import { getSettings, saveSettings } from "./operations";
 import { ensureDatabaseReady } from "./schema";
 
 type DbRow = Record<string, unknown>;
@@ -64,6 +65,20 @@ export async function enqueueQueueTask(input: {
   availableAt?: string;
   maxRetries?: number;
 }) {
+  const result = await ensureQueueTaskEnqueued(input);
+  return result.task;
+}
+
+export async function ensureQueueTaskEnqueued(input: {
+  id?: string;
+  type: QueueTaskType;
+  userId: number;
+  payload: Record<string, unknown>;
+  parentRequestId?: string | null;
+  priority?: QueueTaskPriority;
+  availableAt?: string;
+  maxRetries?: number;
+}) {
   await ensureDatabaseReady();
   const sql = getSql();
   const taskId = String(input.id || randomUUID());
@@ -99,7 +114,10 @@ export async function enqueueQueueTask(input: {
   `;
 
   if (inserted[0]) {
-    return toQueueTaskRecord(inserted[0]);
+    return {
+      task: toQueueTaskRecord(inserted[0]),
+      inserted: true
+    };
   }
 
   const existing = await sql<DbRow[]>`
@@ -113,7 +131,10 @@ export async function enqueueQueueTask(input: {
     throw new Error("队列任务入队失败");
   }
 
-  return toQueueTaskRecord(existing[0]);
+  return {
+    task: toQueueTaskRecord(existing[0]),
+    inserted: false
+  };
 }
 
 export async function claimNextQueueTask(workerId: string, allowedTypes: QueueTaskType[] = []) {
@@ -315,4 +336,148 @@ export async function resetStaleRunningQueueTasks(olderThanIso: string) {
       AND started_at IS NOT NULL
       AND started_at <= ${olderThanIso}
   `;
+}
+
+type QueueSchedulerHeartbeat = {
+  heartbeatAt: string | null;
+  lastTickAt: string | null;
+  lastTickSummary: Record<string, unknown> | null;
+};
+
+export async function saveQueueSchedulerHeartbeat(input: {
+  heartbeatAt: string;
+  lastTickAt?: string | null;
+  lastTickSummary?: Record<string, unknown> | null;
+}) {
+  const updates = [
+    {
+      category: "queue",
+      key: "scheduler_heartbeat_at",
+      value: input.heartbeatAt
+    }
+  ];
+
+  if (input.lastTickAt) {
+    updates.push({
+      category: "queue",
+      key: "scheduler_last_tick_at",
+      value: input.lastTickAt
+    });
+  }
+
+  if (input.lastTickSummary) {
+    updates.push({
+      category: "queue",
+      key: "scheduler_last_tick_summary",
+      value: JSON.stringify(input.lastTickSummary)
+    });
+  }
+
+  await saveSettings(null, updates);
+}
+
+export async function getQueueSchedulerHeartbeat(): Promise<QueueSchedulerHeartbeat> {
+  const settings = await getSettings(null, "queue");
+  const settingsMap = new Map(settings.map((item) => [item.key, item.value]));
+  const rawSummary = settingsMap.get("scheduler_last_tick_summary") || "";
+
+  let summary: Record<string, unknown> | null = null;
+  if (rawSummary) {
+    try {
+      summary = JSON.parse(rawSummary) as Record<string, unknown>;
+    } catch {
+      summary = null;
+    }
+  }
+
+  return {
+    heartbeatAt: settingsMap.get("scheduler_heartbeat_at") || null,
+    lastTickAt: settingsMap.get("scheduler_last_tick_at") || null,
+    lastTickSummary: summary
+  };
+}
+
+export async function getClickFarmSchedulerMetrics() {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const dbType = getDbType();
+  const recentQueueFilter =
+    dbType === "postgres"
+      ? "created_at >= CURRENT_TIMESTAMP - INTERVAL '1 hour'"
+      : "created_at >= datetime(CURRENT_TIMESTAMP, '-1 hour')";
+  const rows = await sql<DbRow[]>`
+    SELECT
+      SUM(CASE WHEN is_deleted = FALSE AND status IN ('pending', 'running') THEN 1 ELSE 0 END) AS enabled_tasks,
+      SUM(
+        CASE
+          WHEN is_deleted = FALSE
+            AND status IN ('pending', 'running')
+            AND (next_run_at IS NULL OR next_run_at <= CURRENT_TIMESTAMP)
+          THEN 1
+          ELSE 0
+        END
+      ) AS overdue_tasks
+    FROM click_farm_tasks
+  `;
+
+  const queueRows = await sql.unsafe<DbRow[]>(
+    `
+      SELECT
+        COUNT(*) AS recent_queued_tasks,
+        MAX(created_at) AS last_queued_at
+      FROM unified_queue_tasks
+      WHERE type IN ('click-farm-trigger', 'click-farm-batch', 'click-farm')
+        AND ${recentQueueFilter}
+    `
+  );
+
+  return {
+    enabledTasks: Number(rows[0]?.enabled_tasks || 0),
+    overdueTasks: Number(rows[0]?.overdue_tasks || 0),
+    recentQueuedTasks: Number(queueRows[0]?.recent_queued_tasks || 0),
+    lastQueuedAt: queueRows[0]?.last_queued_at ? String(queueRows[0]?.last_queued_at) : null,
+    checkInterval: "每分钟"
+  };
+}
+
+export async function getLinkSwapSchedulerMetrics() {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const dbType = getDbType();
+  const recentQueueFilter =
+    dbType === "postgres"
+      ? "created_at >= CURRENT_TIMESTAMP - INTERVAL '1 hour'"
+      : "created_at >= datetime(CURRENT_TIMESTAMP, '-1 hour')";
+  const rows = await sql<DbRow[]>`
+    SELECT
+      SUM(CASE WHEN enabled = TRUE THEN 1 ELSE 0 END) AS enabled_tasks,
+      SUM(
+        CASE
+          WHEN enabled = TRUE
+            AND (next_run_at IS NULL OR next_run_at <= CURRENT_TIMESTAMP)
+          THEN 1
+          ELSE 0
+        END
+      ) AS overdue_tasks
+    FROM link_swap_tasks
+  `;
+
+  const queueRows = await sql.unsafe<DbRow[]>(
+    `
+      SELECT
+        COUNT(*) AS recent_queued_tasks,
+        MAX(created_at) AS last_queued_at
+      FROM unified_queue_tasks
+      WHERE type = 'url-swap'
+        AND ${recentQueueFilter}
+    `
+  );
+
+  return {
+    enabledTasks: Number(rows[0]?.enabled_tasks || 0),
+    overdueTasks: Number(rows[0]?.overdue_tasks || 0),
+    recentQueuedTasks: Number(queueRows[0]?.recent_queued_tasks || 0),
+    lastQueuedAt: queueRows[0]?.last_queued_at ? String(queueRows[0]?.last_queued_at) : null,
+    checkInterval: "每分钟"
+  };
 }
