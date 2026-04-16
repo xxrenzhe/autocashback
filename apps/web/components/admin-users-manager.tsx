@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 
 import {
   ArrowDown,
@@ -12,6 +12,7 @@ import {
   KeyRound,
   PencilLine,
   Plus,
+  RefreshCcw,
   Search,
   Trash2
 } from "lucide-react";
@@ -104,7 +105,7 @@ async function requestAdminUsers(input: AdminUsersQuery) {
   return fetchJson<{
     users: AdminUser[];
     pagination: Pagination;
-  }>(`/api/admin/users?${params.toString()}`);
+  }>(`/api/admin/users?${params.toString()}`, { cache: "no-store" });
 }
 
 export function AdminUsersManager() {
@@ -140,6 +141,7 @@ export function AdminUsersManager() {
     password: string;
   } | null>(null);
   const [loginHistory, setLoginHistory] = useState<LoginRecord[]>([]);
+  const deferredSearchQuery = useDeferredValue(searchQuery);
 
   function formatDateTime(value: string | null) {
     if (!value) {
@@ -165,13 +167,13 @@ export function AdminUsersManager() {
     }));
   }
 
-  async function loadUsers(input?: AdminUsersQuery) {
+  const loadUsers = useCallback(async (input?: AdminUsersQuery) => {
     setLoading(true);
     setError("");
     const result = await requestAdminUsers({
       page: input?.page || 1,
       limit: input?.limit || pagination.limit,
-      searchQuery: input?.searchQuery ?? searchQuery,
+      searchQuery: input?.searchQuery ?? deferredSearchQuery,
       roleFilter: input?.roleFilter ?? roleFilter,
       sortField: input?.sortField ?? sortField,
       sortDirection: input?.sortDirection ?? sortDirection
@@ -185,34 +187,11 @@ export function AdminUsersManager() {
     setUsers(result.data.users || []);
     setPagination((current) => result.data.pagination || current);
     setLoading(false);
-  }
+  }, [deferredSearchQuery, pagination.limit, roleFilter, sortDirection, sortField]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setLoading(true);
-      setError("");
-      void requestAdminUsers({
-        page: 1,
-        limit: pagination.limit,
-        searchQuery,
-        roleFilter,
-        sortField,
-        sortDirection
-      }).then((result) => {
-        if (!result.success) {
-          setError(result.userMessage);
-          setLoading(false);
-          return;
-        }
-
-        setUsers(result.data.users || []);
-        setPagination((current) => result.data.pagination || current);
-        setLoading(false);
-      });
-    }, 220);
-
-    return () => window.clearTimeout(timer);
-  }, [pagination.limit, roleFilter, searchQuery, sortDirection, sortField]);
+    void loadUsers({ page: 1 });
+  }, [loadUsers]);
 
   function handleSort(field: SortField) {
     if (sortField === field) {
@@ -319,8 +298,10 @@ export function AdminUsersManager() {
     }
 
     setMessage("用户已删除");
+    const nextPage =
+      users.length === 1 && pagination.page > 1 ? pagination.page - 1 : pagination.page;
     await loadUsers({
-      page: Math.min(pagination.page, Math.max(1, pagination.totalPages))
+      page: Math.min(nextPage, Math.max(1, pagination.totalPages))
     });
   }
 
@@ -379,72 +360,170 @@ export function AdminUsersManager() {
   }
 
   const emptyState = !loading && users.length === 0;
+  const overview = useMemo(() => {
+    const pageAdminCount = users.filter((user) => user.role === "admin").length;
+    const pageActiveSessionCount = users.filter((user) => user.activeSessionCount > 0).length;
+    const pageRecentLoginCount = users.filter((user) => {
+      if (!user.lastLoginAt) {
+        return false;
+      }
+
+      const timestamp = Date.parse(user.lastLoginAt);
+      return Number.isFinite(timestamp) && Date.now() - timestamp <= 7 * 24 * 60 * 60 * 1000;
+    }).length;
+
+    return {
+      totalUsers: pagination.total,
+      pageAdminCount,
+      pageActiveSessionCount,
+      pageRecentLoginCount
+    };
+  }, [pagination.total, users]);
 
   return (
     <div className="space-y-6">
-      <section className="surface-panel p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="eyebrow">Admin</p>
-            <h2 className="mt-2 text-3xl font-semibold text-slate-900">用户管理</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-              集中管理后台账号、角色分配、登录记录和密码重置，页面结构与 autobb 的用户管理台保持一致。
-            </p>
+      <section className="surface-panel overflow-hidden p-0">
+        <div className="grid gap-0 xl:grid-cols-[1.05fr,0.95fr]">
+          <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="eyebrow">Admin</p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">用户管理</h2>
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
+                  管理后台账号、角色边界、登录会话和密码重置，优先保证运营账号可用、管理员权限收敛。
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-brand-line bg-white/90 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-emerald-200 hover:text-brand-emerald disabled:opacity-60"
+                  disabled={loading}
+                  onClick={() => void loadUsers({ page: pagination.page })}
+                  type="button"
+                >
+                  <RefreshCcw className={cnIcon(loading)} />
+                  刷新列表
+                </button>
+                <button
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white"
+                  onClick={() => setCreateOpen(true)}
+                  type="button"
+                >
+                  <Plus className="h-4 w-4" />
+                  新建用户
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <QuickActionCard
+                description="先创建运营账号，再按角色分配页面和数据访问边界。"
+                icon={Plus}
+                title="新增后台账号"
+              />
+              <QuickActionCard
+                description="登录异常或交接时，直接重置密码并查看最近会话。"
+                icon={KeyRound}
+                title="收口账号风险"
+              />
+            </div>
           </div>
-          <button
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white"
-            onClick={() => setCreateOpen(true)}
-            type="button"
-          >
-            <Plus className="h-4 w-4" />
-            新建用户
-          </button>
+
+          <div className="bg-white px-6 py-7 sm:px-8">
+            <p className="eyebrow">Overview</p>
+            <h3 className="mt-3 text-2xl font-semibold text-slate-900">当前页用户态势</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              用总量、管理员占比、活跃会话和近 7 天登录情况判断当前用户池是否稳定。
+            </p>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <AdminOverviewCard
+                label="总用户数"
+                note="当前筛选条件下的全部用户总量。"
+                tone="slate"
+                value={String(overview.totalUsers)}
+              />
+              <AdminOverviewCard
+                label="本页管理员"
+                note="当前页内管理员账号数量，用来快速复核权限分布。"
+                tone={overview.pageAdminCount > 0 ? "amber" : "slate"}
+                value={String(overview.pageAdminCount)}
+              />
+              <AdminOverviewCard
+                label="活跃会话"
+                note="当前页内仍保持登录态的用户数量。"
+                tone={overview.pageActiveSessionCount > 0 ? "emerald" : "slate"}
+                value={String(overview.pageActiveSessionCount)}
+              />
+              <AdminOverviewCard
+                label="近 7 天登录"
+                note="最近一周内出现过活动的用户数。"
+                tone={overview.pageRecentLoginCount > 0 ? "emerald" : "slate"}
+                value={String(overview.pageRecentLoginCount)}
+              />
+            </div>
+          </div>
         </div>
       </section>
 
       <section className="surface-panel p-6">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-          <label className="relative flex-1">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              className="w-full rounded-2xl border border-brand-line bg-stone-50 py-3 pl-11 pr-4 text-sm text-slate-800"
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="搜索用户名或邮箱"
-              value={searchQuery}
-            />
-          </label>
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+            <label className="relative flex-1">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                className="w-full rounded-2xl border border-brand-line bg-stone-50 py-3 pl-11 pr-4 text-sm text-slate-800"
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="搜索用户名或邮箱"
+                value={searchQuery}
+              />
+            </label>
 
-          <select
-            className="rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 text-sm text-slate-800"
-            onChange={(event) => setRoleFilter(event.target.value as "all" | "admin" | "user")}
-            value={roleFilter}
-          >
-            <option value="all">全部角色</option>
-            <option value="admin">管理员</option>
-            <option value="user">普通用户</option>
-          </select>
+            <select
+              className="rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 text-sm text-slate-800"
+              onChange={(event) => setRoleFilter(event.target.value as "all" | "admin" | "user")}
+              value={roleFilter}
+            >
+              <option value="all">全部角色</option>
+              <option value="admin">管理员</option>
+              <option value="user">普通用户</option>
+            </select>
+
+            <select
+              className="rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 text-sm text-slate-800"
+              onChange={(event) => void loadUsers({ page: 1, limit: Number(event.target.value || 10) })}
+              value={pagination.limit}
+            >
+              <option value="10">10 / 页</option>
+              <option value="20">20 / 页</option>
+              <option value="50">50 / 页</option>
+            </select>
+          </div>
+
+          <p className="text-sm text-slate-500">
+            共 {pagination.total} 个用户，当前第 {pagination.page} / {pagination.totalPages} 页
+          </p>
         </div>
 
         {message ? <p className="mt-4 text-sm text-emerald-700">{message}</p> : null}
         {error ? <p className="mt-4 text-sm text-red-700">{error}</p> : null}
 
-        <div className="mt-6 overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="text-slate-500">
+        <div className="mt-6 overflow-x-auto rounded-[28px] border border-brand-line">
+          <table className="min-w-[960px] w-full text-left text-sm">
+            <thead className="bg-stone-50 text-slate-500">
               <tr className="border-b border-brand-line/70">
                 <SortableHeader field="username" label="用户" onSort={handleSort} renderIcon={renderSortIcon} />
-                <SortableHeader field="email" label="邮箱" onSort={handleSort} renderIcon={renderSortIcon} />
                 <SortableHeader field="role" label="角色" onSort={handleSort} renderIcon={renderSortIcon} />
-                <th className="pb-3">会话</th>
+                <th className="pb-3 pr-4">会话</th>
                 <SortableHeader field="lastLoginAt" label="上次活动" onSort={handleSort} renderIcon={renderSortIcon} />
                 <SortableHeader field="createdAt" label="创建时间" onSort={handleSort} renderIcon={renderSortIcon} />
                 <th className="pb-3 text-right">操作</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="bg-white">
               {loading ? (
                 <tr>
-                  <td className="py-8 text-slate-500" colSpan={7}>
+                  <td className="px-4 py-8 text-slate-500" colSpan={6}>
                     正在加载用户列表...
                   </td>
                 </tr>
@@ -452,7 +531,7 @@ export function AdminUsersManager() {
 
               {emptyState ? (
                 <tr>
-                  <td className="py-8 text-slate-500" colSpan={7}>
+                  <td className="px-4 py-8 text-slate-500" colSpan={6}>
                     当前筛选条件下没有用户。
                   </td>
                 </tr>
@@ -460,38 +539,53 @@ export function AdminUsersManager() {
 
               {!loading
                 ? users.map((user) => (
-                    <tr className="border-b border-brand-line/40 align-top" key={user.id}>
-                      <td className="py-4 pr-4">
+                    <tr className="border-b border-brand-line/40 align-top last:border-b-0" key={user.id}>
+                      <td className="px-4 py-4 pr-4">
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-mist text-sm font-semibold text-brand-emerald">
                             {user.username.slice(0, 2).toUpperCase()}
                           </div>
-                          <div>
-                            <p className="font-medium text-slate-900">{user.username}</p>
-                            <p className="text-xs text-slate-500">ID {user.id}</p>
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-slate-900">{user.username}</p>
+                            <p className="truncate text-xs text-slate-500">{user.email || "未设置邮箱"}</p>
+                            <p className="mt-1 text-xs text-slate-400">ID {user.id}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 pr-4 text-slate-700">{user.email}</td>
-                      <td className="py-4 pr-4">
-                        <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                      <td className="px-4 py-4 pr-4">
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                            user.role === "admin"
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-slate-100 text-slate-700"
+                          }`}
+                        >
                           {user.role === "admin" ? "管理员" : "普通用户"}
                         </span>
                       </td>
-                      <td className="py-4 pr-4 text-slate-700">
-                        {user.activeSessionCount > 0 ? `${user.activeSessionCount} 个活跃会话` : "暂无活跃会话"}
+                      <td className="px-4 py-4 pr-4">
+                        <div className="space-y-1 text-sm text-slate-700">
+                          <p>
+                            {user.activeSessionCount > 0
+                              ? `${user.activeSessionCount} 个活跃会话`
+                              : "暂无活跃会话"}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {user.activeSessionCount > 0 ? "账号当前处于登录态。" : "可用于判断是否已完成交接。"}
+                          </p>
+                        </div>
                       </td>
-                      <td className="py-4 pr-4 text-slate-700">{formatDateTime(user.lastLoginAt)}</td>
-                      <td className="py-4 pr-4 text-slate-700">{formatDateTime(user.createdAt)}</td>
-                      <td className="py-4">
+                      <td className="px-4 py-4 pr-4 text-slate-700">{formatDateTime(user.lastLoginAt)}</td>
+                      <td className="px-4 py-4 pr-4 text-slate-700">{formatDateTime(user.createdAt)}</td>
+                      <td className="px-4 py-4">
                         <div className="flex flex-wrap justify-end gap-2">
                           <ActionButton icon={PencilLine} label="编辑" onClick={() => openEditModal(user)} />
                           <ActionButton icon={KeyRound} label="重置密码" onClick={() => void handleResetPassword(user)} />
                           <ActionButton icon={History} label="登录记录" onClick={() => void handleLoadLoginHistory(user)} />
                           <ActionButton
+                            danger
                             icon={Trash2}
                             label="删除"
-                            danger
                             onClick={() => void handleDeleteUser(user)}
                           />
                         </div>
@@ -504,9 +598,10 @@ export function AdminUsersManager() {
         </div>
 
         <div className="mt-6 flex flex-col gap-3 border-t border-brand-line/60 pt-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            共 {pagination.total} 个用户，当前第 {pagination.page} / {pagination.totalPages} 页
-          </p>
+          <div className="space-y-1">
+            <p>搜索和角色筛选会实时生效，列表默认按创建时间倒序排列。</p>
+            <p>密码重置后会自动清掉该用户的现有登录会话。</p>
+          </div>
           <div className="flex gap-2">
             <button
               className="rounded-2xl border border-brand-line bg-white px-4 py-2 font-medium disabled:opacity-40"
@@ -767,6 +862,60 @@ function SortableHeader(props: {
         {props.renderIcon(props.field)}
       </button>
     </th>
+  );
+}
+
+function cnIcon(loading: boolean) {
+  return loading ? "h-4 w-4 animate-spin" : "h-4 w-4";
+}
+
+function QuickActionCard(props: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+}) {
+  const Icon = props.icon;
+
+  return (
+    <div className="rounded-[24px] border border-brand-line bg-white/90 px-4 py-4">
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+          <Icon className="h-5 w-5" />
+        </span>
+      </div>
+      <p className="mt-4 text-sm font-semibold text-slate-900">{props.title}</p>
+      <p className="mt-2 text-sm leading-6 text-slate-500">{props.description}</p>
+    </div>
+  );
+}
+
+function AdminOverviewCard(props: {
+  label: string;
+  value: string;
+  note: string;
+  tone: "emerald" | "amber" | "slate";
+}) {
+  const toneClass =
+    props.tone === "emerald"
+      ? "bg-brand-mist text-brand-emerald"
+      : props.tone === "amber"
+        ? "bg-amber-50 text-amber-700"
+        : "bg-slate-100 text-slate-700";
+  const valueClass =
+    props.tone === "emerald"
+      ? "text-brand-emerald"
+      : props.tone === "amber"
+        ? "text-amber-700"
+        : "text-slate-900";
+
+  return (
+    <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4">
+      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${toneClass}`}>
+        {props.label}
+      </span>
+      <p className={`mt-4 font-mono text-3xl font-semibold ${valueClass}`}>{props.value}</p>
+      <p className="mt-2 text-sm leading-6 text-slate-500">{props.note}</p>
+    </div>
   );
 }
 
