@@ -11,6 +11,10 @@ import type {
 
 import { getDbType, getSql } from "./client";
 import { decryptText, encryptText } from "./crypto";
+import {
+  removePendingClickFarmQueueTasksByTaskIds,
+  removePendingLinkSwapQueueTasksByTaskIds
+} from "./queue-cleanup";
 import { ensureDatabaseReady } from "./schema";
 import {
   booleanValue,
@@ -249,6 +253,33 @@ export async function updateOffer(
 export async function deleteOffer(userId: number, offerId: number) {
   await ensureDatabaseReady();
   const sql = getSql();
+  const [linkSwapTaskRows, clickFarmTaskRows] = await Promise.all([
+    sql<{ id: number }[]>`
+      SELECT id
+      FROM link_swap_tasks
+      WHERE user_id = ${userId}
+        AND offer_id = ${offerId}
+    `,
+    sql<{ id: number }[]>`
+      SELECT id
+      FROM click_farm_tasks
+      WHERE user_id = ${userId}
+        AND offer_id = ${offerId}
+        AND is_deleted = FALSE
+    `
+  ]);
+
+  await Promise.all([
+    removePendingLinkSwapQueueTasksByTaskIds(
+      linkSwapTaskRows.map((row) => row.id),
+      userId
+    ),
+    removePendingClickFarmQueueTasksByTaskIds(
+      clickFarmTaskRows.map((row) => row.id),
+      userId
+    )
+  ]);
+
   const rows = await sql<{ id: number }[]>`
     DELETE FROM offers
     WHERE id = ${offerId} AND user_id = ${userId}
@@ -538,6 +569,8 @@ export async function disableLinkSwapTask(userId: number, taskId: number) {
   if (!rows[0]) {
     throw new Error("换链接任务不存在");
   }
+
+  await removePendingLinkSwapQueueTasksByTaskIds([taskId], userId);
 
   return toLinkSwapTaskRecord(rows[0]);
 }

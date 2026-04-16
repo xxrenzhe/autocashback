@@ -2,6 +2,7 @@ import type { ClickFarmTask, ClickFarmTaskStatus } from "@autocashback/domain";
 import { getTimezoneForCountry } from "@autocashback/domain";
 
 import { getSql } from "./client";
+import { removePendingClickFarmQueueTasksByTaskIds } from "./queue-cleanup";
 import { ensureDatabaseReady } from "./schema";
 
 type DbRow = Record<string, unknown>;
@@ -309,6 +310,8 @@ export async function stopClickFarmTask(userId: number, taskId: number) {
     throw new Error("补点击任务不存在");
   }
 
+  await removePendingClickFarmQueueTasksByTaskIds([taskId], userId);
+
   return toClickFarmTask(rows[0]);
 }
 
@@ -352,12 +355,24 @@ export async function deleteClickFarmTask(userId: number, taskId: number) {
     RETURNING *
   `;
 
+  if (rows[0]) {
+    await removePendingClickFarmQueueTasksByTaskIds([taskId], userId);
+  }
+
   return Boolean(rows[0]);
 }
 
 export async function deleteClickFarmTasksByOffer(userId: number, offerId: number) {
   await ensureDatabaseReady();
   const sql = getSql();
+  const taskRows = await sql<{ id: number }[]>`
+    SELECT id
+    FROM click_farm_tasks
+    WHERE user_id = ${userId}
+      AND offer_id = ${offerId}
+      AND is_deleted = FALSE
+  `;
+
   await sql`
     UPDATE click_farm_tasks
     SET is_deleted = TRUE,
@@ -369,6 +384,11 @@ export async function deleteClickFarmTasksByOffer(userId: number, offerId: numbe
       AND offer_id = ${offerId}
       AND is_deleted = FALSE
   `;
+
+  await removePendingClickFarmQueueTasksByTaskIds(
+    taskRows.map((row) => row.id),
+    userId
+  );
 }
 
 export async function getClickFarmStats(userId: number) {
