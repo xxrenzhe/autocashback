@@ -10,6 +10,9 @@ export type AuditEventType =
   | "logout"
   | "password_changed"
   | "user_created"
+  | "user_updated"
+  | "user_deleted"
+  | "user_password_reset"
   | "configuration_changed"
   | "sensitive_data_access"
   | "unauthorized_access_attempt";

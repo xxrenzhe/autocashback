@@ -1,11 +1,12 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 
 import { SignJWT, jwtVerify } from "jose";
 
-import { getSql } from "./client";
+import { getDbType, getSql } from "./client";
 import { hashPassword, verifyPassword } from "./crypto";
 import { getServerEnv } from "./env";
 import { ensureDatabaseReady } from "./schema";
+import { countAsInt } from "./sql-helpers";
 
 const COOKIE_NAME = "autocashback_token";
 
@@ -198,6 +199,130 @@ export async function listUsers() {
   `;
 }
 
+export type AdminUsersQueryInput = {
+  limit?: number;
+  page?: number;
+  role?: "admin" | "user" | "all";
+  search?: string;
+  sortBy?: "id" | "username" | "email" | "role" | "createdAt" | "lastLoginAt";
+  sortOrder?: "asc" | "desc";
+};
+
+export type AdminUserListRecord = {
+  id: number;
+  username: string;
+  email: string;
+  role: "admin" | "user";
+  createdAt: string;
+  lastLoginAt: string | null;
+  activeSessionCount: number;
+};
+
+function generateTemporaryPassword(length = 14) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  const bytes = randomBytes(length);
+
+  let password = "";
+  for (let index = 0; index < length; index += 1) {
+    password += alphabet[bytes[index] % alphabet.length];
+  }
+
+  return password;
+}
+
+function toAdminUserListRecord(row: Record<string, unknown>): AdminUserListRecord {
+  return {
+    id: Number(row.id),
+    username: String(row.username),
+    email: String(row.email),
+    role: String(row.role) as "admin" | "user",
+    createdAt: String(row.created_at),
+    lastLoginAt: row.last_login_at ? String(row.last_login_at) : null,
+    activeSessionCount: Number(row.active_session_count || 0)
+  };
+}
+
+export async function listAdminUsers(input?: AdminUsersQueryInput) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const dbType = getDbType();
+  const page = Math.max(1, Number(input?.page || 1));
+  const limit = Math.max(1, Math.min(100, Number(input?.limit || 10)));
+  const offset = (page - 1) * limit;
+  const search = String(input?.search || "").trim().toLowerCase();
+  const role = input?.role === "admin" || input?.role === "user" ? input.role : null;
+  const sortBy = input?.sortBy || "createdAt";
+  const sortOrder = input?.sortOrder === "asc" ? "ASC" : "DESC";
+
+  const sortColumnMap: Record<NonNullable<AdminUsersQueryInput["sortBy"]>, string> = {
+    id: "users.id",
+    username: "users.username",
+    email: "users.email",
+    role: "users.role",
+    createdAt: "users.created_at",
+    lastLoginAt: "last_login_at"
+  };
+
+  const whereClauses = ["1 = 1"];
+  const params: Array<string | number> = [];
+
+  if (search) {
+    whereClauses.push("(LOWER(users.username) LIKE ? OR LOWER(users.email) LIKE ?)");
+    params.push(`%${search}%`, `%${search}%`);
+  }
+
+  if (role) {
+    whereClauses.push("users.role = ?");
+    params.push(role);
+  }
+
+  const whereSql = whereClauses.join(" AND ");
+  const orderBy = sortColumnMap[sortBy] || sortColumnMap.createdAt;
+  const rows = await sql.unsafe<Record<string, unknown>[]>(
+    `
+      SELECT
+        users.id,
+        users.username,
+        users.email,
+        users.role,
+        users.created_at,
+        MAX(user_sessions.last_activity_at) AS last_login_at,
+        ${countAsInt(
+          "COUNT(CASE WHEN user_sessions.revoked_at IS NULL AND user_sessions.expires_at > CURRENT_TIMESTAMP THEN 1 END)",
+          dbType
+        )} AS active_session_count
+      FROM users
+      LEFT JOIN user_sessions ON user_sessions.user_id = users.id
+      WHERE ${whereSql}
+      GROUP BY users.id, users.username, users.email, users.role, users.created_at
+      ORDER BY ${orderBy} ${sortOrder}, users.id DESC
+      LIMIT ? OFFSET ?
+    `,
+    [...params, limit, offset]
+  );
+
+  const totalRows = await sql.unsafe<{ count: number }[]>(
+    `
+      SELECT ${countAsInt("COUNT(*)", dbType)} AS count
+      FROM users
+      WHERE ${whereSql.replaceAll("users.", "")}
+    `,
+    params
+  );
+
+  const total = Number(totalRows[0]?.count || 0);
+
+  return {
+    users: rows.map(toAdminUserListRecord),
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit))
+    }
+  };
+}
+
 export async function createUser(input: {
   username: string;
   email: string;
@@ -225,6 +350,180 @@ export async function createUser(input: {
   `;
 
   return rows[0];
+}
+
+export async function updateUserByAdmin(
+  userId: number,
+  input: {
+    email?: string;
+    role?: "admin" | "user";
+  }
+) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const assignments = [];
+  const params: Array<string | number> = [];
+
+  if (input.email !== undefined) {
+    assignments.push("email = ?");
+    params.push(input.email);
+  }
+
+  if (input.role !== undefined) {
+    assignments.push("role = ?");
+    params.push(input.role);
+  }
+
+  if (!assignments.length) {
+    throw new Error("没有可更新的字段");
+  }
+
+  const rows = await sql.unsafe<{
+    id: number;
+    username: string;
+    email: string;
+    role: "admin" | "user";
+    created_at: string;
+  }[]>(
+    `
+      UPDATE users
+      SET ${assignments.join(", ")}
+      WHERE id = ?
+      RETURNING id, username, email, role, created_at
+    `,
+    [...params, userId]
+  );
+
+  if (!rows[0]) {
+    throw new Error("用户不存在");
+  }
+
+  return {
+    id: rows[0].id,
+    username: rows[0].username,
+    email: rows[0].email,
+    role: rows[0].role,
+    created_at: rows[0].created_at
+  };
+}
+
+export async function deleteUserByAdmin(userId: number) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const dbType = getDbType();
+  const targetRows = await sql<{
+    id: number;
+    username: string;
+    role: "admin" | "user";
+  }[]>`
+    SELECT id, username, role
+    FROM users
+    WHERE id = ${userId}
+    LIMIT 1
+  `;
+
+  const target = targetRows[0];
+  if (!target) {
+    throw new Error("用户不存在");
+  }
+
+  if (target.role === "admin") {
+    const countRows = await sql.unsafe<{ count: number }[]>(
+      `
+        SELECT ${countAsInt("COUNT(*)", dbType)} AS count
+        FROM users
+        WHERE role = 'admin'
+      `
+    );
+    if (Number(countRows[0]?.count || 0) <= 1) {
+      throw new Error("至少需要保留一个管理员账号");
+    }
+  }
+
+  await sql`
+    DELETE FROM users
+    WHERE id = ${userId}
+  `;
+
+  return target;
+}
+
+export async function resetUserPasswordByAdmin(userId: number) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const rows = await sql<{
+    id: number;
+    username: string;
+  }[]>`
+    SELECT id, username
+    FROM users
+    WHERE id = ${userId}
+    LIMIT 1
+  `;
+
+  if (!rows[0]) {
+    throw new Error("用户不存在");
+  }
+
+  const nextPassword = generateTemporaryPassword();
+  const passwordHash = await hashPassword(nextPassword);
+
+  await sql`
+    UPDATE users
+    SET password_hash = ${passwordHash}
+    WHERE id = ${userId}
+  `;
+
+  await revokeAllUserSessions(userId);
+
+  return {
+    userId,
+    username: rows[0].username,
+    password: nextPassword
+  };
+}
+
+export async function listUserLoginHistoryByAdmin(userId: number, limit = 50) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const safeLimit = Math.max(1, Math.min(100, Number(limit || 50)));
+  const rows = await sql<{
+    session_id: string;
+    ip_address: string | null;
+    user_agent: string | null;
+    created_at: string;
+    last_activity_at: string;
+    expires_at: string;
+    revoked_at: string | null;
+  }[]>`
+    SELECT
+      session_id,
+      ip_address,
+      user_agent,
+      created_at,
+      last_activity_at,
+      expires_at,
+      revoked_at
+    FROM user_sessions
+    WHERE user_id = ${userId}
+    ORDER BY created_at DESC
+    LIMIT ${safeLimit}
+  `;
+
+  return rows.map((row) => ({
+    sessionId: row.session_id,
+    ipAddress: row.ip_address,
+    userAgent: row.user_agent,
+    createdAt: row.created_at,
+    lastActivityAt: row.last_activity_at,
+    expiresAt: row.expires_at,
+    revokedAt: row.revoked_at,
+    status: row.revoked_at
+      ? "revoked"
+      : new Date(row.expires_at).getTime() <= Date.now()
+        ? "expired"
+        : "active"
+  }));
 }
 
 export async function changeUserPassword(input: {

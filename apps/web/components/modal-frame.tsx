@@ -7,10 +7,11 @@ export function ModalFrame(props: {
   open: boolean;
   title: string;
   description?: string;
+  eyebrow?: string;
   onClose: () => void;
   children: React.ReactNode;
 }) {
-  const { children, description, onClose, open, title } = props;
+  const { children, description, eyebrow = "任务配置", onClose, open, title } = props;
 
   useEffect(() => {
     if (!open) {
@@ -59,7 +60,7 @@ export function ModalFrame(props: {
         </button>
 
         <div className="pr-10">
-          <p className="eyebrow">任务配置</p>
+          <p className="eyebrow">{eyebrow}</p>
           <h2 className="mt-3 text-2xl font-semibold text-slate-900">{title}</h2>
           {description ? <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p> : null}
         </div>
