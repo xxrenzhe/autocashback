@@ -12,8 +12,17 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await verifyGoogleAdsAccess(user.id);
+    if (!result.valid) {
+      return NextResponse.json(
+        {
+          error: "Google Ads 验证失败，当前 OAuth 账号下没有可访问的 Google Ads 客户号"
+        },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json({
-      success: result.valid,
+      success: true,
       accountCount: result.accountCount
     });
   } catch (error: unknown) {
