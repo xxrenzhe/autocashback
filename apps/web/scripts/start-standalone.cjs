@@ -16,6 +16,34 @@ if (!serverPath) {
   process.exit(1);
 }
 
+function ensureStandaloneAssetPath(targetPath, sourcePath) {
+  if (!fs.existsSync(sourcePath) || fs.existsSync(targetPath)) {
+    return;
+  }
+
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+
+  try {
+    fs.symlinkSync(sourcePath, targetPath, "junction");
+  } catch (error) {
+    if (error && error.code === "EPERM") {
+      fs.cpSync(sourcePath, targetPath, { recursive: true });
+      return;
+    }
+
+    throw error;
+  }
+}
+
+const appRoot = path.resolve(__dirname, "..");
+const standaloneAppRoot = path.dirname(serverPath);
+
+ensureStandaloneAssetPath(
+  path.join(standaloneAppRoot, ".next", "static"),
+  path.join(appRoot, ".next", "static")
+);
+ensureStandaloneAssetPath(path.join(standaloneAppRoot, "public"), path.join(appRoot, "public"));
+
 const child = spawn(process.execPath, [serverPath], {
   cwd: path.dirname(serverPath),
   env: process.env,
