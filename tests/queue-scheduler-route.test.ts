@@ -52,6 +52,7 @@ describe("queue scheduler route", () => {
       enabledTasks: 4,
       overdueTasks: 1,
       recentQueuedTasks: 2,
+      runningTasks: 1,
       lastQueuedAt: "2026-04-16T03:45:00.000Z",
       checkInterval: "每分钟"
     });
@@ -59,6 +60,7 @@ describe("queue scheduler route", () => {
       enabledTasks: 3,
       overdueTasks: 0,
       recentQueuedTasks: 1,
+      runningTasks: 0,
       lastQueuedAt: "2026-04-16T03:50:00.000Z",
       checkInterval: "每分钟"
     });

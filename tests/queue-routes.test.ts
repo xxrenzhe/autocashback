@@ -40,6 +40,12 @@ describe("queue routes", () => {
         "click-farm-batch": 2,
         "click-farm": 5,
         "url-swap": 2
+      },
+      byTypeRunning: {
+        "click-farm-trigger": 0,
+        "click-farm-batch": 1,
+        "click-farm": 0,
+        "url-swap": 0
       }
     });
 

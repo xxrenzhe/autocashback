@@ -192,6 +192,7 @@ export interface QueueStats {
   completed: number;
   failed: number;
   byType: Record<QueueTaskType, number>;
+  byTypeRunning: Record<QueueTaskType, number>;
 }
 
 function toQueueScheduleKey(value: string | null | undefined) {

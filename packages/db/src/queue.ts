@@ -300,7 +300,11 @@ export async function getQueueStats(): Promise<QueueStats> {
         SUM(CASE WHEN type = 'click-farm-trigger' THEN 1 ELSE 0 END) AS click_farm_trigger,
         SUM(CASE WHEN type = 'click-farm-batch' THEN 1 ELSE 0 END) AS click_farm_batch,
         SUM(CASE WHEN type = 'click-farm' THEN 1 ELSE 0 END) AS click_farm,
-        SUM(CASE WHEN type = 'url-swap' THEN 1 ELSE 0 END) AS url_swap
+        SUM(CASE WHEN type = 'url-swap' THEN 1 ELSE 0 END) AS url_swap,
+        SUM(CASE WHEN type = 'click-farm-trigger' AND status = 'running' THEN 1 ELSE 0 END) AS click_farm_trigger_running,
+        SUM(CASE WHEN type = 'click-farm-batch' AND status = 'running' THEN 1 ELSE 0 END) AS click_farm_batch_running,
+        SUM(CASE WHEN type = 'click-farm' AND status = 'running' THEN 1 ELSE 0 END) AS click_farm_running,
+        SUM(CASE WHEN type = 'url-swap' AND status = 'running' THEN 1 ELSE 0 END) AS url_swap_running
       FROM unified_queue_tasks
     `,
     []
@@ -319,6 +323,12 @@ export async function getQueueStats(): Promise<QueueStats> {
       "click-farm-batch": Number(row.click_farm_batch || 0),
       "click-farm": Number(row.click_farm || 0),
       "url-swap": Number(row.url_swap || 0)
+    },
+    byTypeRunning: {
+      "click-farm-trigger": Number(row.click_farm_trigger_running || 0),
+      "click-farm-batch": Number(row.click_farm_batch_running || 0),
+      "click-farm": Number(row.click_farm_running || 0),
+      "url-swap": Number(row.url_swap_running || 0)
     }
   };
 }
@@ -424,7 +434,8 @@ export async function getClickFarmSchedulerMetrics() {
     `
       SELECT
         COUNT(*) AS recent_queued_tasks,
-        MAX(created_at) AS last_queued_at
+        MAX(created_at) AS last_queued_at,
+        SUM(CASE WHEN status = 'running' THEN 1 ELSE 0 END) AS running_tasks
       FROM unified_queue_tasks
       WHERE type IN ('click-farm-trigger', 'click-farm-batch', 'click-farm')
         AND ${recentQueueFilter}
@@ -435,6 +446,7 @@ export async function getClickFarmSchedulerMetrics() {
     enabledTasks: Number(rows[0]?.enabled_tasks || 0),
     overdueTasks: Number(rows[0]?.overdue_tasks || 0),
     recentQueuedTasks: Number(queueRows[0]?.recent_queued_tasks || 0),
+    runningTasks: Number(queueRows[0]?.running_tasks || 0),
     lastQueuedAt: queueRows[0]?.last_queued_at ? String(queueRows[0]?.last_queued_at) : null,
     checkInterval: "每分钟"
   };
@@ -466,7 +478,8 @@ export async function getLinkSwapSchedulerMetrics() {
     `
       SELECT
         COUNT(*) AS recent_queued_tasks,
-        MAX(created_at) AS last_queued_at
+        MAX(created_at) AS last_queued_at,
+        SUM(CASE WHEN status = 'running' THEN 1 ELSE 0 END) AS running_tasks
       FROM unified_queue_tasks
       WHERE type = 'url-swap'
         AND ${recentQueueFilter}
@@ -477,6 +490,7 @@ export async function getLinkSwapSchedulerMetrics() {
     enabledTasks: Number(rows[0]?.enabled_tasks || 0),
     overdueTasks: Number(rows[0]?.overdue_tasks || 0),
     recentQueuedTasks: Number(queueRows[0]?.recent_queued_tasks || 0),
+    runningTasks: Number(queueRows[0]?.running_tasks || 0),
     lastQueuedAt: queueRows[0]?.last_queued_at ? String(queueRows[0]?.last_queued_at) : null,
     checkInterval: "每分钟"
   };

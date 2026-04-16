@@ -15,48 +15,87 @@ const emptyStats: QueueStats = {
     "click-farm-batch": 0,
     "click-farm": 0,
     "url-swap": 0
+  },
+  byTypeRunning: {
+    "click-farm-trigger": 0,
+    "click-farm-batch": 0,
+    "click-farm": 0,
+    "url-swap": 0
   }
 };
+
+type SchedulerStatusPayload = {
+  mode: string;
+  heartbeatAt: string | null;
+  lastTickAt: string | null;
+  lastTickSummary: Record<string, unknown> | null;
+  note: string;
+  clickFarmScheduler: {
+    status: "healthy" | "warning" | "error";
+    message: string;
+    schedulerProcess: string;
+    metrics: {
+      enabledTasks: number;
+      overdueTasks: number;
+      recentQueuedTasks: number;
+      runningTasks?: number;
+      lastQueuedAt: string | null;
+      checkInterval: string;
+    };
+  };
+  urlSwapScheduler: {
+    status: "healthy" | "warning" | "error";
+    message: string;
+    schedulerProcess: string;
+    metrics: {
+      enabledTasks: number;
+      overdueTasks: number;
+      recentQueuedTasks: number;
+      runningTasks?: number;
+      lastQueuedAt: string | null;
+      checkInterval: string;
+    };
+  };
+};
+
+function formatDateTime(value: string | null) {
+  if (!value) {
+    return "--";
+  }
+
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) {
+    return value;
+  }
+
+  return new Date(timestamp).toLocaleString("zh-CN");
+}
+
+function getSchedulerLabel(value: "healthy" | "warning" | "error") {
+  if (value === "healthy") {
+    return "正常";
+  }
+
+  if (value === "warning") {
+    return "警告";
+  }
+
+  return "异常";
+}
 
 export function QueueMonitor() {
   const [stats, setStats] = useState<QueueStats>(emptyStats);
   const [tasks, setTasks] = useState<QueueTaskRecord[]>([]);
-  const [schedulerStatus, setSchedulerStatus] = useState<{
-    mode: string;
-    heartbeatAt: string | null;
-    lastTickAt: string | null;
-    lastTickSummary: Record<string, unknown> | null;
-    note: string;
-    clickFarmScheduler: {
-      status: "healthy" | "warning" | "error";
-      message: string;
-      metrics: {
-        enabledTasks: number;
-        overdueTasks: number;
-        recentQueuedTasks: number;
-        lastQueuedAt: string | null;
-        checkInterval: string;
-      };
-    };
-    urlSwapScheduler: {
-      status: "healthy" | "warning" | "error";
-      message: string;
-      metrics: {
-        enabledTasks: number;
-        overdueTasks: number;
-        recentQueuedTasks: number;
-        lastQueuedAt: string | null;
-        checkInterval: string;
-      };
-    };
-  } | null>(null);
+  const [schedulerStatus, setSchedulerStatus] = useState<SchedulerStatusPayload | null>(null);
   const [status, setStatus] = useState<QueueTaskStatus | "all">("all");
   const [type, setType] = useState<QueueTaskType | "all">("all");
   const [message, setMessage] = useState("");
   const [schedulerMessage, setSchedulerMessage] = useState("");
+  const [schedulerError, setSchedulerError] = useState("");
   const [schedulerLoading, setSchedulerLoading] = useState(false);
+  const [schedulerCollapsed, setSchedulerCollapsed] = useState(true);
 
-  async function loadAll() {
+  async function loadQueueData() {
     try {
       const query = new URLSearchParams();
       if (status !== "all") {
@@ -67,14 +106,12 @@ export function QueueMonitor() {
       }
       query.set("limit", "100");
 
-      const [statsResponse, tasksResponse, schedulerResponse] = await Promise.all([
+      const [statsResponse, tasksResponse] = await Promise.all([
         fetch("/api/queue/stats"),
-        fetch(`/api/queue/tasks?${query.toString()}`),
-        fetch("/api/queue/scheduler")
+        fetch(`/api/queue/tasks?${query.toString()}`)
       ]);
       const statsPayload = await statsResponse.json();
       const tasksPayload = await tasksResponse.json();
-      const schedulerPayload = await schedulerResponse.json();
 
       if (!statsResponse.ok) {
         throw new Error(statsPayload.error || "加载队列统计失败");
@@ -84,22 +121,38 @@ export function QueueMonitor() {
         throw new Error(tasksPayload.error || "加载队列任务失败");
       }
 
-      if (!schedulerResponse.ok) {
-        throw new Error(schedulerPayload.error || "加载调度器状态失败");
-      }
-
       setStats(statsPayload.stats || emptyStats);
       setTasks(tasksPayload.tasks || []);
-      setSchedulerStatus(schedulerPayload.data || null);
       setMessage("");
     } catch (error: unknown) {
       setMessage(error instanceof Error ? error.message : "加载队列数据失败");
     }
   }
 
+  async function loadSchedulerStatus() {
+    try {
+      setSchedulerLoading(true);
+      const schedulerResponse = await fetch("/api/queue/scheduler");
+      const schedulerPayload = await schedulerResponse.json().catch(() => ({}));
+
+      if (!schedulerResponse.ok) {
+        throw new Error(schedulerPayload.error || "加载调度器状态失败");
+      }
+
+      setSchedulerStatus(schedulerPayload.data || null);
+      setSchedulerError("");
+    } catch (error: unknown) {
+      const nextError = error instanceof Error ? error.message : "加载调度器状态失败";
+      setSchedulerError(nextError);
+    } finally {
+      setSchedulerLoading(false);
+    }
+  }
+
   async function triggerScheduler() {
     setSchedulerLoading(true);
     setSchedulerMessage("");
+    setSchedulerError("");
 
     try {
       const response = await fetch("/api/queue/scheduler", { method: "POST" });
@@ -109,17 +162,47 @@ export function QueueMonitor() {
       }
 
       setSchedulerMessage(payload.message || "调度器已手动触发");
-      await loadAll();
+      await Promise.all([loadQueueData(), loadSchedulerStatus()]);
     } catch (error: unknown) {
-      setSchedulerMessage(error instanceof Error ? error.message : "手动触发调度器失败");
+      const nextError = error instanceof Error ? error.message : "手动触发调度器失败";
+      setSchedulerError(nextError);
+      setSchedulerMessage(nextError);
     } finally {
       setSchedulerLoading(false);
     }
   }
 
   useEffect(() => {
-    loadAll();
+    void loadQueueData();
   }, [status, type]);
+
+  useEffect(() => {
+    if (schedulerCollapsed) {
+      return;
+    }
+
+    void loadSchedulerStatus();
+  }, [schedulerCollapsed]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      void loadQueueData();
+    }, 30_000);
+
+    return () => clearInterval(interval);
+  }, [status, type]);
+
+  useEffect(() => {
+    if (schedulerCollapsed) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      void loadSchedulerStatus();
+    }, 60_000);
+
+    return () => clearInterval(interval);
+  }, [schedulerCollapsed]);
 
   return (
     <div className="space-y-6">
@@ -132,11 +215,18 @@ export function QueueMonitor() {
       </section>
 
       <section className="surface-panel p-6">
-        <div className="flex items-center justify-between gap-4">
-          <div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <button
+            className="flex-1 text-left"
+            onClick={() => setSchedulerCollapsed((value) => !value)}
+            type="button"
+          >
             <p className="eyebrow">调度器状态</p>
             <h3 className="mt-2 text-2xl font-semibold text-slate-900">编排中心健康度</h3>
-          </div>
+            <p className="mt-2 text-sm text-slate-600">
+              {schedulerCollapsed ? "展开查看调度器健康检查" : "收起调度器健康检查"}
+            </p>
+          </button>
           <button
             className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
             disabled={schedulerLoading}
@@ -147,26 +237,46 @@ export function QueueMonitor() {
           </button>
         </div>
 
-        {schedulerStatus ? (
+        {!schedulerCollapsed && schedulerLoading && !schedulerStatus ? (
+          <p className="mt-4 rounded-2xl bg-stone-50 px-4 py-5 text-sm text-slate-500">正在加载调度器状态...</p>
+        ) : null}
+
+        {!schedulerCollapsed && schedulerError && !schedulerStatus ? (
+          <div className="mt-4 rounded-[28px] border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+            <p className="font-semibold">获取调度器状态失败</p>
+            <p className="mt-2">{schedulerError}</p>
+            <button
+              className="mt-4 rounded-2xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700"
+              onClick={loadSchedulerStatus}
+              type="button"
+            >
+              重试
+            </button>
+          </div>
+        ) : null}
+
+        {!schedulerCollapsed && schedulerStatus ? (
           <>
-            <p className="mt-4 text-sm text-slate-600">{schedulerStatus.note}</p>
+            <p className="mt-4 rounded-2xl bg-sky-50 px-4 py-4 text-sm text-sky-800">{schedulerStatus.note}</p>
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
               <SchedulerCard
                 label="补点击调度器"
                 value={schedulerStatus.clickFarmScheduler.status}
                 message={schedulerStatus.clickFarmScheduler.message}
+                schedulerProcess={schedulerStatus.clickFarmScheduler.schedulerProcess}
                 metrics={schedulerStatus.clickFarmScheduler.metrics}
               />
               <SchedulerCard
                 label="换链接调度器"
                 value={schedulerStatus.urlSwapScheduler.status}
                 message={schedulerStatus.urlSwapScheduler.message}
+                schedulerProcess={schedulerStatus.urlSwapScheduler.schedulerProcess}
                 metrics={schedulerStatus.urlSwapScheduler.metrics}
               />
             </div>
             <div className="mt-5 grid gap-3 text-sm text-slate-600 sm:grid-cols-2 xl:grid-cols-4">
-              <p>最近心跳：{schedulerStatus.heartbeatAt || "--"}</p>
-              <p>最近编排：{schedulerStatus.lastTickAt || "--"}</p>
+              <p>最近心跳：{formatDateTime(schedulerStatus.heartbeatAt)}</p>
+              <p>最近编排：{formatDateTime(schedulerStatus.lastTickAt)}</p>
               <p>调度模式：{schedulerStatus.mode}</p>
               <p>
                 最近摘要：
@@ -176,11 +286,12 @@ export function QueueMonitor() {
               </p>
             </div>
           </>
-        ) : (
-          <p className="mt-4 rounded-2xl bg-stone-50 px-4 py-5 text-sm text-slate-500">正在加载调度器状态...</p>
-        )}
+        ) : null}
 
         {schedulerMessage ? <p className="mt-4 text-sm text-slate-600">{schedulerMessage}</p> : null}
+        {!schedulerCollapsed && schedulerError && schedulerStatus ? (
+          <p className="mt-4 text-sm text-red-700">{schedulerError}</p>
+        ) : null}
       </section>
 
       <section className="surface-panel p-6">
@@ -215,7 +326,7 @@ export function QueueMonitor() {
             </select>
             <button
               className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white"
-              onClick={loadAll}
+              onClick={loadQueueData}
               type="button"
             >
               刷新
@@ -230,6 +341,10 @@ export function QueueMonitor() {
           <p>补点击触发：{stats.byType["click-farm-trigger"]}</p>
           <p>补点击批次：{stats.byType["click-farm-batch"]}</p>
           <p>补点击执行：{stats.byType["click-farm"]}</p>
+          <p>换链接运行中：{stats.byTypeRunning["url-swap"]}</p>
+          <p>补点击触发运行中：{stats.byTypeRunning["click-farm-trigger"]}</p>
+          <p>补点击批次运行中：{stats.byTypeRunning["click-farm-batch"]}</p>
+          <p>补点击执行运行中：{stats.byTypeRunning["click-farm"]}</p>
         </div>
 
         <div className="mt-5 grid gap-3">
@@ -282,10 +397,12 @@ function SchedulerCard(props: {
   label: string;
   value: "healthy" | "warning" | "error";
   message: string;
+  schedulerProcess: string;
   metrics: {
     enabledTasks: number;
     overdueTasks: number;
     recentQueuedTasks: number;
+    runningTasks?: number;
     lastQueuedAt: string | null;
     checkInterval: string;
   };
@@ -302,16 +419,18 @@ function SchedulerCard(props: {
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-semibold">{props.label}</p>
         <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold uppercase">
-          {props.value}
+          {getSchedulerLabel(props.value)}
         </span>
       </div>
       <p className="mt-3 text-sm leading-6">{props.message}</p>
       <div className="mt-4 grid gap-2 text-xs sm:grid-cols-2">
+        <p>执行进程：{props.schedulerProcess}</p>
         <p>检查周期：{props.metrics.checkInterval}</p>
         <p>启用任务：{props.metrics.enabledTasks}</p>
         <p>待调度：{props.metrics.overdueTasks}</p>
         <p>最近入队：{props.metrics.recentQueuedTasks}</p>
-        <p className="sm:col-span-2">最后入队时间：{props.metrics.lastQueuedAt || "--"}</p>
+        <p>运行中：{props.metrics.runningTasks || 0}</p>
+        <p className="sm:col-span-2">最后入队时间：{formatDateTime(props.metrics.lastQueuedAt)}</p>
       </div>
     </div>
   );
