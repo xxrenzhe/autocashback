@@ -338,6 +338,48 @@ export async function getLinkSwapTaskById(userId: number, taskId: number) {
   return rows[0] ? toLinkSwapTaskRecord(rows[0]) : null;
 }
 
+export async function getLinkSwapTaskExecutionContext(userId: number, taskId: number) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const rows = await sql<DbRow[]>`
+    SELECT
+      tasks.id,
+      tasks.user_id,
+      tasks.offer_id,
+      tasks.enabled,
+      tasks.interval_minutes,
+      tasks.duration_days,
+      tasks.mode,
+      tasks.google_customer_id,
+      tasks.google_campaign_id,
+      tasks.status,
+      tasks.consecutive_failures,
+      tasks.last_run_at,
+      tasks.next_run_at,
+      tasks.activation_started_at,
+      offers.promo_link,
+      offers.target_country,
+      offers.brand_name
+    FROM link_swap_tasks tasks
+    JOIN offers ON offers.id = tasks.offer_id
+    WHERE tasks.user_id = ${userId}
+      AND tasks.id = ${taskId}
+    LIMIT 1
+  `;
+
+  if (!rows[0]) {
+    return null;
+  }
+
+  return {
+    ...toLinkSwapTaskRecord(rows[0]),
+    activationStartedAt: rows[0].activation_started_at ? String(rows[0].activation_started_at) : null,
+    promoLink: String(rows[0].promo_link),
+    targetCountry: String(rows[0].target_country),
+    brandName: String(rows[0].brand_name)
+  };
+}
+
 export async function updateLinkSwapTask(
   userId: number,
   offerId: number,

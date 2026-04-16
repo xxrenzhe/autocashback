@@ -2,12 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const {
+  enqueueQueueTask,
   enableLinkSwapTask,
   getGoogleAdsCredentialStatus,
   getLinkSwapTaskById,
   getOfferById,
   getProxyUrls
 } = vi.hoisted(() => ({
+  enqueueQueueTask: vi.fn(),
   enableLinkSwapTask: vi.fn(),
   getGoogleAdsCredentialStatus: vi.fn(),
   getLinkSwapTaskById: vi.fn(),
@@ -20,6 +22,7 @@ const { getRequestUser } = vi.hoisted(() => ({
 }));
 
 vi.mock("@autocashback/db", () => ({
+  enqueueQueueTask,
   enableLinkSwapTask,
   getGoogleAdsCredentialStatus,
   getLinkSwapTaskById,
@@ -56,7 +59,8 @@ describe("link swap enable route", () => {
       id: 5,
       offerId: 21,
       enabled: true,
-      status: "ready"
+      status: "ready",
+      nextRunAt: "2026-04-16T04:00:00.000Z"
     });
   });
 
@@ -115,6 +119,13 @@ describe("link swap enable route", () => {
 
     expect(response.status).toBe(200);
     expect(enableLinkSwapTask).toHaveBeenCalledWith(9, 5);
+    expect(enqueueQueueTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "url-swap",
+        userId: 9,
+        payload: { linkSwapTaskId: 5 }
+      })
+    );
     expect(payload.success).toBe(true);
     expect(payload.message).toBe("任务已启用");
     expect(payload.data.status).toBe("ready");

@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const { createClickFarmTask, updateClickFarmTask } = vi.hoisted(() => ({
+const { createClickFarmTask, enqueueQueueTask, updateClickFarmTask } = vi.hoisted(() => ({
   createClickFarmTask: vi.fn(),
+  enqueueQueueTask: vi.fn(),
   updateClickFarmTask: vi.fn()
 }));
 
@@ -12,6 +13,7 @@ const { getRequestUser } = vi.hoisted(() => ({
 
 vi.mock("@autocashback/db", () => ({
   createClickFarmTask,
+  enqueueQueueTask,
   listClickFarmTasks: vi.fn(),
   updateClickFarmTask
 }));
@@ -29,7 +31,11 @@ describe("click farm tasks route", () => {
   });
 
   it("preserves -1 duration days when creating an unlimited task", async () => {
-    createClickFarmTask.mockResolvedValue({ id: 1, durationDays: -1 });
+    createClickFarmTask.mockResolvedValue({
+      id: 1,
+      durationDays: -1,
+      nextRunAt: "2026-04-16T04:10:00.000Z"
+    });
     const request = new NextRequest("https://www.autocashback.dev/api/click-farm/tasks", {
       method: "POST",
       body: JSON.stringify({
@@ -54,10 +60,21 @@ describe("click farm tasks route", () => {
         durationDays: -1
       })
     );
+    expect(enqueueQueueTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "click-farm-trigger",
+        userId: 7,
+        payload: { clickFarmTaskId: 1 }
+      })
+    );
   });
 
   it("preserves -1 duration days when updating an unlimited task", async () => {
-    updateClickFarmTask.mockResolvedValue({ id: 5, durationDays: -1 });
+    updateClickFarmTask.mockResolvedValue({
+      id: 5,
+      durationDays: -1,
+      nextRunAt: "2026-04-16T04:20:00.000Z"
+    });
     const request = new NextRequest("https://www.autocashback.dev/api/click-farm/tasks", {
       method: "PUT",
       body: JSON.stringify({
@@ -82,6 +99,13 @@ describe("click farm tasks route", () => {
         offerId: 12,
         dailyClickCount: 120,
         durationDays: -1
+      })
+    );
+    expect(enqueueQueueTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "click-farm-trigger",
+        userId: 7,
+        payload: { clickFarmTaskId: 5 }
       })
     );
   });

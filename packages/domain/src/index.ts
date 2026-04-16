@@ -8,6 +8,9 @@ export type LinkSwapStatus = "idle" | "ready" | "warning" | "error";
 export type LinkSwapMode = "script" | "google_ads_api";
 export type LinkSwapApplyStatus = "not_applicable" | "success" | "failed";
 export type ClickFarmTaskStatus = "pending" | "running" | "paused" | "stopped" | "completed";
+export type QueueTaskType = "click-farm-trigger" | "click-farm-batch" | "click-farm" | "url-swap";
+export type QueueTaskPriority = "high" | "normal" | "low";
+export type QueueTaskStatus = "pending" | "running" | "completed" | "failed";
 
 export interface CurrentUser {
   id: number;
@@ -161,6 +164,54 @@ export interface ProxySettingEntry {
   country: string;
   url: string;
   active: boolean;
+}
+
+export interface QueueTaskRecord {
+  id: string;
+  type: QueueTaskType;
+  userId: number;
+  payload: Record<string, unknown>;
+  parentRequestId: string | null;
+  priority: QueueTaskPriority;
+  status: QueueTaskStatus;
+  availableAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  errorMessage: string | null;
+  retryCount: number;
+  maxRetries: number;
+  workerId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QueueStats {
+  total: number;
+  pending: number;
+  running: number;
+  completed: number;
+  failed: number;
+  byType: Record<QueueTaskType, number>;
+}
+
+function toQueueScheduleKey(value: string | null | undefined) {
+  if (!value) {
+    return "0";
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? String(parsed) : "0";
+}
+
+export function buildLinkSwapQueueTaskId(taskId: number, nextRunAt: string | null | undefined) {
+  return `url-swap:${taskId}:${toQueueScheduleKey(nextRunAt)}`;
+}
+
+export function buildClickFarmTriggerQueueTaskId(
+  taskId: number,
+  nextRunAt: string | null | undefined
+) {
+  return `click-farm-trigger:${taskId}:${toQueueScheduleKey(nextRunAt)}`;
 }
 
 export const PLATFORM_OPTIONS: Array<{ value: PlatformCode; label: string; note: string }> = [

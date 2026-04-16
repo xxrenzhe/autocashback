@@ -6,6 +6,7 @@ import {
   Boxes,
   LayoutDashboard,
   Link2,
+  ListOrdered,
   Settings,
   Shield,
   Target,
@@ -24,6 +25,7 @@ const userLinks = [
   { href: "/link-swap", label: "换链接管理", icon: Link2 },
   { href: "/google-ads", label: "Google Ads", icon: Target },
   { href: "/click-farm", label: "补点击任务", icon: Boxes },
+  { href: "/queue", label: "任务队列", icon: ListOrdered },
   { href: "/settings", label: "系统设置", icon: Settings }
 ];
 

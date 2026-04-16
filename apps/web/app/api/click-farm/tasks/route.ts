@@ -2,10 +2,11 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import {
   createClickFarmTask,
+  enqueueQueueTask,
   listClickFarmTasks,
   updateClickFarmTask
 } from "@autocashback/db";
-import { getTimezoneForCountry } from "@autocashback/domain";
+import { buildClickFarmTriggerQueueTaskId, getTimezoneForCountry } from "@autocashback/domain";
 
 import { getRequestUser } from "@/lib/api-auth";
 
@@ -66,6 +67,14 @@ export async function POST(request: NextRequest) {
       timezone: body.timezone ? String(body.timezone) : getTimezoneForCountry(body.targetCountry || ""),
       refererConfig: body.refererConfig || null
     });
+    await enqueueQueueTask({
+      id: buildClickFarmTriggerQueueTaskId(task.id, task.nextRunAt),
+      type: "click-farm-trigger",
+      userId: user.id,
+      payload: { clickFarmTaskId: task.id },
+      priority: "high",
+      maxRetries: 0
+    });
 
     return NextResponse.json({ task });
   } catch (error: unknown) {
@@ -95,6 +104,14 @@ export async function PUT(request: NextRequest) {
       hourlyDistribution: normalizeDistribution(body.hourlyDistribution, dailyClickCount),
       timezone: body.timezone ? String(body.timezone) : getTimezoneForCountry(body.targetCountry || ""),
       refererConfig: body.refererConfig || null
+    });
+    await enqueueQueueTask({
+      id: buildClickFarmTriggerQueueTaskId(task.id, task.nextRunAt),
+      type: "click-farm-trigger",
+      userId: user.id,
+      payload: { clickFarmTaskId: task.id },
+      priority: "high",
+      maxRetries: 0
     });
 
     return NextResponse.json({ task });

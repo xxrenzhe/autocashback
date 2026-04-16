@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { restartClickFarmTask } from "@autocashback/db";
+import { enqueueQueueTask, restartClickFarmTask } from "@autocashback/db";
+import { buildClickFarmTriggerQueueTaskId } from "@autocashback/domain";
 
 import { getRequestUser } from "@/lib/api-auth";
 
@@ -14,8 +15,18 @@ export async function POST(
   }
 
   try {
+    const task = await restartClickFarmTask(user.id, Number(params.id));
+    await enqueueQueueTask({
+      id: buildClickFarmTriggerQueueTaskId(task.id, task.nextRunAt),
+      type: "click-farm-trigger",
+      userId: user.id,
+      payload: { clickFarmTaskId: task.id },
+      priority: "high",
+      maxRetries: 0
+    });
+
     return NextResponse.json({
-      task: await restartClickFarmTask(user.id, Number(params.id))
+      task
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "恢复补点击任务失败";

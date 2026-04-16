@@ -26,6 +26,12 @@ type ClickFarmDueTask = ClickFarmTask & {
   brandName: string;
 };
 
+export type ClickFarmExecutionContext = ClickFarmTask & {
+  promoLink: string;
+  targetCountry: string;
+  brandName: string;
+};
+
 function parseJsonArray<T>(value: unknown, fallback: T): T {
   if (!value) return fallback;
 
@@ -149,6 +155,33 @@ export async function getClickFarmTaskByOfferId(userId: number, offerId: number)
   `;
 
   return rows[0] ? toClickFarmTask(rows[0]) : null;
+}
+
+export async function getClickFarmTaskExecutionContext(userId: number, taskId: number) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const rows = await sql<DbRow[]>`
+    SELECT
+      tasks.*,
+      offers.promo_link,
+      offers.target_country,
+      offers.brand_name
+    FROM click_farm_tasks tasks
+    JOIN offers ON offers.id = tasks.offer_id
+    WHERE tasks.id = ${taskId}
+      AND tasks.user_id = ${userId}
+      AND tasks.is_deleted = FALSE
+    LIMIT 1
+  `;
+
+  return rows[0]
+    ? ({
+        ...toClickFarmTask(rows[0]),
+        promoLink: String(rows[0].promo_link),
+        targetCountry: String(rows[0].target_country),
+        brandName: String(rows[0].brand_name)
+      } satisfies ClickFarmExecutionContext)
+    : null;
 }
 
 export async function createClickFarmTask(userId: number, input: SaveClickFarmTaskInput) {

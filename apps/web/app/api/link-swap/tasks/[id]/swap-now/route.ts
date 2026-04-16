@@ -1,9 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import {
+  enqueueQueueTask,
   getLinkSwapTaskById,
   scheduleLinkSwapTaskNow
 } from "@autocashback/db";
+import { buildLinkSwapQueueTaskId } from "@autocashback/domain";
 
 import { getRequestUser } from "@/lib/api-auth";
 import { getLinkSwapTaskRunPrecheckError } from "@/lib/link-swap-task-run-helpers";
@@ -40,6 +42,14 @@ export async function POST(
   }
 
   const scheduledTask = await scheduleLinkSwapTaskNow(user.id, taskId);
+  await enqueueQueueTask({
+    id: buildLinkSwapQueueTaskId(scheduledTask.id, scheduledTask.nextRunAt),
+    type: "url-swap",
+    userId: user.id,
+    payload: { linkSwapTaskId: scheduledTask.id },
+    priority: "high",
+    maxRetries: 0
+  });
 
   return NextResponse.json({
     success: true,
