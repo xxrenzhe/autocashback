@@ -60,8 +60,13 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
   const [form, setForm] = useState<FormState>(initialForm);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [enabling, setEnabling] = useState(false);
   const [message, setMessage] = useState("");
   const [proxyWarning, setProxyWarning] = useState("");
+
+  const canEnableTask = Boolean(
+    task && (!task.enabled || task.status === "idle" || task.status === "error")
+  );
 
   useEffect(() => {
     if (!open || !offer) {
@@ -182,6 +187,45 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
       setMessage(error instanceof Error ? error.message : "保存失败");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleEnableTask() {
+    if (!task?.id) {
+      return;
+    }
+
+    if (proxyWarning) {
+      setMessage(proxyWarning);
+      return;
+    }
+
+    setEnabling(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/link-swap/tasks/${task.id}/enable`, {
+        method: "POST"
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || "启用任务失败");
+      }
+
+      const nextTask = (payload.task || payload.data || null) as LinkSwapTaskRecord | null;
+      setTask(nextTask);
+      if (nextTask) {
+        setForm((current) => ({
+          ...current,
+          enabled: nextTask.enabled
+        }));
+      }
+      setMessage(payload.message || "任务已启用");
+      await onSaved?.();
+    } catch (error: unknown) {
+      setMessage(error instanceof Error ? error.message : "启用任务失败");
+    } finally {
+      setEnabling(false);
     }
   }
 
@@ -352,6 +396,16 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
           {message ? <p className="text-sm text-slate-600">{message}</p> : null}
 
           <div className="flex flex-wrap justify-end gap-3">
+            {canEnableTask ? (
+              <button
+                className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                disabled={loading || saving || enabling}
+                onClick={handleEnableTask}
+                type="button"
+              >
+                {enabling ? "恢复中..." : "恢复任务"}
+              </button>
+            ) : null}
             <button
               className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700"
               onClick={onClose}
@@ -361,7 +415,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
             </button>
             <button
               className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
-              disabled={loading || saving}
+              disabled={loading || saving || enabling}
               type="submit"
             >
               {saving ? "保存中..." : "保存任务"}
