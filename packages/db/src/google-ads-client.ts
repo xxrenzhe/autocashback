@@ -1,4 +1,3 @@
-import { GoogleAdsApi } from "google-ads-api";
 import type { GoogleAdsAccountRecord } from "@autocashback/domain";
 
 import { getServerEnv } from "./env";
@@ -26,11 +25,40 @@ function sanitizeFinalUrlSuffix(value: string) {
   return String(value || "").trim().replace(/^\?+/, "");
 }
 
-function createGoogleAdsApiClient(credentials: {
+let googleAdsApiCtorPromise: Promise<
+  new (input: {
+    client_id: string;
+    client_secret: string;
+    developer_token: string;
+  }) => {
+    listAccessibleCustomers: (refreshToken: string) => Promise<unknown>;
+    Customer: (input: {
+      customer_id: string;
+      refresh_token: string;
+      login_customer_id?: string;
+    }) => {
+      query: (query: string) => Promise<unknown>;
+      campaigns: {
+        update: (operations: Array<Record<string, unknown>>) => Promise<unknown>;
+      };
+    };
+  }
+> | null = null;
+
+async function getGoogleAdsApiCtor() {
+  if (!googleAdsApiCtorPromise) {
+    googleAdsApiCtorPromise = import("google-ads-api").then((module) => module.GoogleAdsApi);
+  }
+
+  return googleAdsApiCtorPromise;
+}
+
+async function createGoogleAdsApiClient(credentials: {
   clientId: string;
   clientSecret: string;
   developerToken: string;
 }) {
+  const GoogleAdsApi = await getGoogleAdsApiCtor();
   return new GoogleAdsApi({
     client_id: credentials.clientId,
     client_secret: credentials.clientSecret,
@@ -143,7 +171,7 @@ export async function syncGoogleAdsAccounts(userId: number): Promise<GoogleAdsAc
     throw new Error("Google Ads 未完成 OAuth 授权");
   }
 
-  const client = createGoogleAdsApiClient({
+  const client = await createGoogleAdsApiClient({
     clientId: credentials.clientId,
     clientSecret: credentials.clientSecret,
     developerToken: credentials.developerToken
@@ -261,7 +289,7 @@ export async function updateGoogleAdsCampaignSuffix(input: {
 
   await ensureGoogleAdsAccessToken(input.userId);
 
-  const client = createGoogleAdsApiClient({
+  const client = await createGoogleAdsApiClient({
     clientId: credentials.clientId,
     clientSecret: credentials.clientSecret,
     developerToken: credentials.developerToken

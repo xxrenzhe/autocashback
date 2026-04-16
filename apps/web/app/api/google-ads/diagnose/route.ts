@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleAdsApi } from "google-ads-api";
 
 import { getGoogleAdsCredentials, logAuditEvent } from "@autocashback/db";
 
@@ -77,8 +76,24 @@ function classifyErrorMessage(message: string) {
   return { code: "UNKNOWN", hint: undefined };
 }
 
+async function createGoogleAdsClient(credentials: {
+  clientId: string;
+  clientSecret: string;
+  developerToken: string;
+}) {
+  const { GoogleAdsApi } = await import("google-ads-api");
+
+  return new GoogleAdsApi({
+    client_id: credentials.clientId,
+    client_secret: credentials.clientSecret,
+    developer_token: credentials.developerToken
+  });
+}
+
+type GoogleAdsApiClient = Awaited<ReturnType<typeof createGoogleAdsClient>>;
+
 async function queryCustomerBasicInfo(input: {
-  client: GoogleAdsApi;
+  client: GoogleAdsApiClient;
   refreshToken: string;
   customerId: string;
   loginCustomerId: string;
@@ -182,10 +197,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const client = new GoogleAdsApi({
-      client_id: credentials.clientId,
-      client_secret: credentials.clientSecret,
-      developer_token: credentials.developerToken
+    const client = await createGoogleAdsClient({
+      clientId: credentials.clientId,
+      clientSecret: credentials.clientSecret,
+      developerToken: credentials.developerToken
     });
 
     const listResponse = await client.listAccessibleCustomers(credentials.refreshToken);
