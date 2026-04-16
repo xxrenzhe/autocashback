@@ -153,6 +153,11 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
       return;
     }
 
+    if (Number(form.durationDays) !== -1 && (Number(form.durationDays) < 1 || Number(form.durationDays) > 365)) {
+      setMessage('任务持续天数必须在 1-365 天之间，或选择"不限期"');
+      return;
+    }
+
     if (proxyWarning) {
       setMessage(proxyWarning);
       return;
@@ -162,7 +167,8 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
     setMessage("");
 
     try {
-      const response = await fetch("/api/link-swap/tasks", {
+      const endpoint = task?.id ? `/api/link-swap/tasks/${task.id}` : "/api/link-swap/tasks";
+      const response = await fetch(endpoint, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -180,8 +186,8 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
         throw new Error(payload.error || "保存失败");
       }
 
-      setTask(payload.task as LinkSwapTaskRecord);
-      setMessage("换链接任务已保存");
+      setTask((payload.task || payload.data) as LinkSwapTaskRecord);
+      setMessage(payload.message || "换链接任务已保存");
       await onSaved?.();
     } catch (error: unknown) {
       setMessage(error instanceof Error ? error.message : "保存失败");

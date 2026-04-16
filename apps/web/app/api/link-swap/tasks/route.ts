@@ -69,6 +69,16 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    const durationDays = Number(body.durationDays ?? -1);
+    if (durationDays !== -1 && (durationDays < 1 || durationDays > 365)) {
+      return NextResponse.json(
+        {
+          error: '任务持续天数必须在 1-365 天之间，或选择"不限期"'
+        },
+        { status: 400 }
+      );
+    }
+
     const offer = await getOfferById(user.id, offerId);
     if (!offer) {
       return NextResponse.json({ error: "Offer 不存在" }, { status: 404 });
@@ -99,7 +109,7 @@ export async function PUT(request: NextRequest) {
     const task = await updateLinkSwapTask(user.id, offerId, {
       enabled: Boolean(body.enabled),
       intervalMinutes,
-      durationDays: Number(body.durationDays ?? -1),
+      durationDays,
       mode,
       googleCustomerId,
       googleCampaignId
