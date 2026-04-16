@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import {
   claimNextQueueTask,
   completeQueueTask,
+  createServiceLogger,
   enqueueQueueTask,
   failQueueTask,
   resetStaleRunningQueueTasks,
@@ -30,6 +31,8 @@ const DEFAULT_PER_TYPE_CONCURRENCY: Record<QueueTaskType, number> = {
   "click-farm": 8,
   "url-swap": 2
 };
+
+const logger = createServiceLogger("autocashback-scheduler");
 
 export class UnifiedTaskQueueManager {
   private readonly workerId = `scheduler-${randomUUID()}`;
@@ -71,6 +74,7 @@ export class UnifiedTaskQueueManager {
   }
 
   async updateConfig(config: QueueManagerConfig) {
+    const previousConfig = this.getConfig();
     this.pollIntervalMs = Math.max(100, config.pollIntervalMs || this.pollIntervalMs);
     this.staleTimeoutMs = Math.max(60_000, config.staleTimeoutMs || this.staleTimeoutMs);
     this.globalConcurrency = Math.max(1, config.globalConcurrency || this.globalConcurrency);
@@ -85,6 +89,11 @@ export class UnifiedTaskQueueManager {
       await resetStaleRunningQueueTasks(staleBefore);
       this.schedulePump(0);
     }
+
+    logger.info("queue_config_updated", {
+      previous: previousConfig,
+      next: this.getConfig()
+    });
 
     return this.getConfig();
   }
@@ -110,6 +119,10 @@ export class UnifiedTaskQueueManager {
     this.running = true;
     const staleBefore = new Date(Date.now() - this.staleTimeoutMs).toISOString();
     await resetStaleRunningQueueTasks(staleBefore);
+    logger.info("queue_manager_started", {
+      workerId: this.workerId,
+      config: this.getConfig()
+    });
     this.schedulePump(0);
   }
 
@@ -119,6 +132,10 @@ export class UnifiedTaskQueueManager {
       clearTimeout(this.timer);
       this.timer = null;
     }
+    logger.info("queue_manager_stopped", {
+      workerId: this.workerId,
+      activeTasks: this.activeTaskIds.size
+    });
   }
 
   private schedulePump(delayMs = this.pollIntervalMs) {
@@ -176,11 +193,20 @@ export class UnifiedTaskQueueManager {
 
         const executor = this.executors.get(task.type);
         if (!executor) {
+          logger.error("queue_executor_missing", {
+            taskId: task.id,
+            taskType: task.type
+          });
           await failQueueTask(task.id, `未注册执行器: ${task.type}`);
           continue;
         }
 
         this.incrementActive(task.type, task.id);
+        logger.debug("queue_task_claimed", {
+          taskId: task.id,
+          taskType: task.type,
+          userId: task.userId
+        });
         void this.executeTask(task, executor);
       }
     } finally {
@@ -193,12 +219,34 @@ export class UnifiedTaskQueueManager {
     try {
       await executor(task);
       await completeQueueTask(task.id);
+      logger.info("queue_task_completed", {
+        taskId: task.id,
+        taskType: task.type,
+        retryCount: task.retryCount
+      });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "队列任务执行失败";
       if (task.retryCount < task.maxRetries) {
         const retryDelayMs = Math.min(60_000, 5_000 * (task.retryCount + 1));
+        logger.warn("queue_task_retry_scheduled", {
+          taskId: task.id,
+          taskType: task.type,
+          retryCount: task.retryCount + 1,
+          retryDelayMs,
+          errorMessage: message
+        });
         await retryQueueTask(task.id, message, new Date(Date.now() + retryDelayMs).toISOString());
       } else {
+        logger.error(
+          "queue_task_failed",
+          {
+            taskId: task.id,
+            taskType: task.type,
+            retryCount: task.retryCount,
+            errorMessage: message
+          },
+          error
+        );
         await failQueueTask(task.id, message);
       }
     } finally {

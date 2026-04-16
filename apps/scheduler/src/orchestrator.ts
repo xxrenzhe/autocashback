@@ -1,4 +1,5 @@
 import {
+  createServiceLogger,
   ensureQueueTaskEnqueued,
   getDueClickFarmTasks,
   getDueLinkSwapTasks,
@@ -7,6 +8,8 @@ import {
 
 import { orchestrateClickFarmTriggerTask } from "./click-farm-queue";
 import { orchestrateLinkSwapQueueTask } from "./link-swap-queue";
+
+const logger = createServiceLogger("autocashback-scheduler");
 
 export type OrchestratorTickResult = {
   processed: number;
@@ -101,6 +104,8 @@ export async function runOrchestratorTick(): Promise<OrchestratorTickResult> {
     lastTickSummary: summary
   });
 
+  logger.info("scheduler_orchestrator_tick", summary);
+
   return summary;
 }
 
@@ -108,4 +113,5 @@ export async function updateSchedulerHeartbeatOnly() {
   await saveQueueSchedulerHeartbeat({
     heartbeatAt: new Date().toISOString()
   });
+  logger.debug("scheduler_heartbeat_updated");
 }

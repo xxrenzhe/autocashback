@@ -1,12 +1,16 @@
 import "./load-env";
 
-import { getServerEnv } from "@autocashback/db";
+import { createServiceLogger, getServerEnv } from "@autocashback/db";
+
+const logger = createServiceLogger("autocashback-preflight");
 
 try {
   getServerEnv();
-  console.log("[env] required production environment variables are valid");
+  logger.info("env_validation_passed");
 } catch (error: unknown) {
   const message = error instanceof Error ? error.message : "unknown env error";
-  console.error("[env] validation failed:", message);
+  logger.error("env_validation_failed", {
+    message
+  });
   process.exit(1);
 }

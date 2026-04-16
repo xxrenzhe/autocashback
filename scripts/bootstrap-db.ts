@@ -1,26 +1,50 @@
 import "./load-env";
 
 import {
+  createServiceLogger,
   ensureDatabaseReady,
   ensurePostgresDatabaseExists,
   getServerEnv
 } from "@autocashback/db";
 
+const logger = createServiceLogger("autocashback-db-bootstrap");
+
+function parseDatabaseTarget(databaseUrl: string) {
+  try {
+    const parsed = new URL(databaseUrl);
+    return {
+      postgresHost: parsed.hostname,
+      postgresPort: parsed.port || null,
+      postgresDatabase: parsed.pathname.replace(/^\//, "") || null
+    };
+  } catch {
+    return {
+      postgresHost: null,
+      postgresPort: null,
+      postgresDatabase: null
+    };
+  }
+}
+
 async function main() {
   const env = getServerEnv();
-  console.log(`[db] bootstrapping ${env.DB_TYPE} database`);
+  logger.info("db_bootstrap_start", {
+    dbType: env.DB_TYPE
+  });
   if (env.DB_TYPE === "sqlite") {
-    console.log(`[db] sqlite path: ${env.DATABASE_PATH}`);
+    logger.info("db_bootstrap_target", {
+      databasePath: env.DATABASE_PATH
+    });
   }
   if (env.DB_TYPE === "postgres") {
-    console.log("[db] ensuring target postgres database exists");
+    logger.info("db_bootstrap_target", parseDatabaseTarget(env.DATABASE_URL || ""));
     await ensurePostgresDatabaseExists(env.DATABASE_URL as string);
   }
   await ensureDatabaseReady();
-  console.log("[db] schema and default admin ensured");
+  logger.info("db_bootstrap_complete");
 }
 
 main().catch((error) => {
-  console.error("[db] bootstrap failed", error);
+  logger.error("db_bootstrap_failed", {}, error);
   process.exit(1);
 });

@@ -3,6 +3,7 @@ import { HttpsProxyAgent } from "https-proxy-agent";
 
 import {
   completeClickFarmTask,
+  createServiceLogger,
   enqueueQueueTask,
   getClickFarmTaskExecutionContext,
   getProxyUrls,
@@ -28,6 +29,8 @@ const CLICK_FARM_BATCH_SIZE = (() => {
   const parsed = parseInt(process.env.CLICK_FARM_BATCH_SIZE || "10", 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 10;
 })();
+
+const logger = createServiceLogger("autocashback-scheduler");
 
 type ClickFarmTriggerPayload = {
   clickFarmTaskId: number;
@@ -216,11 +219,19 @@ export async function executeClickFarmTrigger(task: QueueTaskRecord) {
   const payload = task.payload as ClickFarmTriggerPayload;
   const clickFarmTaskId = Number(payload.clickFarmTaskId);
   if (!Number.isFinite(clickFarmTaskId)) {
+    logger.warn("click_farm_trigger_invalid_payload", {
+      taskId: task.id,
+      payload: task.payload
+    });
     return;
   }
 
   const clickTask = await getClickFarmTaskExecutionContext(task.userId, clickFarmTaskId);
   if (!clickTask || clickTask.isDeleted) {
+    logger.warn("click_farm_trigger_task_missing", {
+      queueTaskId: task.id,
+      clickFarmTaskId
+    });
     return;
   }
 
@@ -275,6 +286,10 @@ export async function executeClickFarmTrigger(task: QueueTaskRecord) {
   const proxyUrl = proxies[0] || null;
   if (!proxyUrl) {
     await setClickFarmTaskPaused(clickFarmTaskId, `缺少 ${clickTask.targetCountry} 或 GLOBAL 代理`);
+    logger.warn("click_farm_task_paused_no_proxy", {
+      clickFarmTaskId,
+      targetCountry: clickTask.targetCountry
+    });
     return;
   }
 
@@ -367,11 +382,19 @@ export async function executeClickFarmBatch(task: QueueTaskRecord) {
   const payload = task.payload as ClickFarmBatchPayload;
   const clickFarmTaskId = Number(payload.clickFarmTaskId);
   if (!Number.isFinite(clickFarmTaskId)) {
+    logger.warn("click_farm_batch_invalid_payload", {
+      taskId: task.id,
+      payload: task.payload
+    });
     return;
   }
 
   const clickTask = await getClickFarmTaskExecutionContext(task.userId, clickFarmTaskId);
   if (!clickTask || clickTask.isDeleted) {
+    logger.warn("click_farm_batch_task_missing", {
+      queueTaskId: task.id,
+      clickFarmTaskId
+    });
     return;
   }
 
@@ -434,11 +457,19 @@ export async function executeClickFarmClick(task: QueueTaskRecord) {
   const payload = task.payload as ClickFarmClickPayload;
   const clickFarmTaskId = Number(payload.clickFarmTaskId);
   if (!Number.isFinite(clickFarmTaskId)) {
+    logger.warn("click_farm_click_invalid_payload", {
+      taskId: task.id,
+      payload: task.payload
+    });
     return;
   }
 
   const clickTask = await getClickFarmTaskExecutionContext(task.userId, clickFarmTaskId);
   if (!clickTask || clickTask.isDeleted) {
+    logger.warn("click_farm_click_task_missing", {
+      queueTaskId: task.id,
+      clickFarmTaskId
+    });
     return;
   }
 

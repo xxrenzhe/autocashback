@@ -6,12 +6,15 @@ import {
   type QueueTaskRecord
 } from "@autocashback/domain";
 import {
+  createServiceLogger,
   expireLinkSwapTask,
   getLinkSwapTaskExecutionContext,
   getProxyUrls,
   saveLinkSwapRun,
   updateGoogleAdsCampaignSuffix
 } from "@autocashback/db";
+
+const logger = createServiceLogger("autocashback-scheduler");
 
 type ResolutionResult = {
   resolvedUrl: string | null;
@@ -91,11 +94,19 @@ export async function executeLinkSwapTask(task: QueueTaskRecord) {
   const payload = task.payload as LinkSwapQueuePayload;
   const linkSwapTaskId = Number(payload.linkSwapTaskId);
   if (!Number.isFinite(linkSwapTaskId)) {
+    logger.warn("link_swap_invalid_payload", {
+      taskId: task.id,
+      payload: task.payload
+    });
     return;
   }
 
   const linkTask = await getLinkSwapTaskExecutionContext(task.userId, linkSwapTaskId);
   if (!linkTask) {
+    logger.warn("link_swap_task_missing", {
+      queueTaskId: task.id,
+      linkSwapTaskId
+    });
     return;
   }
 
@@ -104,6 +115,9 @@ export async function executeLinkSwapTask(task: QueueTaskRecord) {
   }
 
   if (isLinkSwapExpired(linkTask)) {
+    logger.info("link_swap_task_expired", {
+      linkSwapTaskId
+    });
     await expireLinkSwapTask(linkSwapTaskId);
     return;
   }
@@ -112,6 +126,10 @@ export async function executeLinkSwapTask(task: QueueTaskRecord) {
   const proxyUrl = proxies[0] || null;
 
   if (!proxyUrl) {
+    logger.warn("link_swap_missing_proxy", {
+      linkSwapTaskId,
+      targetCountry: linkTask.targetCountry
+    });
     await saveLinkSwapRun({
       taskId: linkSwapTaskId,
       offerId: linkTask.offerId,
@@ -148,6 +166,15 @@ export async function executeLinkSwapTask(task: QueueTaskRecord) {
         });
         applyStatus = "success";
       } catch (error: unknown) {
+        logger.error(
+          "link_swap_google_ads_update_failed",
+          {
+            linkSwapTaskId,
+            customerId: linkTask.googleCustomerId,
+            campaignId: linkTask.googleCampaignId
+          },
+          error
+        );
         applyStatus = "failed";
         applyErrorMessage = error instanceof Error ? error.message : "Google Ads 更新失败";
         status = "failed";
