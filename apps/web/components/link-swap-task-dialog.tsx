@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import {
   LINK_SWAP_ALLOWED_INTERVALS_MINUTES,
   LINK_SWAP_INTERVAL_OPTIONS,
+  type LinkSwapRunRecord,
   type LinkSwapTaskRecord,
   type OfferRecord
 } from "@autocashback/domain";
@@ -63,6 +64,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
   const [enabling, setEnabling] = useState(false);
   const [message, setMessage] = useState("");
   const [proxyWarning, setProxyWarning] = useState("");
+  const [history, setHistory] = useState<LinkSwapRunRecord[]>([]);
 
   const canEnableTask = Boolean(
     task && (!task.enabled || task.status === "idle" || task.status === "error")
@@ -80,6 +82,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
       setLoading(true);
       setMessage("");
       setProxyWarning("");
+      setHistory([]);
 
       try {
         const response = await fetch(`/api/offers/${currentOffer.id}/link-swap-task`);
@@ -102,6 +105,14 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
           googleCustomerId: nextTask?.googleCustomerId || "",
           googleCampaignId: nextTask?.googleCampaignId || ""
         });
+
+        if (nextTask?.id) {
+          const historyResponse = await fetch(`/api/link-swap/tasks/${nextTask.id}/history`);
+          const historyPayload = await historyResponse.json().catch(() => null);
+          if (!cancelled && historyResponse.ok) {
+            setHistory(historyPayload?.history || historyPayload?.data?.history || []);
+          }
+        }
 
         const proxyResponse = await fetch(
           `/api/settings/proxy?country=${encodeURIComponent(currentOffer.targetCountry)}`
@@ -187,6 +198,13 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
       }
 
       setTask((payload.task || payload.data) as LinkSwapTaskRecord);
+      if (task?.id) {
+        const historyResponse = await fetch(`/api/link-swap/tasks/${task.id}/history`);
+        const historyPayload = await historyResponse.json().catch(() => null);
+        if (historyResponse.ok) {
+          setHistory(historyPayload?.history || historyPayload?.data?.history || []);
+        }
+      }
       setMessage(payload.message || "换链接任务已保存");
       await onSaved?.();
     } catch (error: unknown) {
@@ -225,6 +243,11 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
           ...current,
           enabled: nextTask.enabled
         }));
+        const historyResponse = await fetch(`/api/link-swap/tasks/${nextTask.id}/history`);
+        const historyPayload = await historyResponse.json().catch(() => null);
+        if (historyResponse.ok) {
+          setHistory(historyPayload?.history || historyPayload?.data?.history || []);
+        }
       }
       setMessage(payload.message || "任务已启用");
       await onSaved?.();
@@ -394,6 +417,40 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
                   <p>连续失败：{task.consecutiveFailures}</p>
                   <p>上次执行：{task.lastRunAt || "暂无"}</p>
                   <p>下次执行：{task.nextRunAt || "待调度"}</p>
+                </div>
+              ) : null}
+
+              {task ? (
+                <div className="rounded-[28px] border border-brand-line bg-stone-50 p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-slate-900">最近执行记录</p>
+                    <span className="text-xs uppercase tracking-wide text-slate-500">
+                      {history.length} runs
+                    </span>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    {history.length ? (
+                      history.map((run) => (
+                        <div className="rounded-2xl border border-brand-line bg-white px-4 py-4" key={run.id}>
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                              {run.status}
+                            </p>
+                            <p className="text-xs text-slate-500">{run.createdAt}</p>
+                          </div>
+                          <p className="mt-2 break-all font-mono text-xs text-slate-700">
+                            {run.resolvedSuffix || run.errorMessage || "无 suffix"}
+                          </p>
+                          <p className="mt-2 text-xs text-slate-500">
+                            应用结果：{run.applyStatus}
+                            {run.applyErrorMessage ? ` · ${run.applyErrorMessage}` : ""}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-slate-500">还没有换链接执行记录。</p>
+                    )}
+                  </div>
                 </div>
               ) : null}
             </>

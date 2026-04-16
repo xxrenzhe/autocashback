@@ -474,20 +474,23 @@ export async function listLinkSwapRuns(userId: number): Promise<LinkSwapRunRecor
     LIMIT 50
   `;
 
-  return rows.map((row) => ({
-    id: Number(row.id),
-    taskId: Number(row.task_id),
-    offerId: Number(row.offer_id),
-    rawUrl: String(row.raw_url),
-    resolvedUrl: row.resolved_url ? String(row.resolved_url) : null,
-    resolvedSuffix: row.resolved_suffix ? String(row.resolved_suffix) : null,
-    proxyUrl: row.proxy_url ? String(row.proxy_url) : null,
-    status: String(row.status) as LinkSwapRunRecord["status"],
-    applyStatus: String(row.apply_status || "not_applicable") as LinkSwapRunRecord["applyStatus"],
-    applyErrorMessage: row.apply_error_message ? String(row.apply_error_message) : null,
-    errorMessage: row.error_message ? String(row.error_message) : null,
-    createdAt: String(row.created_at)
-  }));
+  return rows.map(toLinkSwapRunRecord);
+}
+
+export async function listLinkSwapRunsByTaskId(userId: number, taskId: number): Promise<LinkSwapRunRecord[]> {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const rows = await sql<DbRow[]>`
+    SELECT runs.*
+    FROM link_swap_runs runs
+    JOIN link_swap_tasks tasks ON tasks.id = runs.task_id
+    WHERE tasks.user_id = ${userId}
+      AND runs.task_id = ${taskId}
+    ORDER BY runs.created_at DESC
+    LIMIT 20
+  `;
+
+  return rows.map(toLinkSwapRunRecord);
 }
 
 export async function getSettings(userId: number | null, category?: string) {
@@ -921,5 +924,22 @@ function toLinkSwapTaskRecord(row: DbRow): LinkSwapTaskRecord {
     consecutiveFailures: Number(row.consecutive_failures),
     lastRunAt: row.last_run_at ? String(row.last_run_at) : null,
     nextRunAt: row.next_run_at ? String(row.next_run_at) : null
+  };
+}
+
+function toLinkSwapRunRecord(row: DbRow): LinkSwapRunRecord {
+  return {
+    id: Number(row.id),
+    taskId: Number(row.task_id),
+    offerId: Number(row.offer_id),
+    rawUrl: String(row.raw_url),
+    resolvedUrl: row.resolved_url ? String(row.resolved_url) : null,
+    resolvedSuffix: row.resolved_suffix ? String(row.resolved_suffix) : null,
+    proxyUrl: row.proxy_url ? String(row.proxy_url) : null,
+    status: String(row.status) as LinkSwapRunRecord["status"],
+    applyStatus: String(row.apply_status || "not_applicable") as LinkSwapRunRecord["applyStatus"],
+    applyErrorMessage: row.apply_error_message ? String(row.apply_error_message) : null,
+    errorMessage: row.error_message ? String(row.error_message) : null,
+    createdAt: String(row.created_at)
   };
 }
