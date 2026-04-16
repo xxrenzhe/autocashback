@@ -31,10 +31,23 @@ export async function PATCH(
     const body = (await request.json().catch(() => ({}))) as {
       email?: string;
       role?: "admin" | "user";
+      isActive?: boolean;
+      unlock?: boolean;
     };
+
+    if (userId === currentUser.id && body.isActive === false) {
+      throw new Error("不能停用当前登录账号");
+    }
+
+    if (userId === currentUser.id && body.role === "user") {
+      throw new Error("不能取消当前登录账号的管理员权限");
+    }
+
     const updated = await updateUserByAdmin(userId, {
       email: typeof body.email === "string" ? body.email.trim() : undefined,
-      role: body.role === "admin" || body.role === "user" ? body.role : undefined
+      role: body.role === "admin" || body.role === "user" ? body.role : undefined,
+      isActive: typeof body.isActive === "boolean" ? body.isActive : undefined,
+      unlock: body.unlock === true
     });
 
     await logAuditEvent({
@@ -44,7 +57,11 @@ export async function PATCH(
       details: {
         updatedUserId: updated.id,
         updatedUsername: updated.username,
-        updatedRole: updated.role
+        updatedRole: updated.role,
+        updatedIsActive: updated.isActive,
+        updatedLockedUntil: updated.lockedUntil,
+        updatedFailedLoginCount: updated.failedLoginCount,
+        unlockApplied: body.unlock === true
       }
     });
 

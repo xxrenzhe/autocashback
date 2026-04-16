@@ -27,6 +27,7 @@ import {
   getSql,
   getDashboardSummary,
   getSettings,
+  loginUser,
   listLinkSwapTasks,
   restartClickFarmTask,
   setClickFarmTaskPaused,
@@ -37,7 +38,8 @@ import {
   scheduleLinkSwapTaskNow,
   updateGoogleAdsTokens,
   updateClickFarmTask,
-  updateLinkSwapTask
+  updateLinkSwapTask,
+  updateUserByAdmin
 } from "@autocashback/db";
 
 const tempDir = mkdtempSync(path.join(tmpdir(), "autocashback-db-"));
@@ -908,5 +910,87 @@ describe.sequential("sqlite database bootstrap", () => {
     const orchestratedTask = dueTasks.find((row) => Number(row.id) === task?.id);
     expect(orchestratedTask).toBeTruthy();
     expect(String(orchestratedTask?.next_run_at || "")).toBeTruthy();
+  });
+
+  it("tracks login failures, unlocks accounts, and revokes sessions when a user is disabled", async () => {
+    const user = await createUser({
+      username: "sqlite-user-security",
+      email: "sqlite-user-security@example.com",
+      password: "password",
+      role: "user"
+    });
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      await expect(loginUser(user.username, "wrong-password")).rejects.toThrow("用户名或密码错误");
+    }
+
+    let securityRows = await getSql()<{
+      failed_login_count: number;
+      locked_until: string | null;
+      is_active: number | boolean;
+    }[]>`
+      SELECT failed_login_count, locked_until, is_active
+      FROM users
+      WHERE id = ${user.id}
+    `;
+    expect(Number(securityRows[0]?.failed_login_count || 0)).toBe(4);
+    expect(securityRows[0]?.locked_until).toBeNull();
+
+    await expect(loginUser(user.username, "wrong-password")).rejects.toThrow(
+      "密码错误次数过多，账号已锁定 30 分钟"
+    );
+
+    securityRows = await getSql()<{
+      failed_login_count: number;
+      locked_until: string | null;
+      is_active: number | boolean;
+    }[]>`
+      SELECT failed_login_count, locked_until, is_active
+      FROM users
+      WHERE id = ${user.id}
+    `;
+    expect(Number(securityRows[0]?.failed_login_count || 0)).toBe(5);
+    expect(securityRows[0]?.locked_until).toBeTruthy();
+
+    await updateUserByAdmin(user.id, { unlock: true });
+
+    securityRows = await getSql()<{
+      failed_login_count: number;
+      locked_until: string | null;
+      is_active: number | boolean;
+    }[]>`
+      SELECT failed_login_count, locked_until, is_active
+      FROM users
+      WHERE id = ${user.id}
+    `;
+    expect(Number(securityRows[0]?.failed_login_count || 0)).toBe(0);
+    expect(securityRows[0]?.locked_until).toBeNull();
+
+    const session = await loginUser(user.username, "password");
+    expect(session.user.id).toBe(user.id);
+
+    const activeSessionsBeforeDisable = await getSql()<{
+      count: number;
+    }[]>`
+      SELECT COUNT(*) AS count
+      FROM user_sessions
+      WHERE user_id = ${user.id}
+        AND revoked_at IS NULL
+    `;
+    expect(Number(activeSessionsBeforeDisable[0]?.count || 0)).toBe(1);
+
+    await updateUserByAdmin(user.id, { isActive: false });
+
+    const activeSessionsAfterDisable = await getSql()<{
+      count: number;
+    }[]>`
+      SELECT COUNT(*) AS count
+      FROM user_sessions
+      WHERE user_id = ${user.id}
+        AND revoked_at IS NULL
+    `;
+    expect(Number(activeSessionsAfterDisable[0]?.count || 0)).toBe(0);
+
+    await expect(loginUser(user.username, "password")).rejects.toThrow("账号已停用，请联系管理员");
   });
 });

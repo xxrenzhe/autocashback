@@ -58,7 +58,10 @@ describe("admin users routes", () => {
           role: "user",
           createdAt: "2026-04-16T12:00:00.000Z",
           lastLoginAt: "2026-04-16T12:30:00.000Z",
-          activeSessionCount: 1
+          activeSessionCount: 1,
+          isActive: true,
+          lockedUntil: null,
+          failedLoginCount: 0
         }
       ],
       pagination: {
@@ -80,7 +83,10 @@ describe("admin users routes", () => {
       username: "swiftfox101",
       email: "next@example.com",
       role: "admin",
-      created_at: "2026-04-16T12:00:00.000Z"
+      createdAt: "2026-04-16T12:00:00.000Z",
+      isActive: false,
+      lockedUntil: null,
+      failedLoginCount: 0
     });
     deleteUserByAdmin.mockResolvedValue({
       id: 7,
@@ -160,7 +166,9 @@ describe("admin users routes", () => {
         method: "PATCH",
         body: JSON.stringify({
           email: "next@example.com",
-          role: "admin"
+          role: "admin",
+          isActive: false,
+          unlock: true
         }),
         headers: {
           "Content-Type": "application/json"
@@ -173,9 +181,31 @@ describe("admin users routes", () => {
     expect(response.status).toBe(200);
     expect(updateUserByAdmin).toHaveBeenCalledWith(7, {
       email: "next@example.com",
-      role: "admin"
+      role: "admin",
+      isActive: false,
+      unlock: true
     });
     expect(payload.user.role).toBe("admin");
+  });
+
+  it("prevents disabling the current logged-in admin", async () => {
+    const response = await updateUser(
+      new NextRequest("https://www.autocashback.dev/api/admin/users/1", {
+        method: "PATCH",
+        body: JSON.stringify({
+          isActive: false
+        }),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }),
+      { params: { id: "1" } }
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload.error).toBe("不能停用当前登录账号");
+    expect(updateUserByAdmin).not.toHaveBeenCalled();
   });
 
   it("returns reset password result", async () => {

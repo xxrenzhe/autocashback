@@ -6,15 +6,56 @@ import { getDbType, getSql } from "./client";
 import { hashPassword, verifyPassword } from "./crypto";
 import { getServerEnv } from "./env";
 import { ensureDatabaseReady } from "./schema";
-import { countAsInt } from "./sql-helpers";
+import { booleanValue, countAsInt, plusMinutesExpression } from "./sql-helpers";
 
 const COOKIE_NAME = "autocashback_token";
+const MAX_FAILED_LOGIN_ATTEMPTS = 5;
+const LOGIN_LOCK_WINDOW_MINUTES = 30;
 
 type SessionPayload = {
   userId: number;
   role: "admin" | "user";
   sessionId: string;
 };
+
+function toBooleanFlag(value: unknown) {
+  return value === true || value === 1 || value === "1";
+}
+
+function toNullableTimestamp(value: unknown) {
+  return value ? String(value) : null;
+}
+
+function isFutureTimestamp(value: string | null) {
+  if (!value) {
+    return false;
+  }
+
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) && timestamp > Date.now();
+}
+
+function getRemainingLockMinutes(value: string | null) {
+  if (!value) {
+    return 0;
+  }
+
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.ceil((timestamp - Date.now()) / (60 * 1000)));
+}
+
+function getLoginLockMessage(lockedUntil: string | null) {
+  const remainingMinutes = getRemainingLockMinutes(lockedUntil);
+  if (remainingMinutes > 0) {
+    return `账号已锁定，请 ${remainingMinutes} 分钟后再试`;
+  }
+
+  return "账号已锁定，请稍后再试";
+}
 
 function getSecret() {
   return new TextEncoder().encode(getServerEnv().JWT_SECRET);
@@ -85,8 +126,11 @@ export async function loginUser(
     email: string;
     password_hash: string;
     role: "admin" | "user";
+    is_active: boolean | number;
+    locked_until: string | null;
+    failed_login_count: number;
   }[]>`
-    SELECT id, username, email, password_hash, role
+    SELECT id, username, email, password_hash, role, is_active, locked_until, failed_login_count
     FROM users
     WHERE username = ${usernameOrEmail} OR email = ${usernameOrEmail}
     LIMIT 1
@@ -95,8 +139,36 @@ export async function loginUser(
   const user = users[0];
   if (!user) throw new Error("用户名或密码错误");
 
+  if (!toBooleanFlag(user.is_active)) {
+    throw new Error("账号已停用，请联系管理员");
+  }
+
+  let lockedUntil = toNullableTimestamp(user.locked_until);
+  if (lockedUntil && !isFutureTimestamp(lockedUntil)) {
+    await clearUserLoginSecurityState(user.id);
+    lockedUntil = null;
+  }
+
+  if (lockedUntil) {
+    throw new Error(getLoginLockMessage(lockedUntil));
+  }
+
   const matched = await verifyPassword(password, user.password_hash);
-  if (!matched) throw new Error("用户名或密码错误");
+  if (!matched) {
+    const failureState = await recordFailedLoginAttempt(user.id);
+    if (
+      failureState.failedLoginCount >= MAX_FAILED_LOGIN_ATTEMPTS ||
+      isFutureTimestamp(failureState.lockedUntil)
+    ) {
+      throw new Error(`密码错误次数过多，账号已锁定 ${LOGIN_LOCK_WINDOW_MINUTES} 分钟`);
+    }
+
+    throw new Error("用户名或密码错误");
+  }
+
+  if (Number(user.failed_login_count || 0) > 0) {
+    await clearUserLoginSecurityState(user.id);
+  }
 
   const session = await issueSessionToken(
     {
@@ -130,17 +202,23 @@ export async function verifySessionToken(token?: string | null) {
 
     await ensureDatabaseReady();
     const sql = getSql();
-    const rows = await sql<{
+    const dbType = getDbType();
+    const rows = await sql.unsafe<{
       session_id: string;
-    }[]>`
-      SELECT session_id
+    }[]>(
+      `
+      SELECT user_sessions.session_id
       FROM user_sessions
-      WHERE session_id = ${payload.sessionId}
-        AND token_hash = ${hashSessionToken(token)}
-        AND revoked_at IS NULL
-        AND expires_at > CURRENT_TIMESTAMP
+      INNER JOIN users ON users.id = user_sessions.user_id
+      WHERE user_sessions.session_id = ?
+        AND user_sessions.token_hash = ?
+        AND user_sessions.revoked_at IS NULL
+        AND user_sessions.expires_at > CURRENT_TIMESTAMP
+        AND users.is_active = ${dbType === "postgres" ? "TRUE" : "1"}
       LIMIT 1
-    `;
+    `,
+      [payload.sessionId, hashSessionToken(token)]
+    );
     if (!rows[0]) {
       return null;
     }
@@ -173,14 +251,27 @@ export async function getUserById(userId: number) {
     email: string;
     role: "admin" | "user";
     created_at: string;
+    is_active: boolean | number;
   }[]>`
-    SELECT id, username, email, role, created_at
+    SELECT id, username, email, role, created_at, is_active
     FROM users
     WHERE id = ${userId}
     LIMIT 1
   `;
 
-  return rows[0] ?? null;
+  if (!rows[0]) {
+    return null;
+  }
+
+  return {
+    id: rows[0].id,
+    username: rows[0].username,
+    email: rows[0].email,
+    role: rows[0].role,
+    created_at: rows[0].created_at,
+    createdAt: rows[0].created_at,
+    isActive: toBooleanFlag(rows[0].is_active)
+  };
 }
 
 export async function listUsers() {
@@ -192,8 +283,9 @@ export async function listUsers() {
     email: string;
     role: "admin" | "user";
     created_at: string;
+    is_active: boolean | number;
   }[]>`
-    SELECT id, username, email, role, created_at
+    SELECT id, username, email, role, created_at, is_active
     FROM users
     ORDER BY created_at DESC
   `;
@@ -216,6 +308,9 @@ export type AdminUserListRecord = {
   createdAt: string;
   lastLoginAt: string | null;
   activeSessionCount: number;
+  isActive: boolean;
+  lockedUntil: string | null;
+  failedLoginCount: number;
 };
 
 function generateTemporaryPassword(length = 14) {
@@ -238,7 +333,10 @@ function toAdminUserListRecord(row: Record<string, unknown>): AdminUserListRecor
     role: String(row.role) as "admin" | "user",
     createdAt: String(row.created_at),
     lastLoginAt: row.last_login_at ? String(row.last_login_at) : null,
-    activeSessionCount: Number(row.active_session_count || 0)
+    activeSessionCount: Number(row.active_session_count || 0),
+    isActive: toBooleanFlag(row.is_active),
+    lockedUntil: toNullableTimestamp(row.locked_until),
+    failedLoginCount: Number(row.failed_login_count || 0)
   };
 }
 
@@ -264,7 +362,7 @@ export async function listAdminUsers(input?: AdminUsersQueryInput) {
   };
 
   const whereClauses = ["1 = 1"];
-  const params: Array<string | number> = [];
+  const params: unknown[] = [];
 
   if (search) {
     whereClauses.push("(LOWER(users.username) LIKE ? OR LOWER(users.email) LIKE ?)");
@@ -286,6 +384,9 @@ export async function listAdminUsers(input?: AdminUsersQueryInput) {
         users.email,
         users.role,
         users.created_at,
+        users.is_active,
+        users.locked_until,
+        users.failed_login_count,
         MAX(user_sessions.last_activity_at) AS last_login_at,
         ${countAsInt(
           "COUNT(CASE WHEN user_sessions.revoked_at IS NULL AND user_sessions.expires_at > CURRENT_TIMESTAMP THEN 1 END)",
@@ -294,7 +395,15 @@ export async function listAdminUsers(input?: AdminUsersQueryInput) {
       FROM users
       LEFT JOIN user_sessions ON user_sessions.user_id = users.id
       WHERE ${whereSql}
-      GROUP BY users.id, users.username, users.email, users.role, users.created_at
+      GROUP BY
+        users.id,
+        users.username,
+        users.email,
+        users.role,
+        users.created_at,
+        users.is_active,
+        users.locked_until,
+        users.failed_login_count
       ORDER BY ${orderBy} ${sortOrder}, users.id DESC
       LIMIT ? OFFSET ?
     `,
@@ -357,21 +466,90 @@ export async function updateUserByAdmin(
   input: {
     email?: string;
     role?: "admin" | "user";
+    isActive?: boolean;
+    unlock?: boolean;
   }
 ) {
   await ensureDatabaseReady();
   const sql = getSql();
-  const assignments = [];
-  const params: Array<string | number> = [];
+  const dbType = getDbType();
+  const targetRows = await sql<{
+    id: number;
+    username: string;
+    email: string;
+    role: "admin" | "user";
+    created_at: string;
+    is_active: boolean | number;
+    locked_until: string | null;
+    failed_login_count: number;
+  }[]>`
+    SELECT id, username, email, role, created_at, is_active, locked_until, failed_login_count
+    FROM users
+    WHERE id = ${userId}
+    LIMIT 1
+  `;
 
-  if (input.email !== undefined) {
+  const target = targetRows[0];
+  if (!target) {
+    throw new Error("用户不存在");
+  }
+
+  const currentIsActive = toBooleanFlag(target.is_active);
+  const nextRole = input.role ?? target.role;
+  const nextIsActive = input.isActive ?? currentIsActive;
+
+  if (target.role === "admin" && nextRole !== "admin") {
+    const countRows = await sql.unsafe<{ count: number }[]>(
+      `
+        SELECT ${countAsInt("COUNT(*)", dbType)} AS count
+        FROM users
+        WHERE role = 'admin'
+      `
+    );
+    if (Number(countRows[0]?.count || 0) <= 1) {
+      throw new Error("至少需要保留一个管理员账号");
+    }
+  }
+
+  if (target.role === "admin" && currentIsActive && !nextIsActive) {
+    const activeAdminRows = await sql.unsafe<{ count: number }[]>(
+      `
+        SELECT ${countAsInt("COUNT(*)", dbType)} AS count
+        FROM users
+        WHERE role = 'admin'
+          AND is_active = ${dbType === "postgres" ? "TRUE" : "1"}
+      `
+    );
+    if (Number(activeAdminRows[0]?.count || 0) <= 1) {
+      throw new Error("至少需要保留一个启用中的管理员账号");
+    }
+  }
+
+  const assignments = [];
+  const params: unknown[] = [];
+
+  if (input.email !== undefined && input.email !== target.email) {
     assignments.push("email = ?");
     params.push(input.email);
   }
 
-  if (input.role !== undefined) {
+  if (input.role !== undefined && input.role !== target.role) {
     assignments.push("role = ?");
     params.push(input.role);
+  }
+
+  if (input.isActive !== undefined && input.isActive !== currentIsActive) {
+    assignments.push("is_active = ?");
+    params.push(booleanValue(input.isActive, dbType));
+  }
+
+  const shouldUnlock =
+    Boolean(input.unlock) &&
+    (Number(target.failed_login_count || 0) > 0 || Boolean(target.locked_until));
+
+  if (shouldUnlock) {
+    assignments.push("failed_login_count = 0");
+    assignments.push("locked_until = NULL");
   }
 
   if (!assignments.length) {
@@ -384,12 +562,15 @@ export async function updateUserByAdmin(
     email: string;
     role: "admin" | "user";
     created_at: string;
+    is_active: boolean | number;
+    locked_until: string | null;
+    failed_login_count: number;
   }[]>(
     `
       UPDATE users
       SET ${assignments.join(", ")}
       WHERE id = ?
-      RETURNING id, username, email, role, created_at
+      RETURNING id, username, email, role, created_at, is_active, locked_until, failed_login_count
     `,
     [...params, userId]
   );
@@ -398,12 +579,19 @@ export async function updateUserByAdmin(
     throw new Error("用户不存在");
   }
 
+  if (currentIsActive && !toBooleanFlag(rows[0].is_active)) {
+    await revokeAllUserSessions(userId);
+  }
+
   return {
     id: rows[0].id,
     username: rows[0].username,
     email: rows[0].email,
     role: rows[0].role,
-    created_at: rows[0].created_at
+    createdAt: rows[0].created_at,
+    isActive: toBooleanFlag(rows[0].is_active),
+    lockedUntil: toNullableTimestamp(rows[0].locked_until),
+    failedLoginCount: Number(rows[0].failed_login_count || 0)
   };
 }
 
@@ -415,8 +603,9 @@ export async function deleteUserByAdmin(userId: number) {
     id: number;
     username: string;
     role: "admin" | "user";
+    is_active: boolean | number;
   }[]>`
-    SELECT id, username, role
+    SELECT id, username, role, is_active
     FROM users
     WHERE id = ${userId}
     LIMIT 1
@@ -425,6 +614,10 @@ export async function deleteUserByAdmin(userId: number) {
   const target = targetRows[0];
   if (!target) {
     throw new Error("用户不存在");
+  }
+
+  if (toBooleanFlag(target.is_active)) {
+    throw new Error("无法删除启用中的用户，请先停用该账号");
   }
 
   if (target.role === "admin") {
@@ -471,6 +664,8 @@ export async function resetUserPasswordByAdmin(userId: number) {
   await sql`
     UPDATE users
     SET password_hash = ${passwordHash}
+      , failed_login_count = ${0}
+      , locked_until = ${null}
     WHERE id = ${userId}
   `;
 
@@ -561,6 +756,8 @@ export async function changeUserPassword(input: {
   await sql`
     UPDATE users
     SET password_hash = ${nextHash}
+      , failed_login_count = ${0}
+      , locked_until = ${null}
     WHERE id = ${input.userId}
   `;
 }
@@ -645,4 +842,43 @@ export async function listUserSessions(userId: number, currentSessionId?: string
 
 export function getAuthCookieName() {
   return COOKIE_NAME;
+}
+
+async function clearUserLoginSecurityState(userId: number) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+
+  await sql`
+    UPDATE users
+    SET failed_login_count = ${0},
+        locked_until = ${null}
+    WHERE id = ${userId}
+  `;
+}
+
+async function recordFailedLoginAttempt(userId: number) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const dbType = getDbType();
+  const rows = await sql.unsafe<{
+    failed_login_count: number;
+    locked_until: string | null;
+  }[]>(
+    `
+      UPDATE users
+      SET failed_login_count = failed_login_count + 1,
+          locked_until = CASE
+            WHEN failed_login_count + 1 >= ? THEN ${plusMinutesExpression(LOGIN_LOCK_WINDOW_MINUTES, dbType)}
+            ELSE locked_until
+          END
+      WHERE id = ?
+      RETURNING failed_login_count, locked_until
+    `,
+    [MAX_FAILED_LOGIN_ATTEMPTS, userId]
+  );
+
+  return {
+    failedLoginCount: Number(rows[0]?.failed_login_count || 0),
+    lockedUntil: toNullableTimestamp(rows[0]?.locked_until)
+  };
 }
