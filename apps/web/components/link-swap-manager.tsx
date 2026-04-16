@@ -142,6 +142,22 @@ export function LinkSwapManager() {
     }
   }
 
+  async function disableTask(task: LinkSwapTaskRecord) {
+    setTaskActionLoading(`disable-${task.id}`);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/link-swap/tasks/${task.id}/disable`, {
+        method: "POST"
+      });
+      const payload = await response.json().catch(() => ({}));
+      setMessage(response.ok ? payload.message || "任务已停用" : payload.error || "停用任务失败");
+      await loadAll();
+    } finally {
+      setTaskActionLoading(null);
+    }
+  }
+
   function getTaskStatusLabel(task: LinkSwapTaskRecord) {
     if (!task.enabled || task.status === "idle") {
       return "已停用";
@@ -275,11 +291,11 @@ export function LinkSwapManager() {
                           ) : (
                             <button
                               className="rounded-2xl bg-slate-700 px-4 py-3 text-xs font-semibold text-white"
-                              disabled={taskActionLoading === `save-${task.id}`}
-                              onClick={() => saveTask(task, false)}
+                              disabled={taskActionLoading === `disable-${task.id}`}
+                              onClick={() => disableTask(task)}
                               type="button"
                             >
-                              暂停任务
+                              {taskActionLoading === `disable-${task.id}` ? "暂停中..." : "暂停任务"}
                             </button>
                           )}
                         </div>

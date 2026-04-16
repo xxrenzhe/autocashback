@@ -462,6 +462,44 @@ export async function enableLinkSwapTask(userId: number, taskId: number) {
   return toLinkSwapTaskRecord(rows[0]);
 }
 
+export async function disableLinkSwapTask(userId: number, taskId: number) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const dbType = getDbType();
+
+  const rows = await sql.unsafe<DbRow[]>(
+    `
+      UPDATE link_swap_tasks
+      SET enabled = ?,
+          activation_started_at = ?,
+          status = ?,
+          next_run_at = ?
+      WHERE user_id = ? AND id = ?
+      RETURNING
+        id,
+        user_id,
+        offer_id,
+        enabled,
+        interval_minutes,
+        duration_days,
+        mode,
+        google_customer_id,
+        google_campaign_id,
+        status,
+        consecutive_failures,
+        last_run_at,
+        next_run_at
+    `,
+    [booleanValue(false, dbType), null, "idle", null, userId, taskId]
+  );
+
+  if (!rows[0]) {
+    throw new Error("换链接任务不存在");
+  }
+
+  return toLinkSwapTaskRecord(rows[0]);
+}
+
 export async function listLinkSwapRuns(userId: number): Promise<LinkSwapRunRecord[]> {
   await ensureDatabaseReady();
   const sql = getSql();
