@@ -7,10 +7,10 @@ import {
 } from "@autocashback/db";
 
 import { getRequestUser } from "@/lib/api-auth";
-
-function encodeState(input: { userId: number; timestamp: number }) {
-  return Buffer.from(JSON.stringify(input)).toString("base64url");
-}
+import {
+  attachGoogleAdsOAuthStateCookie,
+  issueGoogleAdsOAuthState
+} from "@/lib/google-ads-oauth-state";
 
 function buildGoogleAdsRedirect(request: NextRequest, error: string) {
   return NextResponse.redirect(
@@ -44,13 +44,8 @@ export async function GET(request: NextRequest) {
     return buildGoogleAdsRedirect(request, "missing_google_ads_config");
   }
 
-  const authUrl = getGoogleAdsAuthorizationUrlForClient(
-    validation.normalizedInput.clientId,
-    encodeState({
-      userId: user.id,
-      timestamp: Date.now()
-    })
-  );
+  const state = issueGoogleAdsOAuthState(user.id);
+  const authUrl = getGoogleAdsAuthorizationUrlForClient(validation.normalizedInput.clientId, state);
 
-  return NextResponse.redirect(authUrl);
+  return attachGoogleAdsOAuthStateCookie(NextResponse.redirect(authUrl), state);
 }

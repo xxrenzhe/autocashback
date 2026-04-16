@@ -9,25 +9,16 @@ import {
 } from "@autocashback/db";
 
 import { getRequestUser } from "@/lib/api-auth";
-
-const STATE_MAX_AGE_MS = 10 * 60 * 1000;
-
-function decodeState(value: string | null) {
-  if (!value) return null;
-
-  try {
-    return JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as {
-      userId: number;
-      timestamp: number;
-    };
-  } catch {
-    return null;
-  }
-}
+import {
+  clearGoogleAdsOAuthStateCookie,
+  verifyGoogleAdsOAuthState
+} from "@/lib/google-ads-oauth-state";
 
 function buildGoogleAdsRedirect(request: NextRequest, error: string) {
-  return NextResponse.redirect(
-    new URL(`/google-ads?error=${encodeURIComponent(error)}`, request.url)
+  return clearGoogleAdsOAuthStateCookie(
+    NextResponse.redirect(
+      new URL(`/google-ads?error=${encodeURIComponent(error)}`, request.url)
+    )
   );
 }
 
@@ -43,25 +34,21 @@ export async function GET(request: NextRequest) {
     return buildGoogleAdsRedirect(request, "missing_code");
   }
 
-  const state = decodeState(url.searchParams.get("state"));
-  if (!state) {
-    return buildGoogleAdsRedirect(request, "invalid_state");
-  }
-
-  if (!Number.isFinite(state.timestamp) || Date.now() - state.timestamp > STATE_MAX_AGE_MS) {
-    return buildGoogleAdsRedirect(request, "state_expired");
-  }
-
   const currentUser = await getRequestUser(request);
-  if (currentUser?.id && currentUser.id !== state.userId) {
-    return buildGoogleAdsRedirect(request, "invalid_state");
-  }
-
-  const userId = state.userId;
-
-  if (!userId) {
+  if (!currentUser) {
     return buildGoogleAdsRedirect(request, "google_ads_oauth");
   }
+
+  const stateError = verifyGoogleAdsOAuthState(
+    request,
+    url.searchParams.get("state"),
+    currentUser.id
+  );
+  if (stateError) {
+    return buildGoogleAdsRedirect(request, stateError);
+  }
+
+  const userId = currentUser.id;
 
   try {
     const credentials = await getGoogleAdsCredentials(userId);
@@ -103,7 +90,9 @@ export async function GET(request: NextRequest) {
 
     await syncGoogleAdsAccounts(userId).catch(() => null);
 
-    return NextResponse.redirect(new URL("/google-ads?success=oauth_connected", request.url));
+    return clearGoogleAdsOAuthStateCookie(
+      NextResponse.redirect(new URL("/google-ads?success=oauth_connected", request.url))
+    );
   } catch (oauthError: unknown) {
     const message = oauthError instanceof Error ? oauthError.message : "oauth_failed";
     return buildGoogleAdsRedirect(request, message);

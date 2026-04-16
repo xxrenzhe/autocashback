@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   clearGoogleAdsCredentials,
   getGoogleAdsCredentialStatus,
+  getGoogleAdsCredentials,
   saveGoogleAdsCredentials,
   validateGoogleAdsCredentialInput
 } from "@autocashback/db";
@@ -27,11 +28,18 @@ export async function PUT(request: NextRequest) {
   }
 
   const body = await request.json();
+  const existing = await getGoogleAdsCredentials(user.id);
+  const mergedInput = {
+    clientId: String(body.clientId || "").trim() || existing?.clientId || "",
+    clientSecret: String(body.clientSecret || "").trim() || existing?.clientSecret || "",
+    developerToken: String(body.developerToken || "").trim() || existing?.developerToken || "",
+    loginCustomerId: String(body.loginCustomerId || "").trim() || existing?.loginCustomerId || ""
+  };
   const validation = validateGoogleAdsCredentialInput({
-    clientId: String(body.clientId || ""),
-    clientSecret: String(body.clientSecret || ""),
-    developerToken: String(body.developerToken || ""),
-    loginCustomerId: String(body.loginCustomerId || "")
+    clientId: mergedInput.clientId,
+    clientSecret: mergedInput.clientSecret,
+    developerToken: mergedInput.developerToken,
+    loginCustomerId: mergedInput.loginCustomerId
   });
 
   if (!validation.valid) {

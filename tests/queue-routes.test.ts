@@ -25,7 +25,7 @@ import { GET as GET_TASKS } from "../apps/web/app/api/queue/tasks/route";
 describe("queue routes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getRequestUser.mockResolvedValue({ id: 7 });
+    getRequestUser.mockResolvedValue({ id: 7, role: "admin" });
   });
 
   it("returns queue stats", async () => {
@@ -72,5 +72,16 @@ describe("queue routes", () => {
       type: "url-swap"
     });
     expect(payload.tasks).toHaveLength(1);
+  });
+
+  it("rejects non-admin access", async () => {
+    getRequestUser.mockResolvedValue({ id: 8, role: "user" });
+
+    const response = await GET_STATS(new NextRequest("https://www.autocashback.dev/api/queue/stats"));
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload.error).toBe("Forbidden");
+    expect(getQueueStats).not.toHaveBeenCalled();
   });
 });

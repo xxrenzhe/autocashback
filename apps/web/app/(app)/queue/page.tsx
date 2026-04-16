@@ -1,5 +1,7 @@
+import { requireAdmin } from "@/lib/auth";
 import { QueueMonitor } from "@/components/queue-monitor";
 
-export default function QueuePage() {
+export default async function QueuePage() {
+  await requireAdmin();
   return <QueueMonitor />;
 }

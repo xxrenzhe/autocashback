@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSettings, saveSettings } from "@autocashback/db";
 
 import { getRequestUser } from "@/lib/api-auth";
+import { serializeSettingForClient } from "@/lib/settings-client-serialization";
 
 export async function GET(request: NextRequest) {
   const user = await getRequestUser(request);
@@ -11,7 +12,9 @@ export async function GET(request: NextRequest) {
   }
 
   const settings = await getSettings(user.id);
-  return NextResponse.json({ settings });
+  return NextResponse.json({
+    settings: settings.map(serializeSettingForClient)
+  });
 }
 
 export async function PUT(request: NextRequest) {

@@ -192,8 +192,10 @@ describe.sequential("sqlite database bootstrap", () => {
 
     const credentials = await getGoogleAdsCredentialStatus(user.id);
     expect(credentials.hasCredentials).toBe(true);
+    expect(credentials.hasClientId).toBe(true);
+    expect(credentials.hasClientSecret).toBe(true);
+    expect(credentials.hasDeveloperToken).toBe(true);
     expect(credentials.hasRefreshToken).toBe(false);
-    expect(credentials.refreshToken).toBeNull();
 
     await updateGoogleAdsTokens(user.id, {
       accessToken: "access-token",
@@ -203,7 +205,6 @@ describe.sequential("sqlite database bootstrap", () => {
 
     const authorizedCredentials = await getGoogleAdsCredentialStatus(user.id);
     expect(authorizedCredentials.hasRefreshToken).toBe(true);
-    expect(authorizedCredentials.refreshToken).toBe("refresh-token-value");
     expect(authorizedCredentials.tokenExpiresAt).toBe("2026-04-16T12:00:00.000Z");
 
     const [task] = await listLinkSwapTasks(user.id);
@@ -232,8 +233,10 @@ describe.sequential("sqlite database bootstrap", () => {
 
     const clearedCredentials = await getGoogleAdsCredentialStatus(user.id);
     expect(clearedCredentials.hasCredentials).toBe(false);
+    expect(clearedCredentials.hasClientId).toBe(false);
+    expect(clearedCredentials.hasClientSecret).toBe(false);
+    expect(clearedCredentials.hasDeveloperToken).toBe(false);
     expect(clearedCredentials.hasRefreshToken).toBe(false);
-    expect(clearedCredentials.refreshToken).toBeNull();
 
     const scriptToken = "script-token-for-test";
     await getSql()`
@@ -265,6 +268,58 @@ describe.sequential("sqlite database bootstrap", () => {
     const storedClickFarmTask = await getClickFarmTaskByOfferId(user.id, offer.id);
     expect(storedClickFarmTask?.id).toBe(clickFarmTask.id);
     expect(storedClickFarmTask?.refererConfig?.type).toBe("random");
+
+    await getSql()`
+      UPDATE click_farm_tasks
+      SET progress = 42,
+          total_clicks = 30,
+          success_clicks = 24,
+          failed_clicks = 6,
+          daily_history = ${JSON.stringify([
+            {
+              date: "2026-04-16",
+              target: 120,
+              actual: 30,
+              success: 24,
+              failed: 6,
+              hourlyBreakdown: Array.from({ length: 24 }, () => ({
+                target: 5,
+                actual: 1,
+                success: 1,
+                failed: 0
+              }))
+            }
+          ])},
+          started_at = ${"2026-04-16T01:00:00.000Z"},
+          completed_at = ${"2026-04-16T02:00:00.000Z"}
+      WHERE id = ${clickFarmTask.id}
+    `;
+
+    const recreatedTask = await createClickFarmTask(user.id, {
+      offerId: offer.id,
+      dailyClickCount: 180,
+      startTime: "08:00",
+      endTime: "24:00",
+      durationDays: 21,
+      scheduledStartDate: "2026-04-18",
+      hourlyDistribution: Array.from({ length: 24 }, (_, hour) => (hour >= 8 ? 9 : 0)),
+      refererConfig: {
+        type: "specific",
+        referer: "https://www.google.com/"
+      }
+    });
+
+    expect(recreatedTask.id).toBe(clickFarmTask.id);
+    expect(recreatedTask.dailyClickCount).toBe(180);
+    expect(recreatedTask.progress).toBe(0);
+    expect(recreatedTask.totalClicks).toBe(0);
+    expect(recreatedTask.successClicks).toBe(0);
+    expect(recreatedTask.failedClicks).toBe(0);
+    expect(recreatedTask.startedAt).toBeNull();
+    expect(recreatedTask.completedAt).toBeNull();
+    expect(recreatedTask.dailyHistory).toHaveLength(1);
+    expect(recreatedTask.dailyHistory[0]?.date).toBe("2026-04-18");
+    expect(recreatedTask.dailyHistory[0]?.target).toBe(180);
   });
 
   it("cleans pending queue tasks when link swap or click farm tasks are stopped or deleted", async () => {

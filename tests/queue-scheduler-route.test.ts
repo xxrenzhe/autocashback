@@ -15,10 +15,6 @@ const { getRequestUser } = vi.hoisted(() => ({
   getRequestUser: vi.fn()
 }));
 
-const { runOrchestratorTick } = vi.hoisted(() => ({
-  runOrchestratorTick: vi.fn()
-}));
-
 vi.mock("@autocashback/db", () => ({
   getClickFarmSchedulerMetrics,
   getLinkSwapSchedulerMetrics,
@@ -29,16 +25,12 @@ vi.mock("@/lib/api-auth", () => ({
   getRequestUser
 }));
 
-vi.mock("../apps/scheduler/src/orchestrator", () => ({
-  runOrchestratorTick
-}));
-
 import { GET, POST } from "../apps/web/app/api/queue/scheduler/route";
 
 describe("queue scheduler route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getRequestUser.mockResolvedValue({ id: 7 });
+    getRequestUser.mockResolvedValue({ id: 7, role: "admin" });
     getQueueSchedulerHeartbeat.mockResolvedValue({
       heartbeatAt: "2026-04-16T04:00:00.000Z",
       lastTickAt: "2026-04-16T04:00:00.000Z",
@@ -64,21 +56,6 @@ describe("queue scheduler route", () => {
       lastQueuedAt: "2026-04-16T03:50:00.000Z",
       checkInterval: "每分钟"
     });
-    runOrchestratorTick.mockResolvedValue({
-      processed: 4,
-      inserted: 3,
-      duplicate: 1,
-      linkSwap: {
-        processed: 1,
-        inserted: 1,
-        duplicate: 0
-      },
-      clickFarm: {
-        processed: 3,
-        inserted: 2,
-        duplicate: 1
-      }
-    });
   });
 
   it("returns scheduler health status", async () => {
@@ -102,7 +79,17 @@ describe("queue scheduler route", () => {
     expect(payload.error).toBe("Unauthorized");
   });
 
-  it("runs orchestrator tick on manual trigger", async () => {
+  it("rejects non-admin scheduler reads", async () => {
+    getRequestUser.mockResolvedValue({ id: 8, role: "user" });
+
+    const response = await GET(new NextRequest("https://www.autocashback.dev/api/queue/scheduler"));
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload.error).toBe("Forbidden");
+  });
+
+  it("returns unsupported for manual trigger", async () => {
     const response = await POST(
       new NextRequest("https://www.autocashback.dev/api/queue/scheduler", {
         method: "POST"
@@ -110,10 +97,9 @@ describe("queue scheduler route", () => {
     );
     const payload = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(runOrchestratorTick).toHaveBeenCalledTimes(1);
-    expect(payload.success).toBe(true);
-    expect(payload.data.processed).toBe(4);
-    expect(payload.message).toContain("处理 4");
+    expect(response.status).toBe(409);
+    expect(payload.success).toBe(false);
+    expect(payload.mode).toBe("external_scheduler_process");
+    expect(payload.error).toContain("不再支持手动调度");
   });
 });

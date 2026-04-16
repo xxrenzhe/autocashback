@@ -63,6 +63,9 @@ export async function GET(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (user.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const [heartbeat, clickFarmMetrics, linkSwapMetrics] = await Promise.all([
     getQueueSchedulerHeartbeat(),
@@ -112,13 +115,16 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (user.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
-  const { runOrchestratorTick } = await import("../../../../../scheduler/src/orchestrator");
-  const result = await runOrchestratorTick();
-
-  return NextResponse.json({
-    success: true,
-    data: result,
-    message: `手动触发完成：处理 ${result.processed}，新入队 ${result.inserted}，重复跳过 ${result.duplicate}`
-  });
+  return NextResponse.json(
+    {
+      success: false,
+      error: "该接口不再支持手动调度；请通过独立 scheduler 进程管理和观测",
+      mode: "external_scheduler_process"
+    },
+    { status: 409 }
+  );
 }

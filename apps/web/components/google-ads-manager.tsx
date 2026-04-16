@@ -164,9 +164,9 @@ export function GoogleAdsManager() {
   }
 
   const canConnect = Boolean(
-    credentials?.clientId &&
-      credentials?.clientSecret &&
-      credentials?.developerToken &&
+    credentials?.hasClientId &&
+      credentials?.hasClientSecret &&
+      credentials?.hasDeveloperToken &&
       credentials?.loginCustomerId
   );
   const hasStoredConfig = Boolean(credentials?.hasCredentials);

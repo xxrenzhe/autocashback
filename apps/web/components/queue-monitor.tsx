@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import type {
   QueueStats,
@@ -109,7 +109,6 @@ export function QueueMonitor() {
   const [status, setStatus] = useState<QueueTaskStatus | "all">("all");
   const [type, setType] = useState<QueueTaskType | "all">("all");
   const [message, setMessage] = useState("");
-  const [schedulerMessage, setSchedulerMessage] = useState("");
   const [schedulerError, setSchedulerError] = useState("");
   const [schedulerLoading, setSchedulerLoading] = useState(false);
   const [schedulerCollapsed, setSchedulerCollapsed] = useState(true);
@@ -119,7 +118,7 @@ export function QueueMonitor() {
   const [configMessage, setConfigMessage] = useState("");
   const [configError, setConfigError] = useState("");
 
-  async function loadQueueData() {
+  const loadQueueData = useCallback(async () => {
     try {
       const query = new URLSearchParams();
       if (status !== "all") {
@@ -151,7 +150,7 @@ export function QueueMonitor() {
     } catch (error: unknown) {
       setMessage(error instanceof Error ? error.message : "加载队列数据失败");
     }
-  }
+  }, [status, type]);
 
   async function loadSchedulerStatus() {
     try {
@@ -168,29 +167,6 @@ export function QueueMonitor() {
     } catch (error: unknown) {
       const nextError = error instanceof Error ? error.message : "加载调度器状态失败";
       setSchedulerError(nextError);
-    } finally {
-      setSchedulerLoading(false);
-    }
-  }
-
-  async function triggerScheduler() {
-    setSchedulerLoading(true);
-    setSchedulerMessage("");
-    setSchedulerError("");
-
-    try {
-      const response = await fetch("/api/queue/scheduler", { method: "POST" });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(payload.error || "手动触发调度器失败");
-      }
-
-      setSchedulerMessage(payload.message || "调度器已手动触发");
-      await Promise.all([loadQueueData(), loadSchedulerStatus()]);
-    } catch (error: unknown) {
-      const nextError = error instanceof Error ? error.message : "手动触发调度器失败";
-      setSchedulerError(nextError);
-      setSchedulerMessage(nextError);
     } finally {
       setSchedulerLoading(false);
     }
@@ -291,7 +267,7 @@ export function QueueMonitor() {
 
   useEffect(() => {
     void loadQueueData();
-  }, [status, type]);
+  }, [loadQueueData]);
 
   useEffect(() => {
     void loadQueueConfig();
@@ -311,7 +287,7 @@ export function QueueMonitor() {
     }, 30_000);
 
     return () => clearInterval(interval);
-  }, [status, type]);
+  }, [loadQueueData]);
 
   useEffect(() => {
     if (schedulerCollapsed) {
@@ -414,14 +390,6 @@ export function QueueMonitor() {
               {schedulerCollapsed ? "展开查看调度器健康检查" : "收起调度器健康检查"}
             </p>
           </button>
-          <button
-            className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
-            disabled={schedulerLoading}
-            onClick={triggerScheduler}
-            type="button"
-          >
-            {schedulerLoading ? "触发中..." : "手动触发"}
-          </button>
         </div>
 
         {!schedulerCollapsed && schedulerLoading && !schedulerStatus ? (
@@ -445,6 +413,9 @@ export function QueueMonitor() {
         {!schedulerCollapsed && schedulerStatus ? (
           <>
             <p className="mt-4 rounded-2xl bg-sky-50 px-4 py-4 text-sm text-sky-800">{schedulerStatus.note}</p>
+            <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+              手动调度入口已关闭。当前实现与 autobb 一致，只允许通过独立 scheduler 进程执行编排，这里仅用于观测心跳、队列积压和配置状态。
+            </p>
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
               <SchedulerCard
                 label="补点击调度器"
@@ -475,7 +446,6 @@ export function QueueMonitor() {
           </>
         ) : null}
 
-        {schedulerMessage ? <p className="mt-4 text-sm text-slate-600">{schedulerMessage}</p> : null}
         {!schedulerCollapsed && schedulerError && schedulerStatus ? (
           <p className="mt-4 text-sm text-red-700">{schedulerError}</p>
         ) : null}

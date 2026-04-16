@@ -83,5 +83,6 @@ describe("google ads authorize route", () => {
       expect.any(String)
     );
     expect(response.headers.get("location")).toBe("https://accounts.google.com/o/oauth2/v2/auth?state=test");
+    expect(response.cookies.get("autocashback_google_ads_oauth_state")?.value).toBeTruthy();
   });
 });

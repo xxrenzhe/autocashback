@@ -164,6 +164,19 @@ function buildHourlyBreakdown(distribution: number[]) {
   }));
 }
 
+function buildInitialDailyHistory(input: SaveClickFarmTaskInput) {
+  return [
+    {
+      date: input.scheduledStartDate,
+      target: input.dailyClickCount,
+      actual: 0,
+      success: 0,
+      failed: 0,
+      hourlyBreakdown: buildHourlyBreakdown(input.hourlyDistribution)
+    }
+  ];
+}
+
 function toClickFarmTask(row: DbRow): ClickFarmTask {
   const hourlyDistribution = parseJsonArray<number[]>(row.hourly_distribution, []);
   const dailyHistory = parseJsonArray<ClickFarmTask["dailyHistory"]>(row.daily_history, []);
@@ -292,6 +305,20 @@ export async function createClickFarmTask(userId: number, input: SaveClickFarmTa
     throw new Error("Offer 不存在");
   }
 
+  const existingRows = await sql<DbRow[]>`
+    SELECT id
+    FROM click_farm_tasks
+    WHERE user_id = ${userId}
+      AND offer_id = ${input.offerId}
+      AND is_deleted = FALSE
+    ORDER BY updated_at DESC, id DESC
+    LIMIT 1
+  `;
+  const existingTaskId = existingRows[0]?.id ? Number(existingRows[0].id) : null;
+  if (existingTaskId) {
+    return updateClickFarmTask(userId, existingTaskId, input);
+  }
+
   const timezone = input.timezone || getTimezoneForCountry(String(offer.target_country || ""));
   const nextRunAt = calculateClickFarmNextRunAt({
     scheduledStartDate: input.scheduledStartDate,
@@ -299,16 +326,7 @@ export async function createClickFarmTask(userId: number, input: SaveClickFarmTa
     hourlyDistribution: input.hourlyDistribution,
     timezone
   });
-  const dailyHistory = [
-    {
-      date: input.scheduledStartDate,
-      target: input.dailyClickCount,
-      actual: 0,
-      success: 0,
-      failed: 0,
-      hourlyBreakdown: buildHourlyBreakdown(input.hourlyDistribution)
-    }
-  ];
+  const dailyHistory = buildInitialDailyHistory(input);
 
   const rows = await sql<DbRow[]>`
     INSERT INTO click_farm_tasks (
@@ -369,6 +387,7 @@ export async function updateClickFarmTask(
     hourlyDistribution: input.hourlyDistribution,
     timezone
   });
+  const dailyHistory = buildInitialDailyHistory(input);
   const rows = await sql<DbRow[]>`
     UPDATE click_farm_tasks
     SET offer_id = ${input.offerId},
@@ -384,6 +403,13 @@ export async function updateClickFarmTask(
         pause_reason = ${null},
         pause_message = ${null},
         paused_at = ${null},
+        progress = ${0},
+        total_clicks = ${0},
+        success_clicks = ${0},
+        failed_clicks = ${0},
+        daily_history = ${JSON.stringify(dailyHistory)},
+        started_at = ${null},
+        completed_at = ${null},
         next_run_at = ${nextRunAt},
         updated_at = CURRENT_TIMESTAMP
     WHERE id = ${taskId}

@@ -65,6 +65,17 @@ describe("queue config route", () => {
     expect(payload.configSource).toBe("database");
   });
 
+  it("rejects non-admin reads", async () => {
+    getRequestUser.mockResolvedValue({ id: 2, role: "user" });
+
+    const response = await GET(new NextRequest("https://www.autocashback.dev/api/queue/config"));
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload.error).toBe("Forbidden");
+    expect(getQueueSystemConfigState).not.toHaveBeenCalled();
+  });
+
   it("rejects non-admin updates", async () => {
     getRequestUser.mockResolvedValue({ id: 2, role: "user" });
 

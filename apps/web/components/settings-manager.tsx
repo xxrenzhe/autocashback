@@ -61,8 +61,10 @@ export function SettingsManager() {
     clientSecret: "",
     developerToken: "",
     loginCustomerId: "",
+    hasClientId: false,
+    hasClientSecret: false,
+    hasDeveloperToken: false,
     hasRefreshToken: false,
-    refreshToken: "",
     tokenExpiresAt: "",
     lastVerifiedAt: ""
   });
@@ -101,12 +103,14 @@ export function SettingsManager() {
       template: scriptPayload.template || ""
     });
     setGoogleAdsConfig({
-      clientId: googleAdsPayload.credentials?.clientId || "",
-      clientSecret: googleAdsPayload.credentials?.clientSecret || "",
-      developerToken: googleAdsPayload.credentials?.developerToken || "",
+      clientId: "",
+      clientSecret: "",
+      developerToken: "",
       loginCustomerId: googleAdsPayload.credentials?.loginCustomerId || "",
+      hasClientId: Boolean(googleAdsPayload.credentials?.hasClientId),
+      hasClientSecret: Boolean(googleAdsPayload.credentials?.hasClientSecret),
+      hasDeveloperToken: Boolean(googleAdsPayload.credentials?.hasDeveloperToken),
       hasRefreshToken: Boolean(googleAdsPayload.credentials?.hasRefreshToken),
-      refreshToken: googleAdsPayload.credentials?.refreshToken || "",
       tokenExpiresAt: googleAdsPayload.credentials?.tokenExpiresAt || "",
       lastVerifiedAt: googleAdsPayload.credentials?.lastVerifiedAt || ""
     });
@@ -452,6 +456,9 @@ export function SettingsManager() {
             Client ID
             <input
               className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+              placeholder={
+                googleAdsConfig.hasClientId ? "已配置，留空表示保持不变" : "Google OAuth Client ID"
+              }
               value={googleAdsConfig.clientId}
               onChange={(event) =>
                 setGoogleAdsConfig((current) => ({
@@ -466,6 +473,9 @@ export function SettingsManager() {
             Client Secret
             <input
               className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+              placeholder={
+                googleAdsConfig.hasClientSecret ? "已配置，留空表示保持不变" : "Google OAuth Client Secret"
+              }
               value={googleAdsConfig.clientSecret}
               onChange={(event) =>
                 setGoogleAdsConfig((current) => ({
@@ -480,6 +490,9 @@ export function SettingsManager() {
             Developer Token
             <input
               className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+              placeholder={
+                googleAdsConfig.hasDeveloperToken ? "已配置，留空表示保持不变" : "Google Ads Developer Token"
+              }
               value={googleAdsConfig.developerToken}
               onChange={(event) =>
                 setGoogleAdsConfig((current) => ({
@@ -507,9 +520,10 @@ export function SettingsManager() {
         </div>
 
         <div className="mt-5 grid gap-3 rounded-[28px] border border-brand-line bg-stone-50 p-5 text-sm text-slate-600 lg:grid-cols-3">
-          <p className="break-all font-mono">
-            Refresh Token：{googleAdsConfig.refreshToken || (googleAdsConfig.hasRefreshToken ? "已连接但未返回值" : "未授权")}
-          </p>
+          <p>Client ID：{googleAdsConfig.hasClientId ? "已保存" : "未配置"}</p>
+          <p>Client Secret：{googleAdsConfig.hasClientSecret ? "已保存" : "未配置"}</p>
+          <p>Developer Token：{googleAdsConfig.hasDeveloperToken ? "已保存" : "未配置"}</p>
+          <p>Refresh Token：{googleAdsConfig.hasRefreshToken ? "已获取" : "未授权"}</p>
           <p>最近验证：{googleAdsConfig.lastVerifiedAt || "尚未验证"}</p>
           <p>Token 过期：{googleAdsConfig.tokenExpiresAt || "未获取"}</p>
         </div>

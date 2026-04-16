@@ -90,11 +90,10 @@ export interface LinkSwapRunRecord {
 
 export interface GoogleAdsCredentialStatus {
   hasCredentials: boolean;
+  hasClientId: boolean;
+  hasClientSecret: boolean;
+  hasDeveloperToken: boolean;
   hasRefreshToken: boolean;
-  refreshToken: string | null;
-  clientId: string | null;
-  clientSecret: string | null;
-  developerToken: string | null;
   loginCustomerId: string | null;
   tokenExpiresAt: string | null;
   lastVerifiedAt: string | null;
