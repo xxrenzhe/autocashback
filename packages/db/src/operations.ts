@@ -861,6 +861,8 @@ export async function expireLinkSwapTask(taskId: number) {
         activation_started_at = ${null}
     WHERE id = ${taskId}
   `;
+
+  await removePendingLinkSwapQueueTasksByTaskIds([taskId]);
 }
 
 export async function getProxyUrls(userId: number, targetCountry?: string) {

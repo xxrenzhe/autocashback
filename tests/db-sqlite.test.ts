@@ -14,6 +14,8 @@ import {
   deleteClickFarmTask,
   deleteOffer,
   disableLinkSwapTask,
+  completeClickFarmTask,
+  expireLinkSwapTask,
   enableLinkSwapTask,
   enqueueQueueTask,
   ensureDatabaseReady,
@@ -25,6 +27,7 @@ import {
   getSettings,
   listLinkSwapTasks,
   restartClickFarmTask,
+  setClickFarmTaskPaused,
   stopClickFarmTask,
   listUsers,
   saveGoogleAdsCredentials,
@@ -569,6 +572,119 @@ describe.sequential("sqlite database bootstrap", () => {
     await scheduleLinkSwapTaskNow(user.id, Number(linkSwapTask?.id));
     await stopClickFarmTask(user.id, clickFarmTask.id);
     await restartClickFarmTask(user.id, clickFarmTask.id);
+
+    remainingQueueTasks = await getSql()<{
+      id: string;
+    }[]>`
+      SELECT id
+      FROM unified_queue_tasks
+      WHERE user_id = ${user.id}
+      ORDER BY id ASC
+    `;
+
+    expect(remainingQueueTasks).toHaveLength(0);
+  });
+
+  it("cleans pending queue tasks when tasks are auto-paused, auto-completed, or auto-expired", async () => {
+    const user = await createUser({
+      username: "sqlite-user-auto-cleanup",
+      email: "sqlite-user-auto-cleanup@example.com",
+      password: "password",
+      role: "user"
+    });
+
+    const account = await createAccount(user.id, {
+      platformCode: "topcashback",
+      accountName: "Auto Cleanup Account",
+      registerEmail: "sqlite-user-auto-cleanup@example.com",
+      payoutMethod: "paypal",
+      notes: "auto cleanup"
+    });
+
+    const offer = await createOffer(user.id, {
+      platformCode: "topcashback",
+      cashbackAccountId: account.id,
+      promoLink: "https://example.com/auto-cleanup",
+      targetCountry: "US",
+      brandName: "Brand Auto Cleanup",
+      campaignLabel: "Campaign Auto Cleanup",
+      commissionCapUsd: 88,
+      manualRecordedCommissionUsd: 12
+    });
+
+    const [linkSwapTask] = await listLinkSwapTasks(user.id);
+    expect(linkSwapTask).toBeTruthy();
+
+    const clickFarmTask = await createClickFarmTask(user.id, {
+      offerId: offer.id,
+      dailyClickCount: 24,
+      startTime: "06:00",
+      endTime: "24:00",
+      durationDays: 7,
+      scheduledStartDate: "2026-04-16",
+      hourlyDistribution: Array.from({ length: 24 }, (_, hour) => (hour >= 6 ? 1 : 0)),
+      refererConfig: {
+        type: "random"
+      }
+    });
+
+    await enqueueQueueTask({
+      id: `auto-cleanup-click-pause-trigger-${clickFarmTask.id}`,
+      type: "click-farm-trigger",
+      userId: user.id,
+      payload: { clickFarmTaskId: clickFarmTask.id }
+    });
+    await enqueueQueueTask({
+      id: `auto-cleanup-click-pause-batch-${clickFarmTask.id}`,
+      type: "click-farm-batch",
+      userId: user.id,
+      payload: { clickFarmTaskId: clickFarmTask.id }
+    });
+    await setClickFarmTaskPaused(clickFarmTask.id, "缺少 US 或 GLOBAL 代理");
+
+    let remainingQueueTasks = await getSql()<{
+      id: string;
+    }[]>`
+      SELECT id
+      FROM unified_queue_tasks
+      WHERE user_id = ${user.id}
+      ORDER BY id ASC
+    `;
+
+    expect(remainingQueueTasks).toHaveLength(0);
+
+    await enqueueQueueTask({
+      id: `auto-cleanup-click-complete-trigger-${clickFarmTask.id}`,
+      type: "click-farm-trigger",
+      userId: user.id,
+      payload: { clickFarmTaskId: clickFarmTask.id }
+    });
+    await enqueueQueueTask({
+      id: `auto-cleanup-click-complete-run-${clickFarmTask.id}`,
+      type: "click-farm",
+      userId: user.id,
+      payload: { clickFarmTaskId: clickFarmTask.id }
+    });
+    await completeClickFarmTask(clickFarmTask.id);
+
+    remainingQueueTasks = await getSql()<{
+      id: string;
+    }[]>`
+      SELECT id
+      FROM unified_queue_tasks
+      WHERE user_id = ${user.id}
+      ORDER BY id ASC
+    `;
+
+    expect(remainingQueueTasks).toHaveLength(0);
+
+    await enqueueQueueTask({
+      id: `auto-cleanup-link-expire-${linkSwapTask?.id}`,
+      type: "url-swap",
+      userId: user.id,
+      payload: { linkSwapTaskId: linkSwapTask?.id }
+    });
+    await expireLinkSwapTask(Number(linkSwapTask?.id));
 
     remainingQueueTasks = await getSql()<{
       id: string;

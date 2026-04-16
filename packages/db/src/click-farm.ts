@@ -457,6 +457,8 @@ export async function setClickFarmTaskPaused(taskId: number, message: string) {
         updated_at = CURRENT_TIMESTAMP
     WHERE id = ${taskId}
   `;
+
+  await removePendingClickFarmQueueTasksByTaskIds([taskId]);
 }
 
 export async function completeClickFarmTask(taskId: number) {
@@ -471,6 +473,8 @@ export async function completeClickFarmTask(taskId: number) {
         updated_at = CURRENT_TIMESTAMP
     WHERE id = ${taskId}
   `;
+
+  await removePendingClickFarmQueueTasksByTaskIds([taskId]);
 }
 
 export async function recordClickFarmTaskRun(
