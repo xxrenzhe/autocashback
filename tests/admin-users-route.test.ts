@@ -137,7 +137,9 @@ describe("admin users routes", () => {
 
   it("lists admin users with query params", async () => {
     const response = await listUsers(
-      new NextRequest("https://www.autocashback.dev/api/admin/users?page=2&limit=20&search=swift&role=user&sortBy=username&sortOrder=asc")
+      new NextRequest(
+        "https://www.autocashback.dev/api/admin/users?page=2&limit=20&search=swift&role=user&status=risk&sortBy=status&sortOrder=asc"
+      )
     );
     const payload = await response.json();
 
@@ -147,7 +149,8 @@ describe("admin users routes", () => {
       limit: 20,
       search: "swift",
       role: "user",
-      sortBy: "username",
+      status: "risk",
+      sortBy: "status",
       sortOrder: "asc"
     });
     expect(payload.users[0].username).toBe("swiftfox101");

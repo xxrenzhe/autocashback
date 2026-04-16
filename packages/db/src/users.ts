@@ -308,7 +308,8 @@ export type AdminUsersQueryInput = {
   page?: number;
   role?: "admin" | "user" | "all";
   search?: string;
-  sortBy?: "id" | "username" | "email" | "role" | "createdAt" | "lastLoginAt";
+  status?: "all" | "risk" | "locked" | "disabled" | "active-session";
+  sortBy?: "id" | "username" | "email" | "role" | "createdAt" | "lastLoginAt" | "status";
   sortOrder?: "asc" | "desc";
 };
 
@@ -410,6 +411,21 @@ function formatAlertTimestamp(value: string | null | undefined) {
   return value || new Date().toISOString();
 }
 
+function getLockedSqlExpression(dbType: ReturnType<typeof getDbType>, userAlias = "users") {
+  return dbType === "postgres"
+    ? `(${userAlias}.locked_until IS NOT NULL AND ${userAlias}.locked_until > CURRENT_TIMESTAMP)`
+    : `(${userAlias}.locked_until IS NOT NULL AND datetime(${userAlias}.locked_until) > datetime('now'))`;
+}
+
+function getActiveSessionCountExpression(dbType: ReturnType<typeof getDbType>, sessionAlias = "user_sessions") {
+  const activeSessionPredicate =
+    dbType === "postgres"
+      ? `${sessionAlias}.revoked_at IS NULL AND ${sessionAlias}.expires_at > CURRENT_TIMESTAMP`
+      : `${sessionAlias}.revoked_at IS NULL AND datetime(${sessionAlias}.expires_at) > datetime('now')`;
+
+  return countAsInt(`COUNT(CASE WHEN ${activeSessionPredicate} THEN 1 END)`, dbType);
+}
+
 export async function listAdminUsers(input?: AdminUsersQueryInput) {
   await ensureDatabaseReady();
   const sql = getSql();
@@ -419,8 +435,23 @@ export async function listAdminUsers(input?: AdminUsersQueryInput) {
   const offset = (page - 1) * limit;
   const search = String(input?.search || "").trim().toLowerCase();
   const role = input?.role === "admin" || input?.role === "user" ? input.role : null;
+  const status =
+    input?.status === "risk" ||
+    input?.status === "locked" ||
+    input?.status === "disabled" ||
+    input?.status === "active-session"
+      ? input.status
+      : "all";
   const sortBy = input?.sortBy || "createdAt";
   const sortOrder = input?.sortOrder === "asc" ? "ASC" : "DESC";
+  const lockedSql = getLockedSqlExpression(dbType);
+  const activeSessionCountSql = getActiveSessionCountExpression(dbType);
+  const statusRankSql = `CASE
+      WHEN users.is_active = ${dbType === "postgres" ? "FALSE" : "0"} THEN 3
+      WHEN ${lockedSql} THEN 2
+      WHEN users.failed_login_count > 0 THEN 1
+      ELSE 0
+    END`;
 
   const sortColumnMap: Record<NonNullable<AdminUsersQueryInput["sortBy"]>, string> = {
     id: "users.id",
@@ -428,11 +459,13 @@ export async function listAdminUsers(input?: AdminUsersQueryInput) {
     email: "users.email",
     role: "users.role",
     createdAt: "users.created_at",
-    lastLoginAt: "last_login_at"
+    lastLoginAt: "last_login_at",
+    status: statusRankSql
   };
 
   const whereClauses = ["1 = 1"];
   const params: unknown[] = [];
+  const havingClauses: string[] = [];
 
   if (search) {
     whereClauses.push("(LOWER(users.username) LIKE ? OR LOWER(users.email) LIKE ?)");
@@ -444,10 +477,22 @@ export async function listAdminUsers(input?: AdminUsersQueryInput) {
     params.push(role);
   }
 
+  if (status === "risk") {
+    whereClauses.push(
+      `(users.is_active = ${dbType === "postgres" ? "FALSE" : "0"} OR ${lockedSql} OR users.failed_login_count > 0)`
+    );
+  } else if (status === "locked") {
+    whereClauses.push(lockedSql);
+  } else if (status === "disabled") {
+    whereClauses.push(`users.is_active = ${dbType === "postgres" ? "FALSE" : "0"}`);
+  } else if (status === "active-session") {
+    havingClauses.push(`${activeSessionCountSql} > 0`);
+  }
+
   const whereSql = whereClauses.join(" AND ");
+  const havingSql = havingClauses.length ? `HAVING ${havingClauses.join(" AND ")}` : "";
   const orderBy = sortColumnMap[sortBy] || sortColumnMap.createdAt;
-  const rows = await sql.unsafe<Record<string, unknown>[]>(
-    `
+  const groupedUsersSql = `
       SELECT
         users.id,
         users.username,
@@ -458,10 +503,7 @@ export async function listAdminUsers(input?: AdminUsersQueryInput) {
         users.locked_until,
         users.failed_login_count,
         MAX(user_sessions.last_activity_at) AS last_login_at,
-        ${countAsInt(
-          "COUNT(CASE WHEN user_sessions.revoked_at IS NULL AND user_sessions.expires_at > CURRENT_TIMESTAMP THEN 1 END)",
-          dbType
-        )} AS active_session_count
+        ${activeSessionCountSql} AS active_session_count
       FROM users
       LEFT JOIN user_sessions ON user_sessions.user_id = users.id
       WHERE ${whereSql}
@@ -474,6 +516,12 @@ export async function listAdminUsers(input?: AdminUsersQueryInput) {
         users.is_active,
         users.locked_until,
         users.failed_login_count
+      ${havingSql}
+    `;
+
+  const rows = await sql.unsafe<Record<string, unknown>[]>(
+    `
+      ${groupedUsersSql}
       ORDER BY ${orderBy} ${sortOrder}, users.id DESC
       LIMIT ? OFFSET ?
     `,
@@ -483,8 +531,7 @@ export async function listAdminUsers(input?: AdminUsersQueryInput) {
   const totalRows = await sql.unsafe<{ count: number }[]>(
     `
       SELECT ${countAsInt("COUNT(*)", dbType)} AS count
-      FROM users
-      WHERE ${whereSql.replaceAll("users.", "")}
+      FROM (${groupedUsersSql}) AS filtered_users
     `,
     params
   );

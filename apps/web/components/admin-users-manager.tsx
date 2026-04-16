@@ -74,13 +74,15 @@ type SecurityAlert = {
   }>;
 };
 
-type SortField = "id" | "username" | "email" | "role" | "createdAt" | "lastLoginAt";
+type SortField = "id" | "username" | "email" | "role" | "createdAt" | "lastLoginAt" | "status";
 type SortDirection = "asc" | "desc";
+type StatusFilter = "all" | "risk" | "locked" | "disabled" | "active-session";
 type AdminUsersQuery = {
   page?: number;
   limit?: number;
   searchQuery?: string;
   roleFilter?: "all" | "admin" | "user";
+  statusFilter?: StatusFilter;
   sortField?: SortField;
   sortDirection?: SortDirection;
 };
@@ -118,12 +120,45 @@ const initialCreateForm = {
   role: "user" as "admin" | "user"
 };
 
+const STATUS_FILTER_OPTIONS: Array<{
+  value: StatusFilter;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "all",
+    label: "全部账号",
+    description: "查看当前筛选条件下的完整用户池。"
+  },
+  {
+    value: "risk",
+    label: "风险账号",
+    description: "聚焦停用、锁定或出现失败登录记录的账号。"
+  },
+  {
+    value: "locked",
+    label: "已锁定",
+    description: "优先处理连续失败登录后被系统锁定的账号。"
+  },
+  {
+    value: "disabled",
+    label: "已停用",
+    description: "查看已收回登录能力、待恢复或待删除的账号。"
+  },
+  {
+    value: "active-session",
+    label: "活跃会话",
+    description: "聚焦当前仍在登录态、需要交接或回收会话的账号。"
+  }
+];
+
 async function requestAdminUsers(input: AdminUsersQuery) {
   const params = new URLSearchParams({
     page: String(input.page || 1),
     limit: String(input.limit || 10),
     search: input.searchQuery ?? "",
     role: input.roleFilter ?? "all",
+    status: input.statusFilter ?? "all",
     sortBy: input.sortField ?? "createdAt",
     sortOrder: input.sortDirection ?? "desc"
   });
@@ -147,6 +182,7 @@ export function AdminUsersManager() {
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "user">("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortField, setSortField] = useState<SortField>("createdAt");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [createOpen, setCreateOpen] = useState(false);
@@ -206,6 +242,7 @@ export function AdminUsersManager() {
       limit: input?.limit || pagination.limit,
       searchQuery: input?.searchQuery ?? deferredSearchQuery,
       roleFilter: input?.roleFilter ?? roleFilter,
+      statusFilter: input?.statusFilter ?? statusFilter,
       sortField: input?.sortField ?? sortField,
       sortDirection: input?.sortDirection ?? sortDirection
     });
@@ -218,7 +255,7 @@ export function AdminUsersManager() {
     setUsers(result.data.users || []);
     setPagination((current) => result.data.pagination || current);
     setLoading(false);
-  }, [deferredSearchQuery, pagination.limit, roleFilter, sortDirection, sortField]);
+  }, [deferredSearchQuery, pagination.limit, roleFilter, sortDirection, sortField, statusFilter]);
 
   useEffect(() => {
     void loadUsers({ page: 1 });
@@ -624,6 +661,40 @@ export function AdminUsersManager() {
           </p>
         </div>
 
+        <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr),auto] xl:items-start">
+          <div className="flex flex-wrap gap-2">
+            {STATUS_FILTER_OPTIONS.map((option) => (
+              <button
+                className={`rounded-2xl border px-4 py-3 text-left transition ${
+                  statusFilter === option.value
+                    ? "border-emerald-300 bg-brand-mist text-brand-emerald shadow-[0_10px_30px_rgba(5,150,105,0.08)]"
+                    : "border-brand-line bg-white text-slate-700 hover:border-emerald-200 hover:text-brand-emerald"
+                }`}
+                key={option.value}
+                onClick={() => setStatusFilter(option.value)}
+                type="button"
+              >
+                <p className="text-sm font-semibold">{option.label}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{option.description}</p>
+              </button>
+            ))}
+          </div>
+
+          {(searchQuery || roleFilter !== "all" || statusFilter !== "all") ? (
+            <button
+              className="inline-flex items-center justify-center rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-emerald-200 hover:text-brand-emerald"
+              onClick={() => {
+                setSearchQuery("");
+                setRoleFilter("all");
+                setStatusFilter("all");
+              }}
+              type="button"
+            >
+              清空筛选
+            </button>
+          ) : null}
+        </div>
+
         {message ? <p className="mt-4 text-sm text-emerald-700">{message}</p> : null}
         {error ? <p className="mt-4 text-sm text-red-700">{error}</p> : null}
 
@@ -633,7 +704,7 @@ export function AdminUsersManager() {
               <tr className="border-b border-brand-line/70">
                 <SortableHeader field="username" label="用户" onSort={handleSort} renderIcon={renderSortIcon} />
                 <SortableHeader field="role" label="角色" onSort={handleSort} renderIcon={renderSortIcon} />
-                <th className="pb-3 pr-4">状态与风险</th>
+                <SortableHeader field="status" label="状态与风险" onSort={handleSort} renderIcon={renderSortIcon} />
                 <th className="pb-3 pr-4">会话</th>
                 <SortableHeader field="lastLoginAt" label="上次活动" onSort={handleSort} renderIcon={renderSortIcon} />
                 <SortableHeader field="createdAt" label="创建时间" onSort={handleSort} renderIcon={renderSortIcon} />
@@ -659,7 +730,7 @@ export function AdminUsersManager() {
 
               {!loading
                 ? users.map((user) => (
-                    <tr className="border-b border-brand-line/40 align-top last:border-b-0" key={user.id}>
+                    <tr className={getUserRowClassName(user)} key={user.id}>
                       <td className="px-4 py-4 pr-4">
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-mist text-sm font-semibold text-brand-emerald">
@@ -781,7 +852,7 @@ export function AdminUsersManager() {
 
         <div className="mt-6 flex flex-col gap-3 border-t border-brand-line/60 pt-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <p>搜索和角色筛选会实时生效，列表默认按创建时间倒序排列。</p>
+            <p>搜索、角色和状态视角会实时生效，列表默认按创建时间倒序排列。</p>
             <p>停用会立即回收现有会话；解除锁定会同步清空失败登录计数；安全告警会按多 IP、多会话和失败登录自动汇总。</p>
           </div>
           <div className="flex gap-2">
@@ -1187,6 +1258,22 @@ function getUserRiskSummary(user: AdminUser) {
   }
 
   return "当前未发现登录侧风险，可继续保留账号运行。";
+}
+
+function getUserRowClassName(user: AdminUser) {
+  if (!user.isActive) {
+    return "border-b border-brand-line/40 bg-red-50/35 align-top last:border-b-0";
+  }
+
+  if (isUserLocked(user) || user.failedLoginCount > 0) {
+    return "border-b border-brand-line/40 bg-amber-50/35 align-top last:border-b-0";
+  }
+
+  if (user.activeSessionCount > 0) {
+    return "border-b border-brand-line/40 bg-emerald-50/30 align-top last:border-b-0";
+  }
+
+  return "border-b border-brand-line/40 align-top last:border-b-0";
 }
 
 function getLoginHistoryStatusLabel(record: LoginRecord) {

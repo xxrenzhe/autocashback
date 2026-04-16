@@ -29,6 +29,7 @@ import {
   getSettings,
   getUserSecurityAlertsByAdmin,
   loginUser,
+  listAdminUsers,
   listLinkSwapTasks,
   listUserLoginHistoryByAdmin,
   restartClickFarmTask,
@@ -1039,5 +1040,86 @@ describe.sequential("sqlite database bootstrap", () => {
     expect(Number(activeSessionsAfterDisable[0]?.count || 0)).toBe(0);
 
     await expect(loginUser(user.username, "password")).rejects.toThrow("账号已停用，请联系管理员");
+  });
+
+  it("filters and sorts admin users by status views", async () => {
+    const prefix = `sqlite-status-${Date.now()}`;
+    const normalUser = await createUser({
+      username: `${prefix}-normal`,
+      email: `${prefix}-normal@example.com`,
+      password: "password",
+      role: "user"
+    });
+    const disabledUser = await createUser({
+      username: `${prefix}-disabled`,
+      email: `${prefix}-disabled@example.com`,
+      password: "password",
+      role: "user"
+    });
+    const lockedUser = await createUser({
+      username: `${prefix}-locked`,
+      email: `${prefix}-locked@example.com`,
+      password: "password",
+      role: "user"
+    });
+    const sessionUser = await createUser({
+      username: `${prefix}-session`,
+      email: `${prefix}-session@example.com`,
+      password: "password",
+      role: "user"
+    });
+
+    await updateUserByAdmin(disabledUser.id, { isActive: false });
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await expect(loginUser(lockedUser.username, "wrong-password")).rejects.toThrow();
+    }
+
+    await loginUser(sessionUser.username, "password", {
+      ipAddress: "203.0.113.42",
+      userAgent: "Mozilla/5.0 Chrome/124.0"
+    });
+
+    const riskView = await listAdminUsers({
+      page: 1,
+      limit: 20,
+      role: "user",
+      search: prefix,
+      status: "risk",
+      sortBy: "status",
+      sortOrder: "desc"
+    });
+    expect(riskView.users.map((user) => user.username)).toEqual([
+      disabledUser.username,
+      lockedUser.username
+    ]);
+
+    const lockedView = await listAdminUsers({
+      page: 1,
+      limit: 20,
+      role: "user",
+      search: prefix,
+      status: "locked"
+    });
+    expect(lockedView.users.map((user) => user.username)).toEqual([lockedUser.username]);
+
+    const disabledView = await listAdminUsers({
+      page: 1,
+      limit: 20,
+      role: "user",
+      search: prefix,
+      status: "disabled"
+    });
+    expect(disabledView.users.map((user) => user.username)).toEqual([disabledUser.username]);
+
+    const activeSessionView = await listAdminUsers({
+      page: 1,
+      limit: 20,
+      role: "user",
+      search: prefix,
+      status: "active-session"
+    });
+    expect(activeSessionView.users.map((user) => user.username)).toContain(sessionUser.username);
+    expect(activeSessionView.users.map((user) => user.username)).not.toContain(normalUser.username);
   });
 });

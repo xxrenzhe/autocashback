@@ -23,8 +23,24 @@ export async function GET(request: NextRequest) {
       limit: Number(searchParams.get("limit") || 10),
       search: searchParams.get("search") || "",
       role: (searchParams.get("role") as "admin" | "user" | "all" | null) || "all",
+      status:
+        (searchParams.get("status") as
+          | "all"
+          | "risk"
+          | "locked"
+          | "disabled"
+          | "active-session"
+          | null) || "all",
       sortBy:
-        (searchParams.get("sortBy") as "id" | "username" | "email" | "role" | "createdAt" | "lastLoginAt" | null) ||
+        (searchParams.get("sortBy") as
+          | "id"
+          | "username"
+          | "email"
+          | "role"
+          | "createdAt"
+          | "lastLoginAt"
+          | "status"
+          | null) ||
         "createdAt",
       sortOrder: (searchParams.get("sortOrder") as "asc" | "desc" | null) || "desc"
     })
