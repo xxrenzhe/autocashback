@@ -1,6 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  AlertTriangle,
+  ArrowRight,
+  RefreshCcw,
+  Search,
+  Settings2,
+  Target,
+  Workflow,
+  Wrench,
+  Zap
+} from "lucide-react";
 
 import type {
   QueueStats,
@@ -9,9 +21,15 @@ import type {
   QueueTaskStatus,
   QueueTaskType
 } from "@autocashback/domain";
+import { cn } from "@autocashback/ui";
 
 import { AdminOperationsMonitor } from "@/components/admin-operations-monitor";
 import { fetchJson } from "@/lib/api-error-handler";
+import {
+  buildQueueConsole,
+  type QueueConsoleSort,
+  type SchedulerStatusPayload
+} from "@/lib/queue-console";
 
 const emptyStats: QueueStats = {
   total: 0,
@@ -33,51 +51,42 @@ const emptyStats: QueueStats = {
   }
 };
 
-type SchedulerStatusPayload = {
-  mode: string;
-  heartbeatAt: string | null;
-  lastTickAt: string | null;
-  lastTickSummary: Record<string, unknown> | null;
-  note: string;
-  clickFarmScheduler: {
-    status: "healthy" | "warning" | "error";
-    message: string;
-    schedulerProcess: string;
-    metrics: {
-      enabledTasks: number;
-      overdueTasks: number;
-      recentQueuedTasks: number;
-      runningTasks?: number;
-      lastQueuedAt: string | null;
-      checkInterval: string;
-    };
-  };
-  urlSwapScheduler: {
-    status: "healthy" | "warning" | "error";
-    message: string;
-    schedulerProcess: string;
-    metrics: {
-      enabledTasks: number;
-      overdueTasks: number;
-      recentQueuedTasks: number;
-      runningTasks?: number;
-      lastQueuedAt: string | null;
-      checkInterval: string;
-    };
-  };
-};
-
 type QueueConfigPayload = {
   config: QueueSystemConfig;
   configSource: "database" | "default";
   note: string;
 };
 
+type MessageTone = "success" | "info";
+
 const queueConfigTaskLabels: Array<{ key: QueueTaskType; label: string }> = [
   { key: "click-farm-trigger", label: "补点击触发" },
   { key: "click-farm-batch", label: "补点击批次" },
   { key: "click-farm", label: "补点击执行" },
   { key: "url-swap", label: "换链接执行" }
+];
+
+const typeOptions: Array<{ value: QueueTaskType | "all"; label: string }> = [
+  { value: "all", label: "全部类型" },
+  { value: "click-farm-trigger", label: "补点击触发" },
+  { value: "click-farm-batch", label: "补点击批次" },
+  { value: "click-farm", label: "补点击执行" },
+  { value: "url-swap", label: "换链接执行" }
+];
+
+const statusOptions: Array<{ value: QueueTaskStatus | "all"; label: string }> = [
+  { value: "all", label: "全部状态" },
+  { value: "pending", label: "待执行" },
+  { value: "running", label: "运行中" },
+  { value: "completed", label: "已完成" },
+  { value: "failed", label: "失败" }
+];
+
+const sortOptions: Array<{ value: QueueConsoleSort; label: string }> = [
+  { value: "recent", label: "按最新创建" },
+  { value: "available-at", label: "按可执行时间" },
+  { value: "priority", label: "按优先级" },
+  { value: "failed-first", label: "失败优先" }
 ];
 
 function formatDateTime(value: string | null) {
@@ -93,50 +102,172 @@ function formatDateTime(value: string | null) {
   return new Date(timestamp).toLocaleString("zh-CN");
 }
 
-function getSchedulerLabel(value: "healthy" | "warning" | "error") {
+function OverviewCard({
+  label,
+  note,
+  tone,
+  value
+}: {
+  label: string;
+  note: string;
+  tone: "emerald" | "amber" | "slate" | "red";
+  value: string;
+}) {
+  const toneStyles = {
+    emerald: {
+      badge: "bg-brand-mist text-brand-emerald",
+      value: "text-brand-emerald"
+    },
+    amber: {
+      badge: "bg-amber-50 text-amber-700",
+      value: "text-amber-700"
+    },
+    slate: {
+      badge: "bg-slate-100 text-slate-700",
+      value: "text-slate-900"
+    },
+    red: {
+      badge: "bg-red-50 text-red-700",
+      value: "text-red-700"
+    }
+  } as const;
+
+  return (
+    <div className="surface-panel p-5">
+      <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", toneStyles[tone].badge)}>
+        {label}
+      </span>
+      <p className={cn("mt-5 font-mono text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
+      <p className="mt-3 text-sm leading-6 text-slate-600">{note}</p>
+    </div>
+  );
+}
+
+function ShortcutCard({
+  description,
+  href,
+  icon: Icon,
+  title
+}: {
+  description: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+}) {
+  return (
+    <Link
+      className="group rounded-[24px] border border-brand-line bg-white/90 px-4 py-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-editorial motion-reduce:transform-none"
+      href={href}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+          <Icon className="h-5 w-5" />
+        </span>
+        <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:text-brand-emerald" />
+      </div>
+      <p className="mt-4 text-sm font-semibold text-slate-900">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
+    </Link>
+  );
+}
+
+function schedulerTone(value: "healthy" | "warning" | "error") {
   if (value === "healthy") {
-    return "正常";
+    return {
+      badge: "bg-brand-mist text-brand-emerald",
+      panel: "border-emerald-200 bg-emerald-50/70"
+    };
   }
 
   if (value === "warning") {
-    return "警告";
+    return {
+      badge: "bg-amber-50 text-amber-700",
+      panel: "border-amber-200 bg-amber-50"
+    };
   }
 
-  return "异常";
+  return {
+    badge: "bg-red-50 text-red-700",
+    panel: "border-red-200 bg-red-50"
+  };
+}
+
+function taskStatusMeta(status: QueueTaskStatus) {
+  if (status === "running") {
+    return { label: "运行中", className: "bg-brand-mist text-brand-emerald" };
+  }
+  if (status === "pending") {
+    return { label: "待执行", className: "bg-slate-100 text-slate-700" };
+  }
+  if (status === "completed") {
+    return { label: "已完成", className: "bg-slate-100 text-slate-700" };
+  }
+  return { label: "失败", className: "bg-red-50 text-red-700" };
 }
 
 export function QueueMonitor() {
   const [stats, setStats] = useState<QueueStats>(emptyStats);
   const [tasks, setTasks] = useState<QueueTaskRecord[]>([]);
   const [schedulerStatus, setSchedulerStatus] = useState<SchedulerStatusPayload | null>(null);
-  const [status, setStatus] = useState<QueueTaskStatus | "all">("all");
-  const [type, setType] = useState<QueueTaskType | "all">("all");
-  const [message, setMessage] = useState("");
-  const [schedulerError, setSchedulerError] = useState("");
-  const [schedulerLoading, setSchedulerLoading] = useState(false);
-  const [schedulerCollapsed, setSchedulerCollapsed] = useState(true);
   const [config, setConfig] = useState<QueueConfigPayload | null>(null);
-  const [configLoading, setConfigLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [configLoading, setConfigLoading] = useState(true);
+  const [schedulerLoading, setSchedulerLoading] = useState(true);
   const [configSaving, setConfigSaving] = useState(false);
-  const [configMessage, setConfigMessage] = useState("");
+  const [statusFilter, setStatusFilter] = useState<QueueTaskStatus | "all">("all");
+  const [typeFilter, setTypeFilter] = useState<QueueTaskType | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sort, setSort] = useState<QueueConsoleSort>("recent");
+  const [message, setMessage] = useState("");
+  const [messageTone, setMessageTone] = useState<MessageTone>("success");
+  const [schedulerError, setSchedulerError] = useState("");
   const [configError, setConfigError] = useState("");
   const [manualScheduling, setManualScheduling] = useState<"all" | "click-farm" | "url-swap" | null>(null);
+  const deferredSearchQuery = useDeferredValue(searchQuery);
 
-  const loadQueueData = useCallback(async () => {
+  const consoleData = useMemo(
+    () =>
+      buildQueueConsole({
+        stats,
+        tasks,
+        schedulerStatus,
+        filters: {
+          search: deferredSearchQuery,
+          sort
+        }
+      }),
+    [deferredSearchQuery, schedulerStatus, sort, stats, tasks]
+  );
+
+  const loadQueueData = useCallback(async (options?: { background?: boolean; preserveMessage?: boolean }) => {
+    if (options?.background) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
+    if (!options?.preserveMessage) {
+      setMessage("");
+    }
+
     try {
       const query = new URLSearchParams();
-      if (status !== "all") {
-        query.set("status", status);
+      if (statusFilter !== "all") {
+        query.set("status", statusFilter);
       }
-      if (type !== "all") {
-        query.set("type", type);
+      if (typeFilter !== "all") {
+        query.set("type", typeFilter);
       }
       query.set("limit", "100");
 
       const [statsResult, tasksResult] = await Promise.all([
-        fetchJson<{ stats: QueueStats }>("/api/queue/stats"),
-        fetchJson<{ tasks: QueueTaskRecord[] }>(`/api/queue/tasks?${query.toString()}`)
+        fetchJson<{ stats: QueueStats }>("/api/queue/stats", { cache: "no-store" }),
+        fetchJson<{ tasks: QueueTaskRecord[] }>(`/api/queue/tasks?${query.toString()}`, {
+          cache: "no-store"
+        })
       ]);
+
       if (!statsResult.success) {
         throw new Error(statsResult.userMessage);
       }
@@ -146,16 +277,23 @@ export function QueueMonitor() {
 
       setStats(statsResult.data.stats || emptyStats);
       setTasks(tasksResult.data.tasks || []);
-      setMessage("");
     } catch (error: unknown) {
+      setMessageTone("info");
       setMessage(error instanceof Error ? error.message : "加载队列数据失败");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  }, [status, type]);
+  }, [statusFilter, typeFilter]);
 
-  async function loadSchedulerStatus() {
+  const loadSchedulerStatus = useCallback(async (options?: { silent?: boolean }) => {
     try {
-      setSchedulerLoading(true);
-      const schedulerResult = await fetchJson<{ data: SchedulerStatusPayload }>("/api/queue/scheduler");
+      if (!options?.silent) {
+        setSchedulerLoading(true);
+      }
+      const schedulerResult = await fetchJson<{ data: SchedulerStatusPayload }>("/api/queue/scheduler", {
+        cache: "no-store"
+      });
       if (!schedulerResult.success) {
         throw new Error(schedulerResult.userMessage);
       }
@@ -163,17 +301,16 @@ export function QueueMonitor() {
       setSchedulerStatus(schedulerResult.data.data || null);
       setSchedulerError("");
     } catch (error: unknown) {
-      const nextError = error instanceof Error ? error.message : "加载调度器状态失败";
-      setSchedulerError(nextError);
+      setSchedulerError(error instanceof Error ? error.message : "加载调度器状态失败");
     } finally {
       setSchedulerLoading(false);
     }
-  }
+  }, []);
 
-  async function loadQueueConfig() {
+  const loadQueueConfig = useCallback(async () => {
     try {
       setConfigLoading(true);
-      const result = await fetchJson<QueueConfigPayload>("/api/queue/config");
+      const result = await fetchJson<QueueConfigPayload>("/api/queue/config", { cache: "no-store" });
       if (!result.success) {
         throw new Error(result.userMessage);
       }
@@ -189,7 +326,7 @@ export function QueueMonitor() {
     } finally {
       setConfigLoading(false);
     }
-  }
+  }, []);
 
   async function saveQueueConfig() {
     if (!config) {
@@ -198,17 +335,13 @@ export function QueueMonitor() {
 
     try {
       setConfigSaving(true);
-      setConfigMessage("");
       setConfigError("");
-
       const result = await fetchJson<{
         config: QueueSystemConfig;
         message?: string;
       }>("/api/queue/config", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config.config)
       });
       if (!result.success) {
@@ -220,7 +353,8 @@ export function QueueMonitor() {
         configSource: "database",
         note: "配置保存后会在 60 秒内自动同步到后台调度服务"
       });
-      setConfigMessage(result.data.message || "队列配置已保存");
+      setMessageTone("success");
+      setMessage(result.data.message || "队列配置已保存。");
     } catch (error: unknown) {
       setConfigError(error instanceof Error ? error.message : "保存队列配置失败");
     } finally {
@@ -239,9 +373,7 @@ export function QueueMonitor() {
         };
       }>("/api/queue/scheduler", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target })
       });
       if (!result.success) {
@@ -250,12 +382,17 @@ export function QueueMonitor() {
 
       const clickFarmInserted = result.data.data?.clickFarm?.inserted || 0;
       const urlSwapInserted = result.data.data?.urlSwap?.inserted || 0;
+      setMessageTone("success");
       setMessage(
         result.data.message ||
           `手动调度完成：补点击新增 ${clickFarmInserted}，换链接新增 ${urlSwapInserted}`
       );
-      await Promise.all([loadQueueData(), loadSchedulerStatus()]);
+      await Promise.all([
+        loadQueueData({ background: true, preserveMessage: true }),
+        loadSchedulerStatus({ silent: true })
+      ]);
     } catch (error: unknown) {
+      setMessageTone("info");
       setMessage(error instanceof Error ? error.message : "手动调度失败");
     } finally {
       setManualScheduling(null);
@@ -301,306 +438,491 @@ export function QueueMonitor() {
   }, [loadQueueData]);
 
   useEffect(() => {
-    void loadQueueConfig();
-  }, []);
-
-  useEffect(() => {
-    if (schedulerCollapsed) {
-      return;
-    }
-
     void loadSchedulerStatus();
-  }, [schedulerCollapsed]);
+    void loadQueueConfig();
+  }, [loadQueueConfig, loadSchedulerStatus]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      void loadQueueData();
+      void loadQueueData({ background: true, preserveMessage: true });
     }, 30_000);
 
     return () => clearInterval(interval);
   }, [loadQueueData]);
 
   useEffect(() => {
-    if (schedulerCollapsed) {
-      return;
-    }
-
     const interval = setInterval(() => {
-      void loadSchedulerStatus();
+      void loadSchedulerStatus({ silent: true });
     }, 60_000);
 
     return () => clearInterval(interval);
-  }, [schedulerCollapsed]);
+  }, [loadSchedulerStatus]);
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-4 xl:grid-cols-5">
-        <StatCard label="总任务数" value={stats.total} />
-        <StatCard label="待执行" value={stats.pending} />
-        <StatCard label="运行中" value={stats.running} />
-        <StatCard label="已完成" value={stats.completed} />
-        <StatCard label="失败" value={stats.failed} />
-      </section>
-
-      <section className="surface-panel p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="eyebrow">队列配置</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">统一调度参数</h3>
-            <p className="mt-2 text-sm text-slate-600">
-              配置保存后会自动同步到后台调度服务，并在下一个刷新周期生效。
-            </p>
-          </div>
-          <button
-            className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
-            disabled={configLoading || configSaving || !config}
-            onClick={saveQueueConfig}
-            type="button"
-          >
-            {configSaving ? "保存中..." : "保存配置"}
-          </button>
-        </div>
-
-        {configLoading && !config ? (
-          <p className="mt-4 rounded-2xl bg-stone-50 px-4 py-5 text-sm text-slate-500">正在加载队列配置...</p>
-        ) : null}
-
-        {config ? (
-          <>
-            <div className="mt-5 grid gap-4 md:grid-cols-3">
-              <ConfigInput
-                label="全局并发"
-                value={config.config.globalConcurrency}
-                onChange={(value) => updateConfigField("globalConcurrency", value)}
-              />
-              <ConfigInput
-                label="轮询间隔(ms)"
-                value={config.config.pollIntervalMs}
-                onChange={(value) => updateConfigField("pollIntervalMs", value)}
-              />
-              <ConfigInput
-                label="僵尸任务超时(ms)"
-                value={config.config.staleTimeoutMs}
-                onChange={(value) => updateConfigField("staleTimeoutMs", value)}
-              />
+      <section className="surface-panel overflow-hidden p-0">
+        <div className="border-b border-brand-line/70 px-6 py-6">
+          <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+            <div className="max-w-3xl">
+              <p className="eyebrow">Queue</p>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <h2 className="text-3xl font-semibold text-slate-900">统一队列控制台</h2>
+                <span className="rounded-full bg-brand-mist px-3 py-1 text-xs font-semibold text-brand-emerald">
+                  {stats.total} tasks
+                </span>
+              </div>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                把补点击、换链和调度器状态放在一个面板里看。先判断健康度，再补投待调度任务或调整并发配置。
+              </p>
             </div>
 
-            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {queueConfigTaskLabels.map((item) => (
-                <ConfigInput
-                  key={item.key}
-                  label={`${item.label}并发`}
-                  value={config.config.perTypeConcurrency[item.key]}
-                  onChange={(value) => updatePerTypeConcurrency(item.key, value)}
-                />
-              ))}
-            </div>
-
-            <div className="mt-5 grid gap-3 text-sm text-slate-600 sm:grid-cols-2 xl:grid-cols-3">
-              <p>配置来源：{config.configSource === "database" ? "数据库" : "默认值"}</p>
-              <p>当前说明：{config.note || "--"}</p>
-              <p>生效范围：补点击与换链接统一队列</p>
-            </div>
-          </>
-        ) : null}
-
-        {configMessage ? <p className="mt-4 text-sm text-slate-600">{configMessage}</p> : null}
-        {configError ? <p className="mt-4 text-sm text-red-700">{configError}</p> : null}
-      </section>
-
-      <section className="surface-panel p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <button className="flex-1 text-left" onClick={() => setSchedulerCollapsed((value) => !value)} type="button">
-            <p className="eyebrow">调度器状态</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">编排中心健康度</h3>
-            <p className="mt-2 text-sm text-slate-600">{schedulerCollapsed ? "展开查看调度器健康检查" : "收起调度器健康检查"}</p>
-          </button>
-          {!schedulerCollapsed ? (
             <div className="flex flex-wrap gap-3">
               <button
-                className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
-                disabled={manualScheduling !== null}
-                onClick={() => triggerManualScheduling("click-farm")}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                disabled={refreshing}
+                onClick={() => void loadQueueData({ background: true, preserveMessage: true })}
                 type="button"
               >
-                {manualScheduling === "click-farm" ? "补投中..." : "补投补点击"}
+                <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
+                {refreshing ? "刷新中..." : "刷新队列"}
               </button>
               <button
-                className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
                 disabled={manualScheduling !== null}
-                onClick={() => triggerManualScheduling("url-swap")}
+                onClick={() => void triggerManualScheduling("all")}
                 type="button"
               >
-                {manualScheduling === "url-swap" ? "补投中..." : "补投换链接"}
-              </button>
-              <button
-                className="rounded-2xl bg-brand-emerald px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
-                disabled={manualScheduling !== null}
-                onClick={() => triggerManualScheduling("all")}
-                type="button"
-              >
+                <Zap className="h-4 w-4" />
                 {manualScheduling === "all" ? "补投中..." : "补投全部待调度任务"}
               </button>
+            </div>
+          </div>
+
+          {message ? (
+            <div
+              className={cn(
+                "mt-5 rounded-[24px] px-4 py-4 text-sm",
+                messageTone === "success"
+                  ? "border border-emerald-200 bg-brand-mist text-brand-emerald"
+                  : "border border-slate-200 bg-stone-50 text-slate-700"
+              )}
+            >
+              {message}
             </div>
           ) : null}
         </div>
 
-        {!schedulerCollapsed && schedulerLoading && !schedulerStatus ? (
-          <p className="mt-4 rounded-2xl bg-stone-50 px-4 py-5 text-sm text-slate-500">正在加载调度器状态...</p>
-        ) : null}
-
-        {!schedulerCollapsed && schedulerError && !schedulerStatus ? (
-          <div className="mt-4 rounded-[28px] border border-red-200 bg-red-50 p-5 text-sm text-red-700">
-            <p className="font-semibold">获取调度器状态失败</p>
-            <p className="mt-2">{schedulerError}</p>
-            <button
-              className="mt-4 rounded-2xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700"
-              onClick={loadSchedulerStatus}
-              type="button"
-            >
-              重试
-            </button>
-          </div>
-        ) : null}
-
-        {!schedulerCollapsed && schedulerStatus ? (
-          <>
-            <p className="mt-4 rounded-2xl bg-sky-50 px-4 py-4 text-sm text-sky-800">{schedulerStatus.note}</p>
-            <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
-              手动补投会把已到期但尚未入队的任务补回统一队列，适合在排查异常或补跑任务时使用。
-            </p>
-            <div className="mt-5 grid gap-4 lg:grid-cols-2">
-              <SchedulerCard
-                label="补点击调度器"
-                value={schedulerStatus.clickFarmScheduler.status}
-                message={schedulerStatus.clickFarmScheduler.message}
-                schedulerProcess={schedulerStatus.clickFarmScheduler.schedulerProcess}
-                metrics={schedulerStatus.clickFarmScheduler.metrics}
-              />
-              <SchedulerCard
-                label="换链接调度器"
-                value={schedulerStatus.urlSwapScheduler.status}
-                message={schedulerStatus.urlSwapScheduler.message}
-                schedulerProcess={schedulerStatus.urlSwapScheduler.schedulerProcess}
-                metrics={schedulerStatus.urlSwapScheduler.metrics}
-              />
-            </div>
-            <div className="mt-5 grid gap-3 text-sm text-slate-600 sm:grid-cols-2 xl:grid-cols-4">
-              <p>最近心跳：{formatDateTime(schedulerStatus.heartbeatAt)}</p>
-              <p>最近编排：{formatDateTime(schedulerStatus.lastTickAt)}</p>
-              <p>调度模式：{schedulerStatus.mode}</p>
-              <p>
-                最近摘要：
-                {schedulerStatus.lastTickSummary
-                  ? ` processed=${schedulerStatus.lastTickSummary.processed || 0}, inserted=${schedulerStatus.lastTickSummary.inserted || 0}`
-                  : " --"}
-              </p>
-            </div>
-          </>
-        ) : null}
-
-        {!schedulerCollapsed && schedulerError && schedulerStatus ? (
-          <p className="mt-4 text-sm text-red-700">{schedulerError}</p>
-        ) : null}
+        <div className="grid gap-4 px-6 py-6 md:grid-cols-2 xl:grid-cols-3">
+          <ShortcutCard
+            description="补点击任务积压时，直接回到业务页确认任务本身是否设置合理。"
+            href="/click-farm"
+            icon={Target}
+            title="补点击任务"
+          />
+          <ShortcutCard
+            description="换链任务和队列互相影响，调度异常时建议同步排查换链页。"
+            href="/link-swap"
+            icon={Workflow}
+            title="换链管理"
+          />
+          <ShortcutCard
+            description="代理和脚本配置异常会直接影响队列健康度，必要时从设置页回查。"
+            href="/settings"
+            icon={Settings2}
+            title="系统设置"
+          />
+        </div>
       </section>
 
-      <section className="surface-panel p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="eyebrow">统一队列</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">任务编排中心</h3>
-          </div>
+      <section className="grid gap-4 xl:grid-cols-4">
+        <OverviewCard
+          label="待执行任务"
+          note="当前统一队列里尚未开始处理的任务数。"
+          tone={consoleData.overview.pendingTasks > 0 ? "amber" : "emerald"}
+          value={String(consoleData.overview.pendingTasks)}
+        />
+        <OverviewCard
+          label="运行中任务"
+          note="当前已被 worker 或调度器接手的任务数。"
+          tone="emerald"
+          value={String(consoleData.overview.runningTasks)}
+        />
+        <OverviewCard
+          label="失败任务"
+          note="建议优先查看错误信息和最近更新时间。"
+          tone={consoleData.overview.failedTasks > 0 ? "red" : "emerald"}
+          value={String(consoleData.overview.failedTasks)}
+        />
+        <OverviewCard
+          label="健康调度器"
+          note="当前心跳和状态都正常的调度器数量。"
+          tone={consoleData.overview.activeSchedulerCount === 2 ? "emerald" : "amber"}
+          value={`${consoleData.overview.activeSchedulerCount}/2`}
+        />
+      </section>
 
-          <div className="flex flex-wrap gap-3">
-            <select
-              className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm text-slate-700"
-              value={type}
-              onChange={(event) => setType(event.target.value as QueueTaskType | "all")}
-            >
-              <option value="all">全部类型</option>
-              <option value="click-farm-trigger">click-farm-trigger</option>
-              <option value="click-farm-batch">click-farm-batch</option>
-              <option value="click-farm">click-farm</option>
-              <option value="url-swap">url-swap</option>
-            </select>
-            <select
-              className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm text-slate-700"
-              value={status}
-              onChange={(event) => setStatus(event.target.value as QueueTaskStatus | "all")}
-            >
-              <option value="all">全部状态</option>
-              <option value="pending">pending</option>
-              <option value="running">running</option>
-              <option value="completed">completed</option>
-              <option value="failed">failed</option>
-            </select>
-            <button
-              className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white"
-              onClick={loadQueueData}
-              type="button"
-            >
-              刷新
-            </button>
-          </div>
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr),420px]">
+        <div className="space-y-6">
+          <section className="surface-panel p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="eyebrow">筛选与查看</p>
+                <h3 className="mt-2 text-2xl font-semibold text-slate-900">先筛出积压或失败任务</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  支持按类型、状态、搜索关键字和排序快速缩小范围，方便先排查最影响系统吞吐的任务。
+                </p>
+              </div>
+              {(searchQuery || statusFilter !== "all" || typeFilter !== "all" || sort !== "recent") && (
+                <button
+                  className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setStatusFilter("all");
+                    setTypeFilter("all");
+                    setSort("recent");
+                  }}
+                  type="button"
+                >
+                  清空筛选
+                </button>
+              )}
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <label className="block text-sm font-medium text-slate-700 md:col-span-2 xl:col-span-1">
+                搜索任务
+                <div className="mt-2 flex items-center gap-3 rounded-2xl border border-brand-line bg-stone-50 px-4 py-3">
+                  <Search className="h-4 w-4 text-slate-400" />
+                  <input
+                    className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="任务 ID、类型、用户、payload"
+                    value={searchQuery}
+                  />
+                </div>
+              </label>
+
+              <label className="block text-sm font-medium text-slate-700">
+                类型
+                <select
+                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                  onChange={(event) => setTypeFilter(event.target.value as QueueTaskType | "all")}
+                  value={typeFilter}
+                >
+                  {typeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block text-sm font-medium text-slate-700">
+                状态
+                <select
+                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                  onChange={(event) => setStatusFilter(event.target.value as QueueTaskStatus | "all")}
+                  value={statusFilter}
+                >
+                  {statusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block text-sm font-medium text-slate-700">
+                排序
+                <select
+                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                  onChange={(event) => setSort(event.target.value as QueueConsoleSort)}
+                  value={sort}
+                >
+                  {sortOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section className="surface-panel overflow-hidden p-0">
+            <div className="border-b border-brand-line/70 px-6 py-5">
+              <p className="eyebrow">任务列表</p>
+              <h3 className="mt-2 text-2xl font-semibold text-slate-900">按时间、优先级和错误状态查看队列</h3>
+            </div>
+
+            {loading ? (
+              <div className="space-y-4 px-6 py-6">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-5" key={index}>
+                    <div className="h-4 w-32 animate-pulse rounded-full bg-stone-200" />
+                    <div className="mt-4 h-4 w-full animate-pulse rounded-full bg-stone-200" />
+                    <div className="mt-3 h-4 w-5/6 animate-pulse rounded-full bg-stone-200" />
+                  </div>
+                ))}
+              </div>
+            ) : consoleData.rows.length ? (
+              <div className="space-y-4 px-6 py-6">
+                {consoleData.rows.map((row) => {
+                  const statusMeta = taskStatusMeta(row.task.status);
+                  return (
+                    <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4" key={row.task.id}>
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-mono text-sm font-semibold text-slate-900">{row.task.id}</p>
+                            <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                              {row.task.type}
+                            </span>
+                            <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-semibold", statusMeta.className)}>
+                              {statusMeta.label}
+                            </span>
+                            <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                              {row.task.priority}
+                            </span>
+                            {row.isPendingBacklog ? (
+                              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+                                已到执行时间
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-3 break-all text-xs leading-6 text-slate-600">{row.payloadPreview}</p>
+                          <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-2 xl:grid-cols-4">
+                            <p>用户：#{row.task.userId}</p>
+                            <p>可执行：{formatDateTime(row.task.availableAt)}</p>
+                            <p>开始：{formatDateTime(row.task.startedAt)}</p>
+                            <p>完成：{formatDateTime(row.task.completedAt)}</p>
+                          </div>
+                        </div>
+
+                        <div className="min-w-[180px] text-xs text-slate-500 lg:text-right">
+                          <p>创建于：{formatDateTime(row.task.createdAt)}</p>
+                          <p className="mt-2">更新于：{formatDateTime(row.task.updatedAt)}</p>
+                          <p className="mt-2">重试：{row.task.retryCount} / {row.task.maxRetries}</p>
+                          <p className="mt-2">Worker：{row.task.workerId || "--"}</p>
+                        </div>
+                      </div>
+
+                      {row.task.errorMessage ? (
+                        <div className="mt-4 rounded-[20px] border border-red-200 bg-red-50 px-4 py-3 text-xs leading-6 text-red-700">
+                          {row.task.errorMessage}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="px-6 py-10 text-center">
+                <p className="text-base font-semibold text-slate-900">当前筛选条件下没有队列任务</p>
+                <p className="mt-3 text-sm leading-6 text-slate-500">
+                  可以放宽筛选条件，或去业务页检查是否还有待入队的任务。
+                </p>
+              </div>
+            )}
+          </section>
         </div>
 
-        {message ? <p className="mt-4 text-sm text-slate-600">{message}</p> : null}
+        <div className="space-y-6">
+          <section className="surface-panel p-6">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="eyebrow">队列配置</p>
+                <h3 className="mt-2 text-2xl font-semibold text-slate-900">统一调度参数</h3>
+              </div>
+              <button
+                className="rounded-2xl bg-brand-emerald px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                disabled={configLoading || configSaving || !config}
+                onClick={saveQueueConfig}
+                type="button"
+              >
+                {configSaving ? "保存中..." : "保存"}
+              </button>
+            </div>
 
-        <div className="mt-5 grid gap-3 text-sm text-slate-600 sm:grid-cols-2 xl:grid-cols-4">
-          <p>换链接：{stats.byType["url-swap"]}</p>
-          <p>补点击触发：{stats.byType["click-farm-trigger"]}</p>
-          <p>补点击批次：{stats.byType["click-farm-batch"]}</p>
-          <p>补点击执行：{stats.byType["click-farm"]}</p>
-          <p>换链接运行中：{stats.byTypeRunning["url-swap"]}</p>
-          <p>补点击触发运行中：{stats.byTypeRunning["click-farm-trigger"]}</p>
-          <p>补点击批次运行中：{stats.byTypeRunning["click-farm-batch"]}</p>
-          <p>补点击执行运行中：{stats.byTypeRunning["click-farm"]}</p>
-        </div>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              调整全局并发、轮询间隔和每种任务类型的并发上限，保存后会自动同步到调度服务。
+            </p>
 
-        <div className="mt-5 grid gap-3">
-          {tasks.length ? (
-            tasks.map((task) => (
-              <div className="rounded-[28px] border border-brand-line bg-stone-50 p-5" key={task.id}>
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
-                    <p className="font-mono text-xs text-slate-500">{task.id}</p>
-                    <p className="mt-2 text-sm font-semibold text-slate-900">{task.type}</p>
-                    <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">
-                      user #{task.userId} · {task.priority} · {task.status}
-                    </p>
-                  </div>
-                  <div className="grid gap-2 text-right text-xs text-slate-500">
-                    <p>可执行时间：{task.availableAt}</p>
-                    <p>开始时间：{task.startedAt || "--"}</p>
-                    <p>完成时间：{task.completedAt || "--"}</p>
-                  </div>
+            {configLoading && !config ? (
+              <p className="mt-4 rounded-2xl bg-stone-50 px-4 py-5 text-sm text-slate-500">正在加载队列配置...</p>
+            ) : null}
+
+            {config ? (
+              <>
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <ConfigInput
+                    label="全局并发"
+                    value={config.config.globalConcurrency}
+                    onChange={(value) => updateConfigField("globalConcurrency", value)}
+                  />
+                  <ConfigInput
+                    label="轮询间隔(ms)"
+                    value={config.config.pollIntervalMs}
+                    onChange={(value) => updateConfigField("pollIntervalMs", value)}
+                  />
+                  <ConfigInput
+                    label="僵尸任务超时(ms)"
+                    value={config.config.staleTimeoutMs}
+                    onChange={(value) => updateConfigField("staleTimeoutMs", value)}
+                  />
                 </div>
 
-                {task.errorMessage ? (
-                  <p className="mt-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-xs text-red-700">
-                    {task.errorMessage}
-                  </p>
-                ) : null}
+                <div className="mt-5 space-y-3">
+                  {queueConfigTaskLabels.map((item) => (
+                    <ConfigInput
+                      key={item.key}
+                      label={`${item.label}并发`}
+                      value={config.config.perTypeConcurrency[item.key]}
+                      onChange={(value) => updatePerTypeConcurrency(item.key, value)}
+                    />
+                  ))}
+                </div>
+
+                <div className="mt-5 rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4 text-sm leading-6 text-slate-600">
+                  <p>配置来源：{config.configSource === "database" ? "数据库" : "默认值"}</p>
+                  <p className="mt-2">{config.note || "配置保存后会自动同步到调度服务。"}</p>
+                </div>
+              </>
+            ) : null}
+
+            {configError ? <p className="mt-4 text-sm text-red-700">{configError}</p> : null}
+          </section>
+
+          <section className="surface-panel p-6">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="eyebrow">调度器状态</p>
+                <h3 className="mt-2 text-2xl font-semibold text-slate-900">后台编排健康度</h3>
               </div>
-            ))
-          ) : (
-            <p className="rounded-2xl bg-stone-50 px-4 py-5 text-sm text-slate-500">
-              当前筛选条件下没有队列任务。
-            </p>
-          )}
+              <button
+                className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                disabled={schedulerLoading}
+                onClick={() => void loadSchedulerStatus()}
+                type="button"
+              >
+                {schedulerLoading ? "刷新中..." : "刷新"}
+              </button>
+            </div>
+
+            {schedulerStatus ? (
+              <div className="mt-5 space-y-4">
+                <p className="rounded-[24px] bg-sky-50 px-4 py-4 text-sm leading-6 text-sky-800">
+                  {schedulerStatus.note}
+                </p>
+
+                {[
+                  {
+                    key: "click-farm",
+                    label: "补点击调度器",
+                    value: schedulerStatus.clickFarmScheduler
+                  },
+                  {
+                    key: "url-swap",
+                    label: "换链接调度器",
+                    value: schedulerStatus.urlSwapScheduler
+                  }
+                ].map((item) => {
+                  const tone = schedulerTone(item.value.status);
+                  return (
+                    <div className={cn("rounded-[24px] border px-4 py-4", tone.panel)} key={item.key}>
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-sm font-semibold text-slate-900">{item.label}</p>
+                        <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", tone.badge)}>
+                          {item.value.status}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-slate-700">{item.value.message}</p>
+                      <div className="mt-4 grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
+                        <p>启用任务：{item.value.metrics.enabledTasks}</p>
+                        <p>待调度：{item.value.metrics.overdueTasks}</p>
+                        <p>最近入队：{item.value.metrics.recentQueuedTasks}</p>
+                        <p>运行中：{item.value.metrics.runningTasks || 0}</p>
+                        <p>检查周期：{item.value.metrics.checkInterval}</p>
+                        <p>最后入队：{formatDateTime(item.value.metrics.lastQueuedAt)}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div className="grid gap-2 text-xs text-slate-500 sm:grid-cols-2">
+                  <p>最近心跳：{formatDateTime(schedulerStatus.heartbeatAt)}</p>
+                  <p>最近编排：{formatDateTime(schedulerStatus.lastTickAt)}</p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <button
+                    className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                    disabled={manualScheduling !== null}
+                    onClick={() => void triggerManualScheduling("click-farm")}
+                    type="button"
+                  >
+                    {manualScheduling === "click-farm" ? "补投中..." : "补投补点击"}
+                  </button>
+                  <button
+                    className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                    disabled={manualScheduling !== null}
+                    onClick={() => void triggerManualScheduling("url-swap")}
+                    type="button"
+                  >
+                    {manualScheduling === "url-swap" ? "补投中..." : "补投换链接"}
+                  </button>
+                  <button
+                    className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                    disabled={manualScheduling !== null}
+                    onClick={() => void triggerManualScheduling("all")}
+                    type="button"
+                  >
+                    {manualScheduling === "all" ? "补投中..." : "补投全部"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-4 rounded-2xl bg-stone-50 px-4 py-5 text-sm text-slate-500">
+                {schedulerLoading ? "正在加载调度器状态..." : "暂未获取到调度器状态。"}
+              </p>
+            )}
+
+            {schedulerError ? <p className="mt-4 text-sm text-red-700">{schedulerError}</p> : null}
+          </section>
+
+          <section className="surface-panel p-6">
+            <p className="eyebrow">重点提醒</p>
+            <h3 className="mt-2 text-2xl font-semibold text-slate-900">先处理这些队列风险</h3>
+
+            <div className="mt-5 space-y-4">
+              {consoleData.risks.slice(0, 4).map((risk) => (
+                <div className="rounded-[24px] border border-brand-line bg-white px-4 py-4" key={risk.id}>
+                  <div className="flex items-start gap-3">
+                    <span
+                      className={cn(
+                        "mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl",
+                        risk.tone === "red"
+                          ? "bg-red-50 text-red-700"
+                          : risk.tone === "amber"
+                            ? "bg-amber-50 text-amber-700"
+                            : "bg-slate-100 text-slate-700"
+                      )}
+                    >
+                      {risk.tone === "slate" ? <Wrench className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900">{risk.title}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{risk.description}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       </section>
 
       <AdminOperationsMonitor />
-    </div>
-  );
-}
-
-function StatCard(props: { label: string; value: number }) {
-  return (
-    <div className="surface-panel p-5">
-      <p className="text-sm text-slate-500">{props.label}</p>
-      <p className="mt-3 font-mono text-3xl font-semibold text-slate-900">{props.value}</p>
     </div>
   );
 }
@@ -621,48 +943,5 @@ function ConfigInput(props: {
         value={props.value}
       />
     </label>
-  );
-}
-
-function SchedulerCard(props: {
-  label: string;
-  value: "healthy" | "warning" | "error";
-  message: string;
-  schedulerProcess: string;
-  metrics: {
-    enabledTasks: number;
-    overdueTasks: number;
-    recentQueuedTasks: number;
-    runningTasks?: number;
-    lastQueuedAt: string | null;
-    checkInterval: string;
-  };
-}) {
-  const tone =
-    props.value === "healthy"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-      : props.value === "warning"
-        ? "border-amber-200 bg-amber-50 text-amber-700"
-        : "border-red-200 bg-red-50 text-red-700";
-
-  return (
-    <div className={`rounded-[28px] border p-5 ${tone}`}>
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold">{props.label}</p>
-        <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold uppercase">
-          {getSchedulerLabel(props.value)}
-        </span>
-      </div>
-      <p className="mt-3 text-sm leading-6">{props.message}</p>
-      <div className="mt-4 grid gap-2 text-xs sm:grid-cols-2">
-        <p>执行进程：{props.schedulerProcess}</p>
-        <p>检查周期：{props.metrics.checkInterval}</p>
-        <p>启用任务：{props.metrics.enabledTasks}</p>
-        <p>待调度：{props.metrics.overdueTasks}</p>
-        <p>最近入队：{props.metrics.recentQueuedTasks}</p>
-        <p>运行中：{props.metrics.runningTasks || 0}</p>
-        <p className="sm:col-span-2">最后入队时间：{formatDateTime(props.metrics.lastQueuedAt)}</p>
-      </div>
-    </div>
   );
 }
