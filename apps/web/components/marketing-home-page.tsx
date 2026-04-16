@@ -20,7 +20,6 @@ import { BrandMark } from "@/components/brand-mark";
 import { ContactQrDialog } from "@/components/contact-qr-dialog";
 
 const navLinks = [
-  { href: "#signals", label: "运营信号" },
   { href: "#workflow", label: "接入流程" },
   { href: "#features", label: "核心能力" },
   { href: "#scenarios", label: "适合场景" },
@@ -32,29 +31,6 @@ const heroSignals = [
   "账号、Offer、佣金和链接更新都能回到一个工作台",
   "适合多平台、多账号和多国家的返利协作场景",
   "关键风险和例行操作都有固定入口，减少错链和漏改"
-];
-
-const heroHighlights = [
-  {
-    label: "统一入口",
-    value: "账号 / Offer / 换链",
-    note: "常见运营动作都能在一套后台里完成。"
-  },
-  {
-    label: "更少切换",
-    value: "告别表格来回翻",
-    note: "把日常状态、佣金进度和链接维护放在同一条链路。"
-  },
-  {
-    label: "更稳执行",
-    value: "风险更早暴露",
-    note: "当终链、佣金或代理状态变化时，更容易第一时间发现。"
-  },
-  {
-    label: "更快协作",
-    value: "交接更省力",
-    note: "新人接手和多人配合时，不必再拼凑零散记录。"
-  }
 ];
 
 const operatingTracks = [
@@ -162,9 +138,9 @@ const footerColumns: Array<{
   {
     title: "产品",
     items: [
-      { type: "link", href: "#signals", label: "运营信号" },
       { type: "link", href: "#workflow", label: "接入流程" },
       { type: "link", href: "#features", label: "核心能力" },
+      { type: "link", href: "#faq", label: "常见问题" },
       { type: "link", href: "/login", label: "账号登录" }
     ]
   },
@@ -276,8 +252,8 @@ export default function MarketingHomePage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-5 pb-10 pt-28 lg:px-8 lg:pt-32">
-        <section className="grid gap-8 pb-12 pt-8 lg:grid-cols-[1.04fr,0.96fr] lg:items-center lg:pt-16">
+      <div className="mx-auto max-w-7xl px-5 pb-10 pt-24 lg:px-8 lg:pt-28">
+        <section className="grid gap-8 pb-12 pt-4 lg:grid-cols-[1.04fr,0.96fr] lg:items-center lg:pt-8">
           <div>
             <p className="eyebrow">返利运营后台</p>
             <h1 className="mt-5 max-w-4xl font-display text-5xl font-semibold leading-tight text-slate-900 lg:text-7xl">
@@ -315,28 +291,6 @@ export default function MarketingHomePage() {
           </div>
 
           <div className="space-y-5">
-            <section className="surface-panel p-7" id="signals">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="eyebrow">运营信号</p>
-                  <h2 className="mt-3 text-2xl font-semibold text-slate-900">先判断系统值不值得接管日常协作</h2>
-                </div>
-                <span className="rounded-full bg-brand-mist px-3 py-1 text-xs font-semibold text-brand-emerald">
-                  一眼看懂
-                </span>
-              </div>
-
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                {heroHighlights.map((item) => (
-                  <article className="rounded-[24px] border border-brand-line bg-stone-50 p-4" key={item.label}>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{item.label}</p>
-                    <p className="mt-3 text-xl font-semibold text-slate-900">{item.value}</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{item.note}</p>
-                  </article>
-                ))}
-              </div>
-            </section>
-
             <section className="surface-panel p-7" id="platforms">
               <div className="flex items-start justify-between gap-4">
                 <div>
