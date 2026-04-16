@@ -158,6 +158,24 @@ export function LinkSwapManager() {
     }
   }
 
+  async function swapNowTask(task: LinkSwapTaskRecord) {
+    setTaskActionLoading(`swap-now-${task.id}`);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/link-swap/tasks/${task.id}/swap-now`, {
+        method: "POST"
+      });
+      const payload = await response.json().catch(() => ({}));
+      setMessage(
+        response.ok ? payload.message || "任务已加入立即执行队列" : payload.error || "立即执行失败"
+      );
+      await loadAll();
+    } finally {
+      setTaskActionLoading(null);
+    }
+  }
+
   function getTaskStatusLabel(task: LinkSwapTaskRecord) {
     if (!task.enabled || task.status === "idle") {
       return "已停用";
@@ -269,6 +287,16 @@ export function LinkSwapManager() {
                               type="button"
                             >
                               编辑任务
+                            </button>
+                          ) : null}
+                          {task.enabled && task.status !== "idle" ? (
+                            <button
+                              className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-xs font-semibold text-slate-700"
+                              disabled={taskActionLoading === `swap-now-${task.id}`}
+                              onClick={() => swapNowTask(task)}
+                              type="button"
+                            >
+                              {taskActionLoading === `swap-now-${task.id}` ? "执行中..." : "立即执行"}
                             </button>
                           ) : null}
                           <button

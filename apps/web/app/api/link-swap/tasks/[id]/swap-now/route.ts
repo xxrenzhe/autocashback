@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { enableLinkSwapTask, getLinkSwapTaskById } from "@autocashback/db";
+import {
+  getLinkSwapTaskById,
+  scheduleLinkSwapTaskNow
+} from "@autocashback/db";
 
 import { getRequestUser } from "@/lib/api-auth";
 import { getLinkSwapTaskRunPrecheckError } from "@/lib/link-swap-task-run-helpers";
@@ -24,8 +27,11 @@ export async function POST(
     return NextResponse.json({ error: "换链接任务不存在" }, { status: 404 });
   }
 
-  if (task.enabled && task.status === "ready") {
-    return NextResponse.json({ error: "任务已经是启用状态" }, { status: 400 });
+  if (!task.enabled || task.status === "idle") {
+    return NextResponse.json(
+      { error: "任务处于停用状态，请先恢复任务后再立即执行" },
+      { status: 400 }
+    );
   }
 
   const precheckError = await getLinkSwapTaskRunPrecheckError(user.id, task);
@@ -33,12 +39,12 @@ export async function POST(
     return NextResponse.json({ error: precheckError }, { status: 400 });
   }
 
-  const enabledTask = await enableLinkSwapTask(user.id, taskId);
+  const scheduledTask = await scheduleLinkSwapTaskNow(user.id, taskId);
 
   return NextResponse.json({
     success: true,
-    data: enabledTask,
-    task: enabledTask,
-    message: "任务已启用"
+    data: scheduledTask,
+    task: scheduledTask,
+    message: "任务已加入立即执行队列"
   });
 }

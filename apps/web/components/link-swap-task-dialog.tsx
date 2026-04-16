@@ -63,6 +63,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
   const [saving, setSaving] = useState(false);
   const [enabling, setEnabling] = useState(false);
   const [disabling, setDisabling] = useState(false);
+  const [swappingNow, setSwappingNow] = useState(false);
   const [message, setMessage] = useState("");
   const [proxyWarning, setProxyWarning] = useState("");
   const [history, setHistory] = useState<LinkSwapRunRecord[]>([]);
@@ -71,6 +72,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
     task && (!task.enabled || task.status === "idle" || task.status === "error")
   );
   const canDisableTask = Boolean(task && task.enabled && task.status !== "idle");
+  const canSwapNowTask = Boolean(task && task.enabled && task.status !== "idle");
 
   useEffect(() => {
     if (!open || !offer) {
@@ -294,6 +296,45 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
     }
   }
 
+  async function handleSwapNowTask() {
+    if (!task?.id) {
+      return;
+    }
+
+    if (proxyWarning) {
+      setMessage(proxyWarning);
+      return;
+    }
+
+    setSwappingNow(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/link-swap/tasks/${task.id}/swap-now`, {
+        method: "POST"
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || "立即执行失败");
+      }
+
+      const nextTask = (payload.task || payload.data || null) as LinkSwapTaskRecord | null;
+      setTask(nextTask);
+      if (nextTask) {
+        setForm((current) => ({
+          ...current,
+          enabled: nextTask.enabled
+        }));
+      }
+      setMessage(payload.message || "任务已加入立即执行队列");
+      await onSaved?.();
+    } catch (error: unknown) {
+      setMessage(error instanceof Error ? error.message : "立即执行失败");
+    } finally {
+      setSwappingNow(false);
+    }
+  }
+
   return (
     <ModalFrame
       description="为单个 Offer 配置换链接执行方式。脚本模式沿用现有 MCC Script；Google Ads API 模式会由平台直接更新指定 Campaign 的 Final URL Suffix。"
@@ -495,10 +536,20 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
           {message ? <p className="text-sm text-slate-600">{message}</p> : null}
 
           <div className="flex flex-wrap justify-end gap-3">
+            {canSwapNowTask ? (
+              <button
+                className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                disabled={loading || saving || enabling || disabling || swappingNow}
+                onClick={handleSwapNowTask}
+                type="button"
+              >
+                {swappingNow ? "执行中..." : "立即执行"}
+              </button>
+            ) : null}
             {canDisableTask ? (
               <button
                 className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
-                disabled={loading || saving || enabling || disabling}
+                disabled={loading || saving || enabling || disabling || swappingNow}
                 onClick={handleDisableTask}
                 type="button"
               >
@@ -508,7 +559,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
             {canEnableTask ? (
               <button
                 className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
-                disabled={loading || saving || enabling || disabling}
+                disabled={loading || saving || enabling || disabling || swappingNow}
                 onClick={handleEnableTask}
                 type="button"
               >
@@ -524,7 +575,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
             </button>
             <button
               className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
-              disabled={loading || saving || enabling || disabling}
+              disabled={loading || saving || enabling || disabling || swappingNow}
               type="submit"
             >
               {saving ? "保存中..." : "保存任务"}
