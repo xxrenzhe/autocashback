@@ -835,6 +835,7 @@ export async function getDueLinkSwapTasks() {
       tasks.mode,
       tasks.google_customer_id,
       tasks.google_campaign_id,
+      tasks.next_run_at,
       tasks.activation_started_at,
       tasks.created_at,
       offers.promo_link,
@@ -843,8 +844,9 @@ export async function getDueLinkSwapTasks() {
     FROM link_swap_tasks tasks
     JOIN offers ON offers.id = tasks.offer_id
     WHERE tasks.enabled = TRUE
+      AND COALESCE(tasks.activation_started_at, tasks.created_at) <= CURRENT_TIMESTAMP
       AND (tasks.next_run_at IS NULL OR tasks.next_run_at <= CURRENT_TIMESTAMP)
-    ORDER BY tasks.id ASC
+    ORDER BY CASE WHEN tasks.next_run_at IS NULL THEN 0 ELSE 1 END ASC, tasks.next_run_at ASC, tasks.id ASC
   `;
 }
 

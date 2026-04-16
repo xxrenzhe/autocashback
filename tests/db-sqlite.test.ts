@@ -21,6 +21,7 @@ import {
   ensureDatabaseReady,
   getClickFarmTaskByOfferId,
   getDueClickFarmTasks,
+  getDueLinkSwapTasks,
   getGoogleAdsCredentialStatus,
   getScriptSnapshot,
   getSql,
@@ -775,5 +776,68 @@ describe.sequential("sqlite database bootstrap", () => {
     expect(Date.parse(updatedTask.nextRunAt || "")).toBeGreaterThan(Date.now());
     dueTasks = await getDueClickFarmTasks();
     expect(dueTasks.some((task) => task.id === futureTask.id)).toBe(false);
+  });
+
+  it("keeps link-swap tasks out of orchestration until activation start and preserves next_run_at", async () => {
+    const user = await createUser({
+      username: "sqlite-user-future-link-swap",
+      email: "sqlite-user-future-link-swap@example.com",
+      password: "password",
+      role: "user"
+    });
+
+    const account = await createAccount(user.id, {
+      platformCode: "topcashback",
+      accountName: "Future Link Swap Account",
+      registerEmail: "sqlite-user-future-link-swap@example.com",
+      payoutMethod: "paypal",
+      notes: "future link swap"
+    });
+
+    const offer = await createOffer(user.id, {
+      platformCode: "topcashback",
+      cashbackAccountId: account.id,
+      promoLink: "https://example.com/future-link-swap",
+      targetCountry: "US",
+      brandName: "Brand Future Link Swap",
+      campaignLabel: "Campaign Future Link Swap",
+      commissionCapUsd: 88,
+      manualRecordedCommissionUsd: 12
+    });
+
+    const [task] = await listLinkSwapTasks(user.id);
+    expect(task?.offerId).toBe(offer.id);
+
+    await getSql()`
+      UPDATE link_swap_tasks
+      SET activation_started_at = ${"2099-04-16T00:00:00.000Z"},
+          next_run_at = CURRENT_TIMESTAMP
+      WHERE id = ${task?.id}
+    `;
+
+    let dueTasks = await getDueLinkSwapTasks();
+    expect(dueTasks.some((row) => Number(row.id) === task?.id)).toBe(false);
+
+    await getSql()`
+      UPDATE link_swap_tasks
+      SET activation_started_at = CURRENT_TIMESTAMP,
+          next_run_at = ${"2099-04-16T01:02:03.000Z"}
+      WHERE id = ${task?.id}
+    `;
+
+    dueTasks = await getDueLinkSwapTasks();
+    const dueTask = dueTasks.find((row) => Number(row.id) === task?.id);
+    expect(dueTask).toBeUndefined();
+
+    await getSql()`
+      UPDATE link_swap_tasks
+      SET next_run_at = CURRENT_TIMESTAMP
+      WHERE id = ${task?.id}
+    `;
+
+    dueTasks = await getDueLinkSwapTasks();
+    const orchestratedTask = dueTasks.find((row) => Number(row.id) === task?.id);
+    expect(orchestratedTask).toBeTruthy();
+    expect(String(orchestratedTask?.next_run_at || "")).toBeTruthy();
   });
 });
