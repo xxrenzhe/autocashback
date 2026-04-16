@@ -263,6 +263,15 @@ export async function clearGoogleAdsCredentials(userId: number) {
   const sql = getSql();
 
   await sql`
+    UPDATE link_swap_tasks
+    SET mode = ${"script"},
+        google_customer_id = ${null},
+        google_campaign_id = ${null}
+    WHERE user_id = ${userId}
+      AND mode = ${"google_ads_api"}
+  `;
+
+  await sql`
     DELETE FROM google_ads_credentials
     WHERE user_id = ${userId}
   `;

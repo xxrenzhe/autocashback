@@ -5,6 +5,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { afterAll, describe, expect, it } from "vitest";
 
 import {
+  clearGoogleAdsCredentials,
   closeDatabase,
   createClickFarmTask,
   createAccount,
@@ -194,19 +195,22 @@ describe.sequential("sqlite database bootstrap", () => {
     expect(updatedTasks[0]?.googleCustomerId).toBe("1111111111");
     expect(updatedTasks[0]?.googleCampaignId).toBe("2222222222");
 
+    await clearGoogleAdsCredentials(user.id);
+
+    const downgradedTasks = await listLinkSwapTasks(user.id);
+    expect(downgradedTasks[0]?.mode).toBe("script");
+    expect(downgradedTasks[0]?.googleCustomerId).toBeNull();
+    expect(downgradedTasks[0]?.googleCampaignId).toBeNull();
+
+    const clearedCredentials = await getGoogleAdsCredentialStatus(user.id);
+    expect(clearedCredentials.hasCredentials).toBe(false);
+    expect(clearedCredentials.hasRefreshToken).toBe(false);
+
     const scriptToken = "script-token-for-test";
     await getSql()`
       INSERT INTO script_tokens (user_id, token)
       VALUES (${user.id}, ${scriptToken})
       ON CONFLICT (user_id) DO UPDATE SET token = EXCLUDED.token
-    `;
-
-    expect(await getScriptSnapshot(scriptToken)).toHaveLength(0);
-
-    await getSql()`
-      UPDATE link_swap_tasks
-      SET mode = ${"script"}
-      WHERE id = ${task?.id || 0}
     `;
 
     const scriptSnapshot = await getScriptSnapshot(scriptToken);
