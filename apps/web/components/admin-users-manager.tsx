@@ -52,6 +52,24 @@ type LoginRecord = {
   status: "active" | "expired" | "revoked";
 };
 
+type SecurityAlert = {
+  id: string;
+  severity: "critical" | "warning" | "info";
+  category:
+    | "lockout"
+    | "failed-login"
+    | "active-session-spread"
+    | "recent-ip-spread"
+    | "recent-device-spread";
+  title: string;
+  description: string;
+  createdAt: string;
+  evidence: Array<{
+    label: string;
+    value: string;
+  }>;
+};
+
 type SortField = "id" | "username" | "email" | "role" | "createdAt" | "lastLoginAt";
 type SortDirection = "asc" | "desc";
 type AdminUsersQuery = {
@@ -131,12 +149,15 @@ export function AdminUsersManager() {
   const [editOpen, setEditOpen] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [alertsLoading, setAlertsLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [createForm, setCreateForm] = useState(initialCreateForm);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [alertsUser, setAlertsUser] = useState<AdminUser | null>(null);
   const [editForm, setEditForm] = useState({
     email: "",
     role: "user" as "admin" | "user"
@@ -146,6 +167,7 @@ export function AdminUsersManager() {
     password: string;
   } | null>(null);
   const [loginHistory, setLoginHistory] = useState<LoginRecord[]>([]);
+  const [securityAlerts, setSecurityAlerts] = useState<SecurityAlert[]>([]);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   function formatDateTime(value: string | null) {
@@ -420,6 +442,25 @@ export function AdminUsersManager() {
     setLoginHistory(result.data.records || []);
   }
 
+  async function handleLoadSecurityAlerts(user: AdminUser) {
+    setAlertsUser(user);
+    setAlertsOpen(true);
+    setAlertsLoading(true);
+    setSecurityAlerts([]);
+
+    const result = await fetchJson<{ alerts: SecurityAlert[] }>(
+      `/api/admin/users/${user.id}/alerts`
+    );
+    setAlertsLoading(false);
+
+    if (!result.success) {
+      setError(result.userMessage);
+      return;
+    }
+
+    setSecurityAlerts(result.data.alerts || []);
+  }
+
   async function copyPassword() {
     if (!resetPasswordData) {
       return;
@@ -691,6 +732,17 @@ export function AdminUsersManager() {
                             label="登录记录"
                             onClick={() => void handleLoadLoginHistory(user)}
                           />
+                          <ActionButton
+                            disabled={actionLoading !== null}
+                            icon={ShieldAlert}
+                            label="安全告警"
+                            onClick={() => void handleLoadSecurityAlerts(user)}
+                            tone={
+                              isUserLocked(user) || user.failedLoginCount > 0 || user.activeSessionCount > 1
+                                ? "amber"
+                                : "default"
+                            }
+                          />
                           {isUserLocked(user) || user.failedLoginCount > 0 ? (
                             <ActionButton
                               disabled={actionLoading !== null}
@@ -726,7 +778,7 @@ export function AdminUsersManager() {
         <div className="mt-6 flex flex-col gap-3 border-t border-brand-line/60 pt-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <p>搜索和角色筛选会实时生效，列表默认按创建时间倒序排列。</p>
-            <p>停用会立即回收现有会话；解除锁定会同步清空失败登录计数；删除前需要先停用账号。</p>
+            <p>停用会立即回收现有会话；解除锁定会同步清空失败登录计数；安全告警会按多 IP、多会话和失败登录自动汇总。</p>
           </div>
           <div className="flex gap-2">
             <button
@@ -967,6 +1019,70 @@ export function AdminUsersManager() {
           </div>
         )}
       </ModalFrame>
+
+      <ModalFrame
+        description={alertsUser ? `查看 ${alertsUser.username} 当前的登录与会话风险。` : undefined}
+        eyebrow="用户管理"
+        onClose={() => setAlertsOpen(false)}
+        open={alertsOpen}
+        title="安全告警"
+      >
+        {alertsLoading ? (
+          <p className="text-sm text-slate-500">正在分析安全告警...</p>
+        ) : securityAlerts.length ? (
+          <div className="space-y-3">
+            {securityAlerts.map((alert) => (
+              <div
+                className={`rounded-[24px] border p-4 ${
+                  alert.severity === "critical"
+                    ? "border-red-200 bg-red-50"
+                    : alert.severity === "warning"
+                      ? "border-amber-200 bg-amber-50"
+                      : "border-brand-line bg-stone-50"
+                }`}
+                key={alert.id}
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={getAlertSeverityBadgeClass(alert.severity)}>
+                        {getAlertSeverityLabel(alert.severity)}
+                      </span>
+                      <span className="text-xs text-slate-500">{formatDateTime(alert.createdAt)}</span>
+                    </div>
+                    <p className="mt-3 text-sm font-semibold text-slate-900">{alert.title}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{alert.description}</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/80 px-3 py-2 text-xs font-medium text-slate-500">
+                    {getAlertCategoryLabel(alert.category)}
+                  </div>
+                </div>
+
+                {alert.evidence.length ? (
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                    {alert.evidence.map((item) => (
+                      <div className="rounded-2xl bg-white/80 px-3 py-3" key={`${alert.id}-${item.label}`}>
+                        <p className="text-xs text-slate-500">{item.label}</p>
+                        <p className="mt-1 text-sm font-medium text-slate-900">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[28px] border border-brand-line bg-stone-50 px-5 py-8 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+              <ShieldAlert className="h-6 w-6" />
+            </div>
+            <p className="mt-4 text-base font-semibold text-slate-900">暂无安全告警</p>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              最近没有检测到高失败登录、多地点活跃会话或异常分散的登录来源。
+            </p>
+          </div>
+        )}
+      </ModalFrame>
     </div>
   );
 }
@@ -1056,6 +1172,47 @@ function getUserRiskSummary(user: AdminUser) {
   }
 
   return "当前未发现登录侧风险，可继续保留账号运行。";
+}
+
+function getAlertSeverityBadgeClass(severity: SecurityAlert["severity"]) {
+  if (severity === "critical") {
+    return "rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700";
+  }
+
+  if (severity === "warning") {
+    return "rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700";
+  }
+
+  return "rounded-full bg-brand-mist px-3 py-1 text-xs font-semibold text-brand-emerald";
+}
+
+function getAlertSeverityLabel(severity: SecurityAlert["severity"]) {
+  if (severity === "critical") {
+    return "严重";
+  }
+
+  if (severity === "warning") {
+    return "警告";
+  }
+
+  return "提示";
+}
+
+function getAlertCategoryLabel(category: SecurityAlert["category"]) {
+  switch (category) {
+    case "lockout":
+      return "锁定";
+    case "failed-login":
+      return "失败登录";
+    case "active-session-spread":
+      return "活跃会话";
+    case "recent-ip-spread":
+      return "来源 IP";
+    case "recent-device-spread":
+      return "设备类型";
+    default:
+      return "安全";
+  }
 }
 
 function QuickActionCard(props: {

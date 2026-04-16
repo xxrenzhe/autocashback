@@ -313,6 +313,24 @@ export type AdminUserListRecord = {
   failedLoginCount: number;
 };
 
+export type AdminUserSecurityAlert = {
+  id: string;
+  severity: "critical" | "warning" | "info";
+  category:
+    | "lockout"
+    | "failed-login"
+    | "active-session-spread"
+    | "recent-ip-spread"
+    | "recent-device-spread";
+  title: string;
+  description: string;
+  createdAt: string;
+  evidence: Array<{
+    label: string;
+    value: string;
+  }>;
+};
+
 function generateTemporaryPassword(length = 14) {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
   const bytes = randomBytes(length);
@@ -338,6 +356,31 @@ function toAdminUserListRecord(row: Record<string, unknown>): AdminUserListRecor
     lockedUntil: toNullableTimestamp(row.locked_until),
     failedLoginCount: Number(row.failed_login_count || 0)
   };
+}
+
+function getBrowserFamily(userAgent: string | null | undefined) {
+  if (!userAgent) {
+    return "未知设备";
+  }
+
+  if (userAgent.includes("Edg/")) {
+    return "Edge";
+  }
+  if (userAgent.includes("Chrome")) {
+    return "Chrome";
+  }
+  if (userAgent.includes("Firefox")) {
+    return "Firefox";
+  }
+  if (userAgent.includes("Safari")) {
+    return "Safari";
+  }
+
+  return "其他设备";
+}
+
+function formatAlertTimestamp(value: string | null | undefined) {
+  return value || new Date().toISOString();
 }
 
 export async function listAdminUsers(input?: AdminUsersQueryInput) {
@@ -459,6 +502,26 @@ export async function createUser(input: {
   `;
 
   return rows[0];
+}
+
+export async function findUserIdByLoginIdentifier(identifier: string) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const normalized = String(identifier || "").trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const rows = await sql<{
+    id: number;
+  }[]>`
+    SELECT id
+    FROM users
+    WHERE username = ${normalized} OR email = ${normalized}
+    LIMIT 1
+  `;
+
+  return rows[0]?.id ?? null;
 }
 
 export async function updateUserByAdmin(
@@ -719,6 +782,202 @@ export async function listUserLoginHistoryByAdmin(userId: number, limit = 50) {
         ? "expired"
         : "active"
   }));
+}
+
+export async function getUserSecurityAlertsByAdmin(userId: number) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+
+  const userRows = await sql<{
+    id: number;
+    username: string;
+    is_active: boolean | number;
+    locked_until: string | null;
+    failed_login_count: number;
+  }[]>`
+    SELECT id, username, is_active, locked_until, failed_login_count
+    FROM users
+    WHERE id = ${userId}
+    LIMIT 1
+  `;
+
+  const user = userRows[0];
+  if (!user) {
+    throw new Error("用户不存在");
+  }
+
+  const sessionRows = await sql<{
+    session_id: string;
+    ip_address: string | null;
+    user_agent: string | null;
+    created_at: string;
+    last_activity_at: string;
+    expires_at: string;
+    revoked_at: string | null;
+  }[]>`
+    SELECT
+      session_id,
+      ip_address,
+      user_agent,
+      created_at,
+      last_activity_at,
+      expires_at,
+      revoked_at
+    FROM user_sessions
+    WHERE user_id = ${userId}
+    ORDER BY created_at DESC
+    LIMIT ${100}
+  `;
+
+  const failedAuditRows = await sql<{
+    id: number;
+    ip_address: string | null;
+    user_agent: string | null;
+    created_at: string;
+  }[]>`
+    SELECT id, ip_address, user_agent, created_at
+    FROM audit_logs
+    WHERE user_id = ${userId}
+      AND event_type = ${"login_failed"}
+    ORDER BY created_at DESC
+    LIMIT ${100}
+  `;
+
+  const now = Date.now();
+  const last24Hours = now - 24 * 60 * 60 * 1000;
+  const last7Days = now - 7 * 24 * 60 * 60 * 1000;
+  const alerts: AdminUserSecurityAlert[] = [];
+
+  const activeSessions = sessionRows.filter((row) => {
+    if (row.revoked_at) {
+      return false;
+    }
+
+    const expiresAt = Date.parse(row.expires_at);
+    return Number.isFinite(expiresAt) && expiresAt > now;
+  });
+
+  const recentSessions = sessionRows.filter((row) => {
+    const activityAt = Date.parse(row.last_activity_at || row.created_at);
+    return Number.isFinite(activityAt) && activityAt >= last7Days;
+  });
+
+  const recentFailedAudits = failedAuditRows.filter((row) => {
+    const createdAt = Date.parse(row.created_at);
+    return Number.isFinite(createdAt) && createdAt >= last24Hours;
+  });
+
+  const activeIps = [...new Set(activeSessions.map((row) => row.ip_address).filter(Boolean))] as string[];
+  const recentIps = [
+    ...new Set(
+      [...recentSessions, ...recentFailedAudits].map((row) => row.ip_address).filter(Boolean)
+    )
+  ] as string[];
+  const recentDeviceFamilies = [
+    ...new Set(recentSessions.map((row) => getBrowserFamily(row.user_agent)).filter(Boolean))
+  ];
+
+  if (isFutureTimestamp(toNullableTimestamp(user.locked_until))) {
+    alerts.push({
+      id: `lockout-${userId}`,
+      severity: "critical",
+      category: "lockout",
+      title: "账号已被临时锁定",
+      description: `当前账号因连续失败登录触发保护，预计 ${getRemainingLockMinutes(toNullableTimestamp(user.locked_until))} 分钟后自动恢复。`,
+      createdAt: formatAlertTimestamp(toNullableTimestamp(user.locked_until)),
+      evidence: [
+        { label: "累计失败次数", value: String(user.failed_login_count || 0) },
+        {
+          label: "锁定至",
+          value: toNullableTimestamp(user.locked_until) || "--"
+        }
+      ]
+    });
+  }
+
+  if (Number(user.failed_login_count || 0) >= 3 || recentFailedAudits.length >= 3) {
+    const failedIpCount = new Set(recentFailedAudits.map((row) => row.ip_address).filter(Boolean)).size;
+    alerts.push({
+      id: `failed-login-${userId}`,
+      severity:
+        Number(user.failed_login_count || 0) >= MAX_FAILED_LOGIN_ATTEMPTS || recentFailedAudits.length >= 5
+          ? "critical"
+          : "warning",
+      category: "failed-login",
+      title: "近期失败登录偏高",
+      description: `当前保留 ${user.failed_login_count || 0} 次失败记录，最近 24 小时还有 ${recentFailedAudits.length} 次失败登录，需要确认是否为误输密码或异常尝试。`,
+      createdAt: formatAlertTimestamp(recentFailedAudits[0]?.created_at),
+      evidence: [
+        { label: "当前失败记录", value: String(user.failed_login_count || 0) },
+        { label: "24 小时失败次数", value: String(recentFailedAudits.length) },
+        { label: "失败来源 IP", value: failedIpCount > 0 ? String(failedIpCount) : "--" }
+      ]
+    });
+  }
+
+  if (activeSessions.length >= 2 && activeIps.length >= 2) {
+    alerts.push({
+      id: `active-session-spread-${userId}`,
+      severity: activeIps.length >= 3 ? "critical" : "warning",
+      category: "active-session-spread",
+      title: "存在多地点活跃会话",
+      description: `当前仍有 ${activeSessions.length} 个未过期会话，覆盖 ${activeIps.length} 个不同 IP，建议确认是否为多人共用账号。`,
+      createdAt: formatAlertTimestamp(activeSessions[0]?.last_activity_at),
+      evidence: [
+        { label: "活跃会话数", value: String(activeSessions.length) },
+        { label: "活跃 IP 数", value: String(activeIps.length) },
+        { label: "最近活跃 IP", value: activeIps.slice(0, 3).join(" / ") || "--" }
+      ]
+    });
+  }
+
+  if (recentIps.length >= 3) {
+    alerts.push({
+      id: `recent-ip-spread-${userId}`,
+      severity: recentIps.length >= 4 ? "warning" : "info",
+      category: "recent-ip-spread",
+      title: "近 7 天登录来源分散",
+      description: `近 7 天会话与失败尝试累计覆盖 ${recentIps.length} 个 IP，适合结合交接记录核对是否存在异地共享使用。`,
+      createdAt: formatAlertTimestamp(
+        recentSessions[0]?.last_activity_at || recentFailedAudits[0]?.created_at
+      ),
+      evidence: [
+        { label: "近 7 天 IP 数", value: String(recentIps.length) },
+        { label: "样本来源", value: `${recentSessions.length} 会话 / ${recentFailedAudits.length} 失败尝试` },
+        { label: "最近 IP", value: recentIps.slice(0, 4).join(" / ") || "--" }
+      ]
+    });
+  }
+
+  if (recentDeviceFamilies.length >= 3) {
+    alerts.push({
+      id: `recent-device-spread-${userId}`,
+      severity: "info",
+      category: "recent-device-spread",
+      title: "近 7 天设备类型较多",
+      description: `最近访问覆盖 ${recentDeviceFamilies.length} 类浏览器或设备，若该账号应固定在少量运营环境中使用，建议复核登录来源。`,
+      createdAt: formatAlertTimestamp(recentSessions[0]?.last_activity_at),
+      evidence: [
+        { label: "设备类型数", value: String(recentDeviceFamilies.length) },
+        { label: "设备样本", value: recentDeviceFamilies.slice(0, 4).join(" / ") || "--" }
+      ]
+    });
+  }
+
+  const severityRank: Record<AdminUserSecurityAlert["severity"], number> = {
+    critical: 0,
+    warning: 1,
+    info: 2
+  };
+
+  return alerts.sort((left, right) => {
+    const severityCompare = severityRank[left.severity] - severityRank[right.severity];
+    if (severityCompare !== 0) {
+      return severityCompare;
+    }
+
+    return Date.parse(right.createdAt) - Date.parse(left.createdAt);
+  });
 }
 
 export async function changeUserPassword(input: {

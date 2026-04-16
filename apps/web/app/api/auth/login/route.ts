@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getAuthCookieName, logAuditEvent, loginUser } from "@autocashback/db";
+import {
+  findUserIdByLoginIdentifier,
+  getAuthCookieName,
+  logAuditEvent,
+  loginUser
+} from "@autocashback/db";
 
 import { getRequestMetadata } from "@/lib/request-metadata";
 
@@ -34,7 +39,9 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "登录失败";
+    const matchedUserId = await findUserIdByLoginIdentifier(username);
     await logAuditEvent({
+      userId: matchedUserId,
       eventType: "login_failed",
       ...metadata,
       details: {

@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 const {
   createUser,
   deleteUserByAdmin,
+  getUserSecurityAlertsByAdmin,
   listAdminUsers,
   listUserLoginHistoryByAdmin,
   logAuditEvent,
@@ -12,6 +13,7 @@ const {
 } = vi.hoisted(() => ({
   createUser: vi.fn(),
   deleteUserByAdmin: vi.fn(),
+  getUserSecurityAlertsByAdmin: vi.fn(),
   listAdminUsers: vi.fn(),
   listUserLoginHistoryByAdmin: vi.fn(),
   logAuditEvent: vi.fn(),
@@ -26,6 +28,7 @@ const { getRequestUser } = vi.hoisted(() => ({
 vi.mock("@autocashback/db", () => ({
   createUser,
   deleteUserByAdmin,
+  getUserSecurityAlertsByAdmin,
   listAdminUsers,
   listUserLoginHistoryByAdmin,
   logAuditEvent,
@@ -42,6 +45,7 @@ import {
   DELETE as deleteUser,
   PATCH as updateUser
 } from "../apps/web/app/api/admin/users/[id]/route";
+import { GET as getAlerts } from "../apps/web/app/api/admin/users/[id]/alerts/route";
 import { GET as getLoginHistory } from "../apps/web/app/api/admin/users/[id]/login-history/route";
 import { POST as resetPassword } from "../apps/web/app/api/admin/users/[id]/reset-password/route";
 
@@ -108,6 +112,20 @@ describe("admin users routes", () => {
         expiresAt: "2026-04-23T12:00:00.000Z",
         revokedAt: null,
         status: "active"
+      }
+    ]);
+    getUserSecurityAlertsByAdmin.mockResolvedValue([
+      {
+        id: "failed-login-7",
+        severity: "warning",
+        category: "failed-login",
+        title: "近期失败登录偏高",
+        description: "最近 24 小时失败登录次数偏高。",
+        createdAt: "2026-04-16T12:35:00.000Z",
+        evidence: [
+          { label: "当前失败记录", value: "3" },
+          { label: "24 小时失败次数", value: "4" }
+        ]
       }
     ]);
     logAuditEvent.mockResolvedValue(undefined);
@@ -232,6 +250,18 @@ describe("admin users routes", () => {
     expect(response.status).toBe(200);
     expect(listUserLoginHistoryByAdmin).toHaveBeenCalledWith(7, 50);
     expect(payload.records).toHaveLength(1);
+  });
+
+  it("returns security alerts for a user", async () => {
+    const response = await getAlerts(
+      new NextRequest("https://www.autocashback.dev/api/admin/users/7/alerts"),
+      { params: { id: "7" } }
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(getUserSecurityAlertsByAdmin).toHaveBeenCalledWith(7);
+    expect(payload.alerts[0].title).toBe("近期失败登录偏高");
   });
 
   it("prevents deleting current logged-in admin", async () => {

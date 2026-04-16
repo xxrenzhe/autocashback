@@ -27,12 +27,14 @@ import {
   getSql,
   getDashboardSummary,
   getSettings,
+  getUserSecurityAlertsByAdmin,
   loginUser,
   listLinkSwapTasks,
   restartClickFarmTask,
   setClickFarmTaskPaused,
   stopClickFarmTask,
   listUsers,
+  logAuditEvent,
   saveGoogleAdsCredentials,
   saveSettings,
   scheduleLinkSwapTaskNow,
@@ -966,8 +968,44 @@ describe.sequential("sqlite database bootstrap", () => {
     expect(Number(securityRows[0]?.failed_login_count || 0)).toBe(0);
     expect(securityRows[0]?.locked_until).toBeNull();
 
-    const session = await loginUser(user.username, "password");
+    await logAuditEvent({
+      userId: user.id,
+      eventType: "login_failed",
+      ipAddress: "203.0.113.10",
+      userAgent: "Mozilla/5.0 Chrome/124.0",
+      details: { username: user.username }
+    });
+    await logAuditEvent({
+      userId: user.id,
+      eventType: "login_failed",
+      ipAddress: "198.51.100.8",
+      userAgent: "Mozilla/5.0 Safari/605.1.15",
+      details: { username: user.username }
+    });
+    await logAuditEvent({
+      userId: user.id,
+      eventType: "login_failed",
+      ipAddress: "198.51.100.9",
+      userAgent: "Mozilla/5.0 Firefox/124.0",
+      details: { username: user.username }
+    });
+
+    const session = await loginUser(user.username, "password", {
+      ipAddress: "203.0.113.10",
+      userAgent: "Mozilla/5.0 Chrome/124.0"
+    });
     expect(session.user.id).toBe(user.id);
+
+    const secondSession = await loginUser(user.username, "password", {
+      ipAddress: "198.51.100.8",
+      userAgent: "Mozilla/5.0 Safari/605.1.15"
+    });
+    expect(secondSession.user.id).toBe(user.id);
+
+    const alerts = await getUserSecurityAlertsByAdmin(user.id);
+    expect(alerts.some((alert) => alert.category === "failed-login")).toBe(true);
+    expect(alerts.some((alert) => alert.category === "active-session-spread")).toBe(true);
+    expect(alerts.some((alert) => alert.category === "recent-ip-spread")).toBe(true);
 
     const activeSessionsBeforeDisable = await getSql()<{
       count: number;
@@ -977,7 +1015,7 @@ describe.sequential("sqlite database bootstrap", () => {
       WHERE user_id = ${user.id}
         AND revoked_at IS NULL
     `;
-    expect(Number(activeSessionsBeforeDisable[0]?.count || 0)).toBe(1);
+    expect(Number(activeSessionsBeforeDisable[0]?.count || 0)).toBe(2);
 
     await updateUserByAdmin(user.id, { isActive: false });
 
