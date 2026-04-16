@@ -17,7 +17,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  return NextResponse.json({ tasks: await listLinkSwapTasks(user.id) });
+  const tasks = await listLinkSwapTasks(user.id);
+  const payload = {
+    tasks,
+    pagination: {
+      page: 1,
+      limit: tasks.length || 20,
+      total: tasks.length,
+      totalPages: 1
+    }
+  };
+
+  return NextResponse.json({
+    ...payload,
+    success: true,
+    data: payload
+  });
 }
 
 export async function PUT(request: NextRequest) {
@@ -90,7 +105,12 @@ export async function PUT(request: NextRequest) {
       googleCampaignId
     });
 
-    return NextResponse.json({ task });
+    return NextResponse.json({
+      success: true,
+      data: task,
+      task,
+      message: "换链接任务更新成功"
+    });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "换链接任务更新失败";
     return NextResponse.json({ error: message }, { status: 400 });

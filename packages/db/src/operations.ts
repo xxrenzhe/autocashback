@@ -311,6 +311,33 @@ export async function getLinkSwapTaskByOfferId(userId: number, offerId: number) 
   return rows[0] ? toLinkSwapTaskRecord(rows[0]) : null;
 }
 
+export async function getLinkSwapTaskById(userId: number, taskId: number) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const rows = await sql<DbRow[]>`
+    SELECT
+      id,
+      user_id,
+      offer_id,
+      enabled,
+      interval_minutes,
+      duration_days,
+      mode,
+      google_customer_id,
+      google_campaign_id,
+      status,
+      consecutive_failures,
+      last_run_at,
+      next_run_at
+    FROM link_swap_tasks
+    WHERE user_id = ${userId}
+      AND id = ${taskId}
+    LIMIT 1
+  `;
+
+  return rows[0] ? toLinkSwapTaskRecord(rows[0]) : null;
+}
+
 export async function updateLinkSwapTask(
   userId: number,
   offerId: number,
@@ -387,6 +414,45 @@ export async function updateLinkSwapTask(
       userId,
       offerId
     ]
+  );
+
+  if (!rows[0]) {
+    throw new Error("换链接任务不存在");
+  }
+
+  return toLinkSwapTaskRecord(rows[0]);
+}
+
+export async function enableLinkSwapTask(userId: number, taskId: number) {
+  await ensureDatabaseReady();
+  const sql = getSql();
+  const dbType = getDbType();
+
+  const rows = await sql.unsafe<DbRow[]>(
+    `
+      UPDATE link_swap_tasks
+      SET enabled = ?,
+          activation_started_at = CURRENT_TIMESTAMP,
+          status = ?,
+          consecutive_failures = 0,
+          next_run_at = CURRENT_TIMESTAMP
+      WHERE user_id = ? AND id = ?
+      RETURNING
+        id,
+        user_id,
+        offer_id,
+        enabled,
+        interval_minutes,
+        duration_days,
+        mode,
+        google_customer_id,
+        google_campaign_id,
+        status,
+        consecutive_failures,
+        last_run_at,
+        next_run_at
+    `,
+    [booleanValue(true, dbType), "ready", userId, taskId]
   );
 
   if (!rows[0]) {

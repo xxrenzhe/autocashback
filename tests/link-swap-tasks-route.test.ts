@@ -26,7 +26,7 @@ vi.mock("@/lib/api-auth", () => ({
   getRequestUser
 }));
 
-import { PUT } from "../apps/web/app/api/link-swap/tasks/route";
+import { GET, PUT } from "../apps/web/app/api/link-swap/tasks/route";
 
 describe("link swap tasks route", () => {
   beforeEach(() => {
@@ -91,6 +91,22 @@ describe("link swap tasks route", () => {
         mode: "script"
       })
     );
+  });
+
+  it("returns autobb-compatible list payload with pagination metadata", async () => {
+    listLinkSwapTasks.mockResolvedValue([{ id: 5, offerId: 21, intervalMinutes: 30 }]);
+
+    const response = await GET(
+      new NextRequest("https://www.autocashback.dev/api/link-swap/tasks")
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.success).toBe(true);
+    expect(payload.tasks).toHaveLength(1);
+    expect(payload.data.tasks).toHaveLength(1);
+    expect(payload.pagination.total).toBe(1);
+    expect(payload.data.pagination.totalPages).toBe(1);
   });
 
   it("rejects saving when the offer country has no proxy configured", async () => {

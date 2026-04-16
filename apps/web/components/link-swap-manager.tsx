@@ -48,6 +48,7 @@ export function LinkSwapManager() {
   const [message, setMessage] = useState("");
   const [rotatingToken, setRotatingToken] = useState(false);
   const [activeOffer, setActiveOffer] = useState<OfferRecord | null>(null);
+  const [taskActionLoading, setTaskActionLoading] = useState<string | null>(null);
 
   const offersMap = useMemo(
     () => new Map(offers.map((offer) => [offer.id, offer])),
@@ -62,7 +63,8 @@ export function LinkSwapManager() {
       fetch("/api/script/link-swap/template")
     ]);
 
-    const taskList = (await tasksResponse.json()).tasks || [];
+    const tasksPayload = await tasksResponse.json();
+    const taskList = tasksPayload?.tasks || tasksPayload?.data?.tasks || [];
     setTasks(taskList);
     setRuns((await runsResponse.json()).runs || []);
     setOffers((await offersResponse.json()).offers || []);
@@ -90,32 +92,71 @@ export function LinkSwapManager() {
   }, [offers, selectedOfferId]);
 
   async function saveTask(task: LinkSwapTaskRecord, enabled: boolean) {
+    setTaskActionLoading(`save-${task.id}`);
     setMessage("");
     const intervalMinutes = Number(intervals[task.id] || task.intervalMinutes);
     if (!LINK_SWAP_ALLOWED_INTERVALS_MINUTES.includes(intervalMinutes)) {
       setMessage(
         `换链接间隔必须是以下值之一：${LINK_SWAP_ALLOWED_INTERVALS_MINUTES.join(", ")} 分钟`
       );
+      setTaskActionLoading(null);
       return;
     }
 
-    const response = await fetch("/api/link-swap/tasks", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        offerId: task.offerId,
-        enabled,
-        intervalMinutes,
-        durationDays: task.durationDays,
-        mode: task.mode,
-        googleCustomerId: task.googleCustomerId,
-        googleCampaignId: task.googleCampaignId
-      })
-    });
+    try {
+      const response = await fetch("/api/link-swap/tasks", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          offerId: task.offerId,
+          enabled,
+          intervalMinutes,
+          durationDays: task.durationDays,
+          mode: task.mode,
+          googleCustomerId: task.googleCustomerId,
+          googleCampaignId: task.googleCampaignId
+        })
+      });
 
-    const payload = await response.json();
-    setMessage(response.ok ? "任务已更新" : payload.error || "任务更新失败");
-    await loadAll();
+      const payload = await response.json();
+      setMessage(response.ok ? payload.message || "任务已更新" : payload.error || "任务更新失败");
+      await loadAll();
+    } finally {
+      setTaskActionLoading(null);
+    }
+  }
+
+  async function enableTask(task: LinkSwapTaskRecord) {
+    setTaskActionLoading(`enable-${task.id}`);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/link-swap/tasks/${task.id}/enable`, {
+        method: "POST"
+      });
+      const payload = await response.json().catch(() => ({}));
+      setMessage(response.ok ? payload.message || "任务已启用" : payload.error || "启用任务失败");
+      await loadAll();
+    } finally {
+      setTaskActionLoading(null);
+    }
+  }
+
+  function getTaskStatusLabel(task: LinkSwapTaskRecord) {
+    if (!task.enabled || task.status === "idle") {
+      return "已停用";
+    }
+
+    switch (task.status) {
+      case "ready":
+        return "运行中";
+      case "warning":
+        return "预警";
+      case "error":
+        return "异常";
+      default:
+        return task.status;
+    }
   }
 
   async function rotateToken() {
@@ -216,26 +257,37 @@ export function LinkSwapManager() {
                           ) : null}
                           <button
                             className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-xs font-semibold text-slate-700"
+                            disabled={taskActionLoading === `save-${task.id}`}
                             onClick={() => saveTask(task, task.enabled)}
                             type="button"
                           >
-                            保存频率
+                            {taskActionLoading === `save-${task.id}` ? "保存中..." : "保存配置"}
                           </button>
-                          <button
-                            className={`rounded-2xl px-4 py-3 text-xs font-semibold text-white ${
-                              task.enabled ? "bg-slate-700" : "bg-brand-emerald"
-                            }`}
-                            onClick={() => saveTask(task, !task.enabled)}
-                            type="button"
-                          >
-                            {task.enabled ? "暂停任务" : "启用任务"}
-                          </button>
+                          {!task.enabled || task.status === "idle" ? (
+                            <button
+                              className="rounded-2xl bg-brand-emerald px-4 py-3 text-xs font-semibold text-white"
+                              disabled={taskActionLoading === `enable-${task.id}`}
+                              onClick={() => enableTask(task)}
+                              type="button"
+                            >
+                              {taskActionLoading === `enable-${task.id}` ? "启用中..." : "恢复任务"}
+                            </button>
+                          ) : (
+                            <button
+                              className="rounded-2xl bg-slate-700 px-4 py-3 text-xs font-semibold text-white"
+                              disabled={taskActionLoading === `save-${task.id}`}
+                              onClick={() => saveTask(task, false)}
+                              type="button"
+                            >
+                              暂停任务
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
 
                     <div className="mt-4 grid gap-3 sm:grid-cols-4">
-                      <p className="text-sm text-slate-600">状态：{task.status}</p>
+                      <p className="text-sm text-slate-600">状态：{getTaskStatusLabel(task)}</p>
                       <p className="text-sm text-slate-600">当前间隔：{task.intervalMinutes} 分钟</p>
                       <p className="text-sm text-slate-600">
                         持续天数：{task.durationDays === -1 ? "不限期" : `${task.durationDays} 天`}
