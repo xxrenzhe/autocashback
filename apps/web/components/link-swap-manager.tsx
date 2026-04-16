@@ -1,39 +1,238 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-
 import {
-  LINK_SWAP_ALLOWED_INTERVALS_MINUTES,
-  LINK_SWAP_INTERVAL_OPTIONS,
-  type LinkSwapRunRecord,
-  type LinkSwapTaskRecord,
-  type OfferRecord
-} from "@autocashback/domain";
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  CheckCircle2,
+  Clock3,
+  Copy,
+  ExternalLink,
+  History,
+  Link2,
+  Pause,
+  PencilLine,
+  Play,
+  RefreshCcw,
+  Settings2,
+  ShieldAlert,
+  Target
+} from "lucide-react";
+
+import type { LinkSwapRunRecord, LinkSwapTaskRecord, OfferRecord } from "@autocashback/domain";
+import { cn } from "@autocashback/ui";
 
 import { LinkSwapTaskDialog } from "@/components/link-swap-task-dialog";
+import { ModalFrame } from "@/components/modal-frame";
+import { fetchJson } from "@/lib/api-error-handler";
+import {
+  buildLinkSwapConsole,
+  type LinkSwapConsoleRow,
+  type LinkSwapConsoleStatus
+} from "@/lib/link-swap-console";
 
 type ScriptTemplatePayload = {
   template: string;
   token: string;
 };
 
-function getIntervalOptions(currentValue: number) {
-  if (LINK_SWAP_INTERVAL_OPTIONS.some((option) => option.value === currentValue)) {
-    return LINK_SWAP_INTERVAL_OPTIONS;
+type FeedbackState =
+  | {
+      tone: "success" | "error";
+      text: string;
+    }
+  | null;
+
+type SortField = "offer" | "status" | "mode" | "interval" | "lastRun" | "nextRun" | "failures";
+type SortDirection = "asc" | "desc";
+
+const statusFilterOptions: Array<{ value: "all" | LinkSwapConsoleStatus; label: string }> = [
+  { value: "all", label: "全部状态" },
+  { value: "running", label: "运行中" },
+  { value: "paused", label: "已暂停" },
+  { value: "warning", label: "预警" },
+  { value: "error", label: "异常" }
+];
+
+const modeFilterOptions: Array<{ value: "all" | LinkSwapTaskRecord["mode"]; label: string }> = [
+  { value: "all", label: "全部模式" },
+  { value: "script", label: "Script 模式" },
+  { value: "google_ads_api", label: "Google Ads API" }
+];
+
+function formatDateTime(value: string | null) {
+  if (!value) {
+    return "--";
   }
 
-  if (LINK_SWAP_ALLOWED_INTERVALS_MINUTES.includes(currentValue)) {
-    return [
-      ...LINK_SWAP_INTERVAL_OPTIONS,
-      {
-        value: currentValue,
-        label: `${currentValue} 分钟（旧值）`
-      }
-    ];
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed)
+    ? new Date(parsed).toLocaleString("zh-CN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      })
+    : value;
+}
+
+function formatRunSummary(run: LinkSwapRunRecord | null) {
+  if (!run) {
+    return "暂无执行记录";
   }
 
-  return LINK_SWAP_INTERVAL_OPTIONS;
+  return run.resolvedSuffix || run.errorMessage || "本次执行未返回 suffix";
+}
+
+function getRowSortValue(row: LinkSwapConsoleRow, field: SortField): number | string {
+  switch (field) {
+    case "offer":
+      return (row.offer?.brandName || row.offer?.campaignLabel || `Offer ${row.task.offerId}`).toLowerCase();
+    case "status":
+      return row.statusGroup;
+    case "mode":
+      return row.task.mode;
+    case "interval":
+      return row.task.intervalMinutes;
+    case "lastRun":
+      return Date.parse(row.task.lastRunAt || row.latestRun?.createdAt || "") || 0;
+    case "nextRun":
+      return Date.parse(row.task.nextRunAt || "") || 0;
+    case "failures":
+      return row.task.consecutiveFailures;
+    default:
+      return row.task.id;
+  }
+}
+
+function compareRows(left: LinkSwapConsoleRow, right: LinkSwapConsoleRow, field: SortField, direction: SortDirection) {
+  const leftValue = getRowSortValue(left, field);
+  const rightValue = getRowSortValue(right, field);
+
+  let base =
+    typeof leftValue === "number" && typeof rightValue === "number"
+      ? leftValue - rightValue
+      : String(leftValue).localeCompare(String(rightValue), "zh-CN", { numeric: true });
+
+  if (field === "status") {
+    const statusRank: Record<LinkSwapConsoleStatus, number> = {
+      error: 0,
+      warning: 1,
+      running: 2,
+      paused: 3
+    };
+    base = statusRank[left.statusGroup] - statusRank[right.statusGroup];
+  }
+
+  return direction === "asc" ? base : -base;
+}
+
+function SortableHeader({
+  active,
+  direction,
+  label,
+  onClick
+}: {
+  active: boolean;
+  direction: SortDirection;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className="inline-flex items-center gap-1 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500"
+      onClick={onClick}
+      type="button"
+    >
+      <span>{label}</span>
+      {!active ? (
+        <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />
+      ) : direction === "asc" ? (
+        <ArrowUp className="h-3.5 w-3.5 text-slate-700" />
+      ) : (
+        <ArrowDown className="h-3.5 w-3.5 text-slate-700" />
+      )}
+    </button>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  note,
+  tone,
+  icon: Icon
+}: {
+  label: string;
+  value: string;
+  note: string;
+  tone: "emerald" | "amber" | "slate";
+  icon: React.ComponentType<{ className?: string }>;
+}) {
+  const toneStyles = {
+    emerald: {
+      badge: "bg-brand-mist text-brand-emerald",
+      icon: "bg-brand-mist text-brand-emerald"
+    },
+    amber: {
+      badge: "bg-amber-50 text-amber-700",
+      icon: "bg-amber-50 text-amber-700"
+    },
+    slate: {
+      badge: "bg-slate-100 text-slate-700",
+      icon: "bg-slate-100 text-slate-700"
+    }
+  } as const;
+
+  return (
+    <div className="surface-panel p-5">
+      <div className="flex items-start justify-between gap-4">
+        <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", toneStyles[tone].badge)}>
+          {label}
+        </span>
+        <span className={cn("flex h-10 w-10 items-center justify-center rounded-2xl", toneStyles[tone].icon)}>
+          <Icon className="h-4 w-4" />
+        </span>
+      </div>
+      <p className="mt-5 font-mono text-4xl font-semibold text-slate-900">{value}</p>
+      <p className="mt-3 text-sm leading-6 text-slate-600">{note}</p>
+    </div>
+  );
+}
+
+function statusPill(status: LinkSwapConsoleStatus) {
+  switch (status) {
+    case "running":
+      return "bg-brand-mist text-brand-emerald";
+    case "paused":
+      return "bg-slate-100 text-slate-700";
+    case "warning":
+      return "bg-amber-50 text-amber-700";
+    case "error":
+      return "bg-red-50 text-red-700";
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+}
+
+function statusLabel(status: LinkSwapConsoleStatus) {
+  switch (status) {
+    case "running":
+      return "运行中";
+    case "paused":
+      return "已暂停";
+    case "warning":
+      return "预警";
+    case "error":
+      return "异常";
+    default:
+      return status;
+  }
 }
 
 export function LinkSwapManager() {
@@ -43,41 +242,60 @@ export function LinkSwapManager() {
   const [tasks, setTasks] = useState<LinkSwapTaskRecord[]>([]);
   const [runs, setRuns] = useState<LinkSwapRunRecord[]>([]);
   const [offers, setOffers] = useState<OfferRecord[]>([]);
-  const [intervals, setIntervals] = useState<Record<number, number>>({});
   const [script, setScript] = useState<ScriptTemplatePayload>({ template: "", token: "" });
-  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [feedback, setFeedback] = useState<FeedbackState>(null);
   const [rotatingToken, setRotatingToken] = useState(false);
   const [activeOffer, setActiveOffer] = useState<OfferRecord | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyTask, setHistoryTask] = useState<LinkSwapConsoleRow | null>(null);
+  const [historyRecords, setHistoryRecords] = useState<LinkSwapRunRecord[]>([]);
   const [taskActionLoading, setTaskActionLoading] = useState<string | null>(null);
 
-  const offersMap = useMemo(
-    () => new Map(offers.map((offer) => [offer.id, offer])),
-    [offers]
-  );
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | LinkSwapConsoleStatus>("all");
+  const [modeFilter, setModeFilter] = useState<"all" | LinkSwapTaskRecord["mode"]>("all");
+  const [sortField, setSortField] = useState<SortField>("nextRun");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-  async function loadAll() {
-    const [tasksResponse, runsResponse, offersResponse, scriptResponse] = await Promise.all([
-      fetch("/api/link-swap/tasks"),
-      fetch("/api/link-swap/runs"),
-      fetch("/api/offers"),
-      fetch("/api/script/link-swap/template")
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
+  async function loadAll(options?: { refresh?: boolean }) {
+    if (options?.refresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
+    const [tasksResult, runsResult, offersResult, scriptResult] = await Promise.all([
+      fetchJson<{ tasks: LinkSwapTaskRecord[] }>("/api/link-swap/tasks", { cache: "no-store" }),
+      fetchJson<{ runs: LinkSwapRunRecord[] }>("/api/link-swap/runs", { cache: "no-store" }),
+      fetchJson<{ offers: OfferRecord[] }>("/api/offers", { cache: "no-store" }),
+      fetchJson<ScriptTemplatePayload>("/api/script/link-swap/template", { cache: "no-store" })
     ]);
 
-    const tasksPayload = await tasksResponse.json();
-    const taskList = tasksPayload?.tasks || tasksPayload?.data?.tasks || [];
-    setTasks(taskList);
-    setRuns((await runsResponse.json()).runs || []);
-    setOffers((await offersResponse.json()).offers || []);
-    setScript(await scriptResponse.json());
-    setIntervals(
-      Object.fromEntries(
-        taskList.map((task: LinkSwapTaskRecord) => [task.id, task.intervalMinutes])
-      )
-    );
+    const failedResult = [tasksResult, runsResult, offersResult, scriptResult].find((result) => !result.success);
+    if (failedResult && !failedResult.success) {
+      setFeedback({ tone: "error", text: failedResult.userMessage });
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
+    setTasks(tasksResult.success ? tasksResult.data.tasks || [] : []);
+    setRuns(runsResult.success ? runsResult.data.runs || [] : []);
+    setOffers(offersResult.success ? offersResult.data.offers || [] : []);
+    setScript(scriptResult.success ? scriptResult.data : { template: "", token: "" });
+    setLoading(false);
+    setRefreshing(false);
   }
 
   useEffect(() => {
-    loadAll();
+    void loadAll();
   }, []);
 
   useEffect(() => {
@@ -85,373 +303,746 @@ export function LinkSwapManager() {
       return;
     }
 
-    const matchedOffer = offers.find((offer) => offer.id === selectedOfferId) || null;
-    if (matchedOffer) {
-      setActiveOffer(matchedOffer);
+    const offer = offers.find((item) => item.id === selectedOfferId) || null;
+    if (offer) {
+      setActiveOffer(offer);
     }
   }, [offers, selectedOfferId]);
 
-  async function saveTask(task: LinkSwapTaskRecord, enabled: boolean) {
-    setTaskActionLoading(`save-${task.id}`);
-    setMessage("");
-    const intervalMinutes = Number(intervals[task.id] || task.intervalMinutes);
-    if (!LINK_SWAP_ALLOWED_INTERVALS_MINUTES.includes(intervalMinutes)) {
-      setMessage(
-        `换链接间隔必须是以下值之一：${LINK_SWAP_ALLOWED_INTERVALS_MINUTES.join(", ")} 分钟`
+  const consoleData = useMemo(() => buildLinkSwapConsole(tasks, offers, runs), [tasks, offers, runs]);
+
+  const filteredRows = useMemo(() => {
+    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
+
+    return consoleData.rows
+      .filter((row) => {
+        if (normalizedQuery && !row.searchText.includes(normalizedQuery)) {
+          return false;
+        }
+
+        if (statusFilter !== "all" && row.statusGroup !== statusFilter) {
+          return false;
+        }
+
+        if (modeFilter !== "all" && row.task.mode !== modeFilter) {
+          return false;
+        }
+
+        return true;
+      })
+      .slice()
+      .sort((left: LinkSwapConsoleRow, right: LinkSwapConsoleRow) =>
+        compareRows(left, right, sortField, sortDirection)
       );
+  }, [consoleData.rows, deferredSearchQuery, modeFilter, sortDirection, sortField, statusFilter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [deferredSearchQuery, modeFilter, pageSize, sortDirection, sortField, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  async function handleTaskAction(taskId: number, action: "enable" | "disable" | "swap-now") {
+    setTaskActionLoading(`${action}-${taskId}`);
+    setFeedback(null);
+
+    const result = await fetchJson<{ message?: string }>(`/api/link-swap/tasks/${taskId}/${action}`, {
+      method: "POST"
+    });
+
+    if (!result.success) {
+      setFeedback({ tone: "error", text: result.userMessage });
       setTaskActionLoading(null);
       return;
     }
 
-    try {
-      const response = await fetch("/api/link-swap/tasks", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          offerId: task.offerId,
-          enabled,
-          intervalMinutes,
-          durationDays: task.durationDays,
-          mode: task.mode,
-          googleCustomerId: task.googleCustomerId,
-          googleCampaignId: task.googleCampaignId
-        })
-      });
-
-      const payload = await response.json();
-      setMessage(response.ok ? payload.message || "任务已更新" : payload.error || "任务更新失败");
-      await loadAll();
-    } finally {
-      setTaskActionLoading(null);
-    }
+    setFeedback({
+      tone: "success",
+      text:
+        result.data.message ||
+        (action === "enable" ? "任务已恢复" : action === "disable" ? "任务已暂停" : "任务已加入立即执行队列")
+    });
+    await loadAll({ refresh: true });
+    setTaskActionLoading(null);
   }
 
-  async function enableTask(task: LinkSwapTaskRecord) {
-    setTaskActionLoading(`enable-${task.id}`);
-    setMessage("");
+  async function openHistory(row: LinkSwapConsoleRow) {
+    setHistoryTask(row);
+    setHistoryOpen(true);
+    setHistoryLoading(true);
+    setHistoryRecords([]);
 
-    try {
-      const response = await fetch(`/api/link-swap/tasks/${task.id}/enable`, {
-        method: "POST"
-      });
-      const payload = await response.json().catch(() => ({}));
-      setMessage(response.ok ? payload.message || "任务已启用" : payload.error || "启用任务失败");
-      await loadAll();
-    } finally {
-      setTaskActionLoading(null);
-    }
-  }
+    const result = await fetchJson<{ history: LinkSwapRunRecord[] }>(
+      `/api/link-swap/tasks/${row.task.id}/history`,
+      { cache: "no-store" }
+    );
 
-  async function disableTask(task: LinkSwapTaskRecord) {
-    setTaskActionLoading(`disable-${task.id}`);
-    setMessage("");
-
-    try {
-      const response = await fetch(`/api/link-swap/tasks/${task.id}/disable`, {
-        method: "POST"
-      });
-      const payload = await response.json().catch(() => ({}));
-      setMessage(response.ok ? payload.message || "任务已停用" : payload.error || "停用任务失败");
-      await loadAll();
-    } finally {
-      setTaskActionLoading(null);
-    }
-  }
-
-  async function swapNowTask(task: LinkSwapTaskRecord) {
-    setTaskActionLoading(`swap-now-${task.id}`);
-    setMessage("");
-
-    try {
-      const response = await fetch(`/api/link-swap/tasks/${task.id}/swap-now`, {
-        method: "POST"
-      });
-      const payload = await response.json().catch(() => ({}));
-      setMessage(
-        response.ok ? payload.message || "任务已加入立即执行队列" : payload.error || "立即执行失败"
-      );
-      await loadAll();
-    } finally {
-      setTaskActionLoading(null);
-    }
-  }
-
-  function getTaskStatusLabel(task: LinkSwapTaskRecord) {
-    if (!task.enabled || task.status === "idle") {
-      return "已停用";
+    if (!result.success) {
+      setFeedback({ tone: "error", text: result.userMessage });
+      setHistoryLoading(false);
+      return;
     }
 
-    switch (task.status) {
-      case "ready":
-        return "运行中";
-      case "warning":
-        return "预警";
-      case "error":
-        return "异常";
-      default:
-        return task.status;
-    }
+    setHistoryRecords(result.data.history || []);
+    setHistoryLoading(false);
   }
 
   async function rotateToken() {
     setRotatingToken(true);
-    setMessage("");
+    setFeedback(null);
+
+    const result = await fetchJson<{ message?: string }>(
+      "/api/script/link-swap/rotate-token",
+      { method: "POST" }
+    );
+
+    if (!result.success) {
+      setFeedback({ tone: "error", text: result.userMessage });
+      setRotatingToken(false);
+      return;
+    }
+
+    await loadAll({ refresh: true });
+    setFeedback({
+      tone: "success",
+      text: "Token 已更换，旧脚本立即失效，请重新复制最新脚本。"
+    });
+    setRotatingToken(false);
+  }
+
+  async function copyScriptTemplate() {
+    if (!script.template) {
+      setFeedback({ tone: "error", text: "当前没有可复制的脚本模板" });
+      return;
+    }
 
     try {
-      const response = await fetch("/api/script/link-swap/rotate-token", {
-        method: "POST"
-      });
-      const payload = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        setMessage(payload.error || "Token 更换失败");
-        return;
-      }
-
-      await loadAll();
-      setMessage("Token 已更换，旧脚本立即失效，请复制最新换链接脚本。");
+      await navigator.clipboard.writeText(script.template);
+      setFeedback({ tone: "success", text: "最新换链脚本已复制到剪贴板" });
     } catch {
-      setMessage("Token 更换失败");
-    } finally {
-      setRotatingToken(false);
+      setFeedback({ tone: "error", text: "复制失败，请检查浏览器剪贴板权限" });
     }
+  }
+
+  function toggleSort(field: SortField) {
+    if (sortField !== field) {
+      startTransition(() => {
+        setSortField(field);
+        setSortDirection(field === "offer" || field === "mode" || field === "status" ? "asc" : "desc");
+      });
+      return;
+    }
+
+    startTransition(() => {
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+    });
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <section className="surface-panel p-6">
+          <div className="h-8 w-48 animate-pulse rounded-full bg-brand-mist" />
+          <div className="mt-4 h-4 w-80 animate-pulse rounded-full bg-stone-100" />
+        </section>
+        <section className="grid gap-4 xl:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div className="surface-panel p-5" key={index}>
+              <div className="h-6 w-20 animate-pulse rounded-full bg-stone-100" />
+              <div className="mt-5 h-10 w-24 animate-pulse rounded-full bg-stone-100" />
+              <div className="mt-3 h-4 w-full animate-pulse rounded-full bg-stone-100" />
+            </div>
+          ))}
+        </section>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-6 xl:grid-cols-[1.15fr,0.85fr]">
-        <div className="surface-panel p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="eyebrow">任务总览</p>
-              <h3 className="mt-2 text-2xl font-semibold text-slate-900">换链接任务</h3>
-            </div>
-            <span className="rounded-full bg-stone-100 px-3 py-2 font-mono text-xs text-slate-600">
-              {tasks.length} tasks
-            </span>
-          </div>
-
-          <div className="mt-5 space-y-3">
-            {tasks.length ? (
-              tasks.map((task) => {
-                const offer = offersMap.get(task.offerId);
-                const isSelected = offer?.id === selectedOfferId;
-
-                return (
-                  <div
-                    className={`rounded-[28px] border p-5 ${
-                      isSelected
-                        ? "border-brand-emerald bg-brand-mist/40"
-                        : "border-brand-line bg-stone-50"
-                    }`}
-                    key={task.id}
-                  >
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">
-                          {offer?.brandName || `Offer #${task.offerId}`}
-                        </p>
-                        <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">
-                          {offer?.campaignLabel || "未绑定标签"} · {offer?.targetCountry || "--"} · {task.mode}
-                        </p>
-                        <p className="mt-3 max-w-2xl break-all font-mono text-xs text-slate-600">
-                          {offer?.latestResolvedSuffix || "尚未解析到可用 suffix"}
-                        </p>
-                      </div>
-
-                      <div className="grid gap-3 sm:grid-cols-2 lg:w-[420px]">
-                        <label className="text-sm font-medium text-slate-700">
-                          执行间隔（分钟）
-                          <select
-                            className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 font-mono"
-                            value={intervals[task.id] ?? task.intervalMinutes}
-                            onChange={(event) =>
-                              setIntervals((current) => ({
-                                ...current,
-                                [task.id]: Number(event.target.value)
-                              }))
-                            }
-                          >
-                            {getIntervalOptions(intervals[task.id] ?? task.intervalMinutes).map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <div className="flex items-end gap-2">
-                          {offer ? (
-                            <button
-                              className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-xs font-semibold text-slate-700"
-                              onClick={() => setActiveOffer(offer)}
-                              type="button"
-                            >
-                              编辑任务
-                            </button>
-                          ) : null}
-                          {task.enabled && task.status !== "idle" ? (
-                            <button
-                              className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-xs font-semibold text-slate-700"
-                              disabled={taskActionLoading === `swap-now-${task.id}`}
-                              onClick={() => swapNowTask(task)}
-                              type="button"
-                            >
-                              {taskActionLoading === `swap-now-${task.id}` ? "执行中..." : "立即执行"}
-                            </button>
-                          ) : null}
-                          <button
-                            className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-xs font-semibold text-slate-700"
-                            disabled={taskActionLoading === `save-${task.id}`}
-                            onClick={() => saveTask(task, task.enabled)}
-                            type="button"
-                          >
-                            {taskActionLoading === `save-${task.id}` ? "保存中..." : "保存配置"}
-                          </button>
-                          {!task.enabled || task.status === "idle" ? (
-                            <button
-                              className="rounded-2xl bg-brand-emerald px-4 py-3 text-xs font-semibold text-white"
-                              disabled={taskActionLoading === `enable-${task.id}`}
-                              onClick={() => enableTask(task)}
-                              type="button"
-                            >
-                              {taskActionLoading === `enable-${task.id}` ? "启用中..." : "恢复任务"}
-                            </button>
-                          ) : (
-                            <button
-                              className="rounded-2xl bg-slate-700 px-4 py-3 text-xs font-semibold text-white"
-                              disabled={taskActionLoading === `disable-${task.id}`}
-                              onClick={() => disableTask(task)}
-                              type="button"
-                            >
-                              {taskActionLoading === `disable-${task.id}` ? "暂停中..." : "暂停任务"}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 grid gap-3 sm:grid-cols-4">
-                      <p className="text-sm text-slate-600">状态：{getTaskStatusLabel(task)}</p>
-                      <p className="text-sm text-slate-600">当前间隔：{task.intervalMinutes} 分钟</p>
-                      <p className="text-sm text-slate-600">
-                        持续天数：{task.durationDays === -1 ? "不限期" : `${task.durationDays} 天`}
-                      </p>
-                      <p className="text-sm text-slate-600">下次执行：{task.nextRunAt || "待调度"}</p>
-                    </div>
-
-                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                      <p className="text-sm text-slate-600">连续失败：{task.consecutiveFailures}</p>
-                      <p className="text-sm text-slate-600">
-                        Customer ID：{task.googleCustomerId || "--"}
-                      </p>
-                      <p className="text-sm text-slate-600">
-                        Campaign ID：{task.googleCampaignId || "--"}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <p className="rounded-2xl bg-stone-50 px-4 py-5 text-sm text-slate-500">
-                创建 Offer 后会自动生成换链接任务。
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className="surface-panel p-6">
-          <p className="eyebrow">脚本对接</p>
-          <h3 className="mt-2 text-2xl font-semibold text-slate-900">MCC 执行说明</h3>
-          <ol className="mt-5 space-y-3 text-sm leading-7 text-slate-600">
-            <li>1. 在 Google Ads 中先为目标 Campaign 打上与 Offer 一致的 `campaignLabel`。</li>
-            <li>2. 点击下方复制脚本，直接粘贴到 Google Ads Scripts / MCC 中，无需再修改脚本内容。</li>
-            <li>3. Script Token 默认长期有效，同一时间只有当前显示的这一个 Token 可用。</li>
-            <li>4. 如需更换 Token，请在这里直接更换，然后重新复制最新脚本。</li>
-            <li>5. Script 模式下，脚本会从快照接口读取 suffix；Google Ads API 模式则由平台直接更新目标 Campaign。</li>
-          </ol>
-
-          <div className="mt-5 rounded-[28px] border border-brand-line bg-stone-50 p-5">
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Script Token</p>
-            <p className="mt-2 font-mono text-sm text-slate-800">{script.token || "尚未生成"}</p>
-            <div className="mt-4 flex flex-wrap gap-3">
+      <section className="surface-panel overflow-hidden p-0">
+        <div className="grid gap-0 xl:grid-cols-[1.15fr,0.85fr]">
+          <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="eyebrow">Link Swap</p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">换链任务控制台</h2>
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
+                  统一查看任务状态、执行节奏、最近结果和脚本对接信息，先处理异常和预警，再调整具体任务。
+                </p>
+              </div>
               <button
-                className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700 disabled:opacity-60"
-                disabled={rotatingToken}
-                onClick={rotateToken}
+                className="inline-flex items-center gap-2 rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-stone-50 disabled:opacity-60"
+                disabled={refreshing}
+                onClick={() => void loadAll({ refresh: true })}
                 type="button"
               >
-                {rotatingToken ? "更换中..." : "更换 Token"}
-              </button>
-              <button
-                className="rounded-full bg-brand-emerald px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                disabled={!script.template || rotatingToken}
-                onClick={() => navigator.clipboard.writeText(script.template || "")}
-                type="button"
-              >
-                复制最新换链接脚本
+                <RefreshCcw className={cn("h-3.5 w-3.5", refreshing ? "animate-spin" : "")} />
+                {refreshing ? "刷新中" : "刷新"}
               </button>
             </div>
-            <p className="mt-4 text-sm leading-6 text-slate-600">
-              这份脚本已经内置当前站点地址和 Script Token。Token 默认长期有效，若你更换 Token，旧 Token 会立即失效，请重新复制一次最新脚本。
-            </p>
-            <textarea
-              className="mt-4 min-h-56 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 font-mono text-xs text-slate-700"
-              readOnly
-              value={script.template}
-            />
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <Link
+                className="group rounded-[24px] border border-brand-line bg-white/90 px-4 py-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-editorial motion-reduce:transform-none"
+                href="/offers"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+                    <Target className="h-5 w-5" />
+                  </span>
+                  <ExternalLink className="h-4 w-4 text-slate-400 transition group-hover:text-brand-emerald" />
+                </div>
+                <p className="mt-4 text-sm font-semibold text-slate-900">查看 Offer</p>
+                <p className="mt-2 text-sm leading-6 text-slate-500">先补齐品牌、国家和 campaignLabel，再回到这里管理任务。</p>
+              </Link>
+
+              <Link
+                className="group rounded-[24px] border border-brand-line bg-white/90 px-4 py-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-editorial motion-reduce:transform-none"
+                href="/google-ads"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+                    <Link2 className="h-5 w-5" />
+                  </span>
+                  <ExternalLink className="h-4 w-4 text-slate-400 transition group-hover:text-brand-emerald" />
+                </div>
+                <p className="mt-4 text-sm font-semibold text-slate-900">Google Ads 配置</p>
+                <p className="mt-2 text-sm leading-6 text-slate-500">API 模式依赖 Customer ID、Campaign ID 和授权状态。</p>
+              </Link>
+
+              <Link
+                className="group rounded-[24px] border border-brand-line bg-white/90 px-4 py-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-editorial motion-reduce:transform-none"
+                href="/settings"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+                    <Settings2 className="h-5 w-5" />
+                  </span>
+                  <ExternalLink className="h-4 w-4 text-slate-400 transition group-hover:text-brand-emerald" />
+                </div>
+                <p className="mt-4 text-sm font-semibold text-slate-900">代理与系统设置</p>
+                <p className="mt-2 text-sm leading-6 text-slate-500">异常任务优先检查目标国家代理和脚本运行环境。</p>
+              </Link>
+
+              <button
+                className="group rounded-[24px] border border-brand-line bg-white/90 px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-editorial motion-reduce:transform-none"
+                onClick={() => {
+                  setHistoryTask(null);
+                  setHistoryRecords(runs.slice(0, 20));
+                  setHistoryLoading(false);
+                  setHistoryOpen(true);
+                }}
+                type="button"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+                    <History className="h-5 w-5" />
+                  </span>
+                  <ExternalLink className="h-4 w-4 text-slate-400 transition group-hover:text-brand-emerald" />
+                </div>
+                <p className="mt-4 text-sm font-semibold text-slate-900">查看执行历史</p>
+                <p className="mt-2 text-sm leading-6 text-slate-500">从任务行打开历史弹窗，快速定位失败原因和最近 suffix。</p>
+              </button>
+            </div>
+          </div>
+
+          <div className="border-t border-brand-line/70 bg-white/84 px-6 py-7 xl:border-l xl:border-t-0">
+            <p className="eyebrow">脚本对接</p>
+            <h3 className="mt-3 text-2xl font-semibold text-slate-900">MCC 执行说明</h3>
+            <ol className="mt-5 space-y-3 text-sm leading-7 text-slate-600">
+              <li>1. 先在对应 Offer 中确认 campaignLabel、目标国家和最终推广链接配置正确。</li>
+              <li>2. Script 模式直接复制下面的模板，粘贴到 Google Ads Scripts 或 MCC 环境。</li>
+              <li>3. Google Ads API 模式由平台直接更新目标 Campaign，需要先完成授权和 ID 配置。</li>
+              <li>4. 每次更换 Token 后，旧脚本立即失效，请重新复制最新模板。</li>
+            </ol>
+
+            <div className="mt-5 rounded-[28px] border border-brand-line bg-stone-50 p-5">
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Script Token</p>
+              <p className="mt-2 break-all font-mono text-sm text-slate-800">{script.token || "尚未生成"}</p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700 disabled:opacity-60"
+                  disabled={rotatingToken}
+                  onClick={() => void rotateToken()}
+                  type="button"
+                >
+                  {rotatingToken ? "更换中..." : "更换 Token"}
+                </button>
+                <button
+                  className="inline-flex items-center gap-2 rounded-full bg-brand-emerald px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                  disabled={!script.template || rotatingToken}
+                  onClick={() => void copyScriptTemplate()}
+                  type="button"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  复制最新脚本
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="surface-panel p-6">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="eyebrow">最近执行日志</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">调度执行记录</h3>
+      <section className="grid gap-4 xl:grid-cols-5">
+        <SummaryCard
+          icon={Link2}
+          label="总任务"
+          note="当前用户下所有换链任务数量。"
+          tone="slate"
+          value={`${consoleData.stats.totalTasks}`}
+        />
+        <SummaryCard
+          icon={Play}
+          label="运行中"
+          note="当前处于可调度状态的任务。"
+          tone="emerald"
+          value={`${consoleData.stats.runningTasks}`}
+        />
+        <SummaryCard
+          icon={Pause}
+          label="已暂停"
+          note="已停用或暂不调度的任务。"
+          tone="slate"
+          value={`${consoleData.stats.pausedTasks}`}
+        />
+        <SummaryCard
+          icon={ShieldAlert}
+          label="预警/异常"
+          note="存在连续失败或状态异常的任务。"
+          tone="amber"
+          value={`${consoleData.stats.warningTasks}`}
+        />
+        <SummaryCard
+          icon={CheckCircle2}
+          label="最近成功率"
+          note="基于最近执行记录计算的成功比例。"
+          tone="emerald"
+          value={`${consoleData.stats.recentSuccessRate}%`}
+        />
+      </section>
+
+      {feedback ? (
+        <section
+          className={cn(
+            "rounded-[24px] border px-5 py-4 text-sm",
+            feedback.tone === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+              : "border-red-200 bg-red-50 text-red-800"
+          )}
+        >
+          {feedback.text}
+        </section>
+      ) : null}
+
+      <section className="grid gap-6 xl:grid-cols-[1.2fr,0.8fr]">
+        <div className="surface-panel p-6">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div>
+              <p className="eyebrow">任务列表</p>
+              <h3 className="mt-2 text-2xl font-semibold text-slate-900">按状态筛选和处理任务</h3>
+            </div>
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr),auto,auto] xl:min-w-[560px]">
+              <label className="relative block">
+                <span className="sr-only">搜索任务</span>
+                <input
+                  className="w-full rounded-2xl border border-brand-line bg-stone-50 py-3 pl-4 pr-4 text-sm text-slate-800"
+                  onChange={(event) =>
+                    startTransition(() => {
+                      setSearchQuery(event.target.value);
+                    })
+                  }
+                  placeholder="搜索品牌、标签、Offer ID 或 Google Ads ID"
+                  value={searchQuery}
+                />
+              </label>
+
+              <select
+                className="rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 text-sm text-slate-800"
+                onChange={(event) =>
+                  startTransition(() => {
+                    setStatusFilter(event.target.value as "all" | LinkSwapConsoleStatus);
+                  })
+                }
+                value={statusFilter}
+              >
+                {statusFilterOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                className="rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 text-sm text-slate-800"
+                onChange={(event) =>
+                  startTransition(() => {
+                    setModeFilter(event.target.value as "all" | LinkSwapTaskRecord["mode"]);
+                  })
+                }
+                value={modeFilter}
+              >
+                {modeFilterOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          {message ? <span className="text-sm text-slate-600">{message}</span> : null}
+
+          <div className="mt-6 overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-brand-line/70">
+                  <th className="pb-3">
+                    <SortableHeader
+                      active={sortField === "offer"}
+                      direction={sortDirection}
+                      label="Offer"
+                      onClick={() => toggleSort("offer")}
+                    />
+                  </th>
+                  <th className="pb-3">
+                    <SortableHeader
+                      active={sortField === "status"}
+                      direction={sortDirection}
+                      label="状态"
+                      onClick={() => toggleSort("status")}
+                    />
+                  </th>
+                  <th className="pb-3">
+                    <SortableHeader
+                      active={sortField === "mode"}
+                      direction={sortDirection}
+                      label="模式"
+                      onClick={() => toggleSort("mode")}
+                    />
+                  </th>
+                  <th className="pb-3">
+                    <SortableHeader
+                      active={sortField === "interval"}
+                      direction={sortDirection}
+                      label="间隔"
+                      onClick={() => toggleSort("interval")}
+                    />
+                  </th>
+                  <th className="pb-3">
+                    <SortableHeader
+                      active={sortField === "lastRun"}
+                      direction={sortDirection}
+                      label="最近执行"
+                      onClick={() => toggleSort("lastRun")}
+                    />
+                  </th>
+                  <th className="pb-3">
+                    <SortableHeader
+                      active={sortField === "nextRun"}
+                      direction={sortDirection}
+                      label="下次执行"
+                      onClick={() => toggleSort("nextRun")}
+                    />
+                  </th>
+                  <th className="pb-3">
+                    <SortableHeader
+                      active={sortField === "failures"}
+                      direction={sortDirection}
+                      label="失败"
+                      onClick={() => toggleSort("failures")}
+                    />
+                  </th>
+                  <th className="pb-3 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedRows.length ? (
+                  paginatedRows.map((row: LinkSwapConsoleRow) => {
+                    const isRunning = row.statusGroup === "running";
+                    return (
+                      <tr className="border-b border-brand-line/40 align-top" key={row.task.id}>
+                        <td className="py-4 pr-4">
+                          <div className="min-w-[220px]">
+                            <p className="font-semibold text-slate-900">
+                              {row.offer?.brandName || `Offer #${row.task.offerId}`}
+                            </p>
+                            <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">
+                              {row.offer?.campaignLabel || "未设置标签"} · {row.offer?.targetCountry || "--"}
+                            </p>
+                            <p className="mt-2 break-all text-xs text-slate-500">
+                              {formatRunSummary(row.latestRun)}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="py-4 pr-4">
+                          <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", statusPill(row.statusGroup))}>
+                            {statusLabel(row.statusGroup)}
+                          </span>
+                        </td>
+                        <td className="py-4 pr-4 text-slate-700">
+                          {row.task.mode === "script" ? "Script" : "Google Ads API"}
+                        </td>
+                        <td className="py-4 pr-4 text-slate-700">{row.task.intervalMinutes} 分钟</td>
+                        <td className="py-4 pr-4 text-slate-700">
+                          <div>
+                            <p>{formatDateTime(row.task.lastRunAt || row.latestRun?.createdAt || null)}</p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              近 50 条: 成功 {row.recentSuccessCount} / 失败 {row.recentFailureCount}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="py-4 pr-4 text-slate-700">{formatDateTime(row.task.nextRunAt)}</td>
+                        <td className="py-4 pr-4 text-slate-700">{row.task.consecutiveFailures}</td>
+                        <td className="py-4">
+                          <div className="flex flex-wrap justify-end gap-2">
+                            <button
+                              className="inline-flex items-center gap-2 rounded-2xl border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+                              onClick={() => setActiveOffer(row.offer)}
+                              type="button"
+                            >
+                              <PencilLine className="h-3.5 w-3.5" />
+                              编辑
+                            </button>
+                            <button
+                              className="inline-flex items-center gap-2 rounded-2xl border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+                              onClick={() => void openHistory(row)}
+                              type="button"
+                            >
+                              <History className="h-3.5 w-3.5" />
+                              历史
+                            </button>
+                            {isRunning ? (
+                              <>
+                                <button
+                                  className="inline-flex items-center gap-2 rounded-2xl border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50"
+                                  disabled={taskActionLoading === `swap-now-${row.task.id}`}
+                                  onClick={() => void handleTaskAction(row.task.id, "swap-now")}
+                                  type="button"
+                                >
+                                  <Play className="h-3.5 w-3.5" />
+                                  立即执行
+                                </button>
+                                <button
+                                  className="inline-flex items-center gap-2 rounded-2xl bg-slate-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                                  disabled={taskActionLoading === `disable-${row.task.id}`}
+                                  onClick={() => void handleTaskAction(row.task.id, "disable")}
+                                  type="button"
+                                >
+                                  <Pause className="h-3.5 w-3.5" />
+                                  暂停
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                className="inline-flex items-center gap-2 rounded-2xl bg-brand-emerald px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                                disabled={taskActionLoading === `enable-${row.task.id}`}
+                                onClick={() => void handleTaskAction(row.task.id, "enable")}
+                                type="button"
+                              >
+                                <Play className="h-3.5 w-3.5" />
+                                恢复
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td className="py-8 text-slate-500" colSpan={8}>
+                      {consoleData.rows.length === 0
+                        ? "当前还没有换链任务。创建 Offer 后会自动生成对应任务。"
+                        : "当前筛选条件下没有匹配的任务。"}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-3 border-t border-brand-line/60 pt-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <p>
+                共 {filteredRows.length} 个任务，当前第 {currentPage} / {totalPages} 页
+              </p>
+              <select
+                className="rounded-full border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+                onChange={(event) => setPageSize(Number(event.target.value))}
+                value={pageSize}
+              >
+                <option value={10}>10 / 页</option>
+                <option value={20}>20 / 页</option>
+                <option value={50}>50 / 页</option>
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button
+                className="rounded-2xl border border-brand-line bg-white px-4 py-2 font-medium disabled:opacity-40"
+                disabled={currentPage <= 1}
+                onClick={() => setPage((value) => Math.max(1, value - 1))}
+                type="button"
+              >
+                上一页
+              </button>
+              <button
+                className="rounded-2xl border border-brand-line bg-white px-4 py-2 font-medium disabled:opacity-40"
+                disabled={currentPage >= totalPages}
+                onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+                type="button"
+              >
+                下一页
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-5 grid gap-3 lg:grid-cols-2">
-          {runs.length ? (
-            runs.map((run) => {
-              const offer = offersMap.get(run.offerId);
-              return (
-                <div className="rounded-2xl border border-brand-line bg-stone-50 px-4 py-4" key={run.id}>
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-slate-900">
-                      {offer?.brandName || `Offer #${run.offerId}`}
+        <div className="space-y-6">
+          <div className="surface-panel p-6">
+            <p className="eyebrow">重点提醒</p>
+            <h3 className="mt-2 text-2xl font-semibold text-slate-900">当前优先处理项</h3>
+            <div className="mt-5 space-y-3">
+              <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4">
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+                    <AlertTriangle className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">先处理预警和异常</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      当前有 {consoleData.stats.warningTasks} 个任务进入预警或异常状态，优先检查代理、Offer 链接和 Google Ads 参数。
                     </p>
-                    <span className="text-xs uppercase tracking-wide text-slate-500">{run.status}</span>
                   </div>
-                  <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">
-                    {offer?.campaignLabel || "未绑定标签"}
-                  </p>
-                  <p className="mt-2 text-xs text-slate-500">{run.createdAt}</p>
-                  <p className="mt-3 break-all font-mono text-xs text-slate-700">
-                    {run.resolvedSuffix || run.errorMessage || "无 suffix"}
-                  </p>
-                  <p className="mt-2 text-xs text-slate-500">
-                    应用结果：{run.applyStatus}
-                    {run.applyErrorMessage ? ` · ${run.applyErrorMessage}` : ""}
-                  </p>
                 </div>
-              );
-            })
-          ) : (
-            <p className="rounded-2xl bg-stone-50 px-4 py-5 text-sm text-slate-500">
-              还没有换链接执行日志。
-            </p>
-          )}
+              </div>
+
+              <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4">
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+                    <Clock3 className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">控制执行节奏</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      如果某个 Offer 近期波动明显，优先调整任务间隔和持续天数，而不是频繁手动触发。
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4">
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                    <Target className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">API 模式单独复核</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      当前有 {consoleData.stats.apiModeTasks} 个任务使用 Google Ads API 模式，这些任务需要同时校验授权和目标 Campaign ID。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="surface-panel p-6">
+            <p className="eyebrow">最近执行</p>
+            <h3 className="mt-2 text-2xl font-semibold text-slate-900">最近 6 条结果</h3>
+            <div className="mt-5 space-y-3">
+              {runs.length ? (
+                runs.slice(0, 6).map((run) => {
+                  const offer = offers.find((item) => item.id === run.offerId) || null;
+                  return (
+                    <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4" key={run.id}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-900">
+                            {offer?.brandName || `Offer #${run.offerId}`}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">{formatDateTime(run.createdAt)}</p>
+                        </div>
+                        <span
+                          className={cn(
+                            "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
+                            run.status === "success" ? "bg-brand-mist text-brand-emerald" : "bg-red-50 text-red-700"
+                          )}
+                        >
+                          {run.status === "success" ? "成功" : "失败"}
+                        </span>
+                      </div>
+                      <p className="mt-3 break-all text-xs text-slate-600">
+                        {run.resolvedSuffix || run.errorMessage || "本次执行未返回 suffix"}
+                      </p>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="rounded-[24px] border border-dashed border-brand-line bg-stone-50 px-4 py-5 text-sm text-slate-500">
+                  还没有换链执行记录。
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
       <LinkSwapTaskDialog
         offer={activeOffer}
-        open={Boolean(activeOffer)}
         onClose={() => setActiveOffer(null)}
-        onSaved={loadAll}
+        onSaved={() => loadAll({ refresh: true })}
+        open={Boolean(activeOffer)}
       />
+
+      <ModalFrame
+        description={
+          historyTask
+            ? `查看 ${historyTask.offer?.brandName || `Offer #${historyTask.task.offerId}`} 的最近执行结果。`
+            : "查看最近执行结果。"
+        }
+        eyebrow="执行历史"
+        onClose={() => {
+          setHistoryOpen(false);
+          setHistoryTask(null);
+          setHistoryRecords([]);
+        }}
+        open={historyOpen}
+        title={historyTask ? `${historyTask.offer?.brandName || `Offer #${historyTask.task.offerId}`} 执行记录` : "执行记录"}
+      >
+        {historyLoading ? (
+          <p className="text-sm text-slate-500">正在加载执行记录...</p>
+        ) : historyRecords.length ? (
+          <div className="space-y-3">
+            {historyRecords.map((run) => (
+              <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4" key={run.id}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{formatDateTime(run.createdAt)}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      应用结果: {run.applyStatus}
+                      {run.applyErrorMessage ? ` · ${run.applyErrorMessage}` : ""}
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
+                      run.status === "success" ? "bg-brand-mist text-brand-emerald" : "bg-red-50 text-red-700"
+                    )}
+                  >
+                    {run.status === "success" ? "成功" : "失败"}
+                  </span>
+                </div>
+                <p className="mt-3 break-all font-mono text-xs text-slate-700">
+                  {run.resolvedSuffix || run.errorMessage || "本次执行未返回 suffix"}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">当前任务还没有执行历史。</p>
+        )}
+      </ModalFrame>
     </div>
   );
 }
