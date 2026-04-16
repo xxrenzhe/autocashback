@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { Coins, KeyRound, Link2, ShieldCheck, WalletCards, Workflow } from "lucide-react";
+import { Coins, Link2, WalletCards, Workflow } from "lucide-react";
 
 import { BrandMark } from "@/components/brand-mark";
 import { ContactQrDialog } from "@/components/contact-qr-dialog";
@@ -43,12 +43,6 @@ const loginSignals = [
     value: "直接进入控制台",
     note: "继续处理账号、Offer 和换链等日常动作。"
   }
-];
-
-const securityNotes = [
-  "管理员重置密码后，旧登录会话会自动失效。",
-  "如果最近登录设备或 IP 异常，建议联系管理员先复核账号状态。",
-  "没有账号时，先申请试用或联系开通，再使用统一入口登录。"
 ];
 
 function ContactButton(props: {
@@ -97,11 +91,7 @@ export function LoginPageShell() {
 
       <div className="mx-auto grid min-h-[calc(100vh-6rem)] max-w-7xl items-start gap-10 px-5 pb-10 pt-10 lg:grid-cols-[1.02fr,0.98fr] lg:items-stretch lg:px-8 lg:pt-12">
         <section className="flex h-full max-w-2xl flex-col">
-          <p className="inline-flex items-center gap-2 rounded-full border border-brand-line bg-white/80 px-4 py-2 text-sm font-semibold text-slate-700">
-            <ShieldCheck className="h-4 w-4 text-brand-emerald" />
-            AutoCashBack 账号入口
-          </p>
-          <h1 className="mt-6 max-w-4xl font-display text-5xl font-semibold leading-tight text-slate-900 lg:text-6xl">
+          <h1 className="max-w-4xl font-display text-5xl font-semibold leading-tight text-slate-900 lg:text-6xl">
             登录后，
             <span className="block text-brand-emerald">继续当天返利运营</span>
           </h1>
@@ -137,26 +127,6 @@ export function LoginPageShell() {
                   </div>
                 );
               })}
-            </div>
-          </div>
-
-          <div className="surface-panel mt-6 p-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
-                <KeyRound className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-slate-900">登录前提醒</p>
-                <p className="text-sm text-slate-500">先确认账号状态，再进入控制台。</p>
-              </div>
-            </div>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-              {securityNotes.map((item) => (
-                <p className="flex items-start gap-2" key={item}>
-                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand-emerald" />
-                  <span>{item}</span>
-                </p>
-              ))}
             </div>
           </div>
         </section>
