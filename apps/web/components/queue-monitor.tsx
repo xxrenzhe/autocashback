@@ -218,7 +218,7 @@ export function QueueMonitor() {
       setConfig({
         config: result.data.config,
         configSource: "database",
-        note: "配置保存到数据库后，独立 scheduler 进程会在 60 秒内自动拉取并应用"
+        note: "配置保存后会在 60 秒内自动同步到后台调度服务"
       });
       setConfigMessage(result.data.message || "队列配置已保存");
     } catch (error: unknown) {
@@ -348,7 +348,7 @@ export function QueueMonitor() {
             <p className="eyebrow">队列配置</p>
             <h3 className="mt-2 text-2xl font-semibold text-slate-900">统一调度参数</h3>
             <p className="mt-2 text-sm text-slate-600">
-              复用 autobb 的持久化配置思路，参数保存到数据库后由独立 scheduler 进程自动拉取。
+              配置保存后会自动同步到后台调度服务，并在下一个刷新周期生效。
             </p>
           </div>
           <button
@@ -467,7 +467,7 @@ export function QueueMonitor() {
           <>
             <p className="mt-4 rounded-2xl bg-sky-50 px-4 py-4 text-sm text-sky-800">{schedulerStatus.note}</p>
             <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
-              默认仍以独立 scheduler 进程为主；这里新增的是管理员补投入口，只会把“已到期但尚未入队”的任务补回统一队列，不替代常驻调度。
+              手动补投会把已到期但尚未入队的任务补回统一队列，适合在排查异常或补跑任务时使用。
             </p>
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
               <SchedulerCard

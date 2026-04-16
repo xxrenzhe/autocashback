@@ -136,7 +136,7 @@ export default async function DashboardPage() {
               {user.username}，今天先盯住返利链路
             </h2>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
-              这个首页按 autobb 的思路重新整理为“总览、行动、风险”三层结构，方便你在登录后先看关键指标，再进入账号、Offer 或换链接任务处理。
+              在这里先查看关键指标、待处理事项和风险提醒，再进入账号、Offer 或换链接任务继续处理。
             </p>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

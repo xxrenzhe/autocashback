@@ -459,7 +459,7 @@ export function SettingsManager() {
         </div>
 
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          这里保存 Google Ads OAuth 基础参数。首次保存后请发起授权；如果你修改了基础参数，系统会清除旧授权状态，需重新获取
+          在这里保存 Google Ads OAuth 基础参数。首次保存后请发起授权；如果你修改了基础参数，系统会清除旧授权状态，需重新获取
           Refresh Token 并同步账号。
         </p>
 
@@ -578,7 +578,7 @@ export function SettingsManager() {
         <p className="eyebrow">返利网配置</p>
         <h3 className="mt-2 text-2xl font-semibold text-slate-900">平台接入策略</h3>
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          V1 统一按“无公开 API”平台处理。这里保存的是运营说明、登录入口和人工处理规范，方便团队共享。
+          在这里维护各返利平台的运营说明、登录入口和处理规范，方便团队统一查看和协作。
         </p>
 
         <div className="mt-5 grid gap-4 xl:grid-cols-3">

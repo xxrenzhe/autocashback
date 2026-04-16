@@ -115,7 +115,7 @@ export function AccountSecurityPanel() {
           <p className="eyebrow">账户安全</p>
           <h3 className="mt-2 text-2xl font-semibold text-slate-900">密码与登录会话</h3>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-            这里复用 autobb 的安全加固思路：支持修改密码、查看活跃会话，并按需撤销单个或全部登录状态。
+            在这里可以修改密码、查看活跃会话，并按需撤销单个或全部登录状态。
           </p>
         </div>
         <button

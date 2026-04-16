@@ -255,7 +255,7 @@ export function GoogleAdsManager() {
           <p className="eyebrow">OAuth 状态</p>
           <h3 className="mt-2 text-2xl font-semibold text-slate-900">Google Ads 连接</h3>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            这里显示当前账号的 Google Ads OAuth 状态。基础参数在设置页维护，这一页用于连接、验证和同步可访问账号。
+            查看当前账号的 Google Ads 连接状态，并完成授权、验证和可访问账号同步。
           </p>
 
           <div className="mt-5 grid gap-3">
@@ -268,8 +268,8 @@ export function GoogleAdsManager() {
 
             {!hasStoredConfig ? (
               <div className="rounded-[28px] border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-800">
-                还没有完成 Google Ads API 基础配置。先去设置页保存 `Client ID / Client Secret / Developer Token / Login Customer ID`，
-                再回到这里发起 OAuth 授权。
+                还没有完成 Google Ads API 基础配置。请先前往设置页保存 `Client ID / Client Secret / Developer Token / Login Customer ID`，
+                然后发起 OAuth 授权。
               </div>
             ) : null}
 
@@ -372,7 +372,7 @@ export function GoogleAdsManager() {
             <p className="eyebrow">诊断工具</p>
             <h3 className="mt-2 text-2xl font-semibold text-slate-900">Google Ads OAuth / MCC 诊断</h3>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              这一段直接借鉴 autobb 的只读诊断思路：不向浏览器返回敏感凭证，只读取可访问客户号、账号类型和权限错误分类。
+              诊断结果会帮助你确认可访问客户号、账号类型和常见权限问题，同时不会在浏览器中暴露敏感凭证。
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

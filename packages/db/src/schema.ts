@@ -69,17 +69,17 @@ async function ensureDefaultSettings() {
     {
       category: "cashback",
       key: "topcashback_notes",
-      value: "TopCashback 按手工模式运营，账号、Offer、佣金进度均在 AutoCashBack 内部维护。"
+      value: "TopCashback 当前通过平台后台与人工流程配合管理，账号、Offer 和佣金进度可在 AutoCashBack 中统一记录。"
     },
     {
       category: "cashback",
       key: "rakuten_notes",
-      value: "Rakuten 按手工模式运营，不依赖公开 API。"
+      value: "Rakuten 当前以平台后台维护为主，适合在这里集中记录账号、Offer 和运营说明。"
     },
     {
       category: "cashback",
       key: "custom_notes",
-      value: "Custom 平台用于录入无法标准化接入的返利网。"
+      value: "Custom 适合补充暂未标准化接入的返利平台，方便统一管理相关记录。"
     },
     {
       category: "linkSwap",

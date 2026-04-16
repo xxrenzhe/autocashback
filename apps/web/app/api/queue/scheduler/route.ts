@@ -53,7 +53,7 @@ function buildSchedulerMessage(params: {
 
   const health = getHealthFromHeartbeat(params.heartbeatAt);
   if (health === "error") {
-    return `${params.schedulerName} 心跳超时，请检查独立 scheduler 进程`;
+    return `${params.schedulerName} 心跳超时，请检查后台调度服务`;
   }
 
   if (params.overdueTasks > 0 && params.recentQueuedTasks === 0) {
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
       heartbeatAt: heartbeat.heartbeatAt,
       lastTickAt: heartbeat.lastTickAt,
       lastTickSummary: heartbeat.lastTickSummary,
-      note: "调度器运行在独立 scheduler 进程中，此处通过心跳和最近入队情况推断健康状态",
+      note: "系统会根据最近心跳和入队情况评估后台调度服务的运行状态",
       clickFarmScheduler: {
         status: clickFarmStatus,
         message: buildSchedulerMessage({
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
           recentQueuedTasks: clickFarmMetrics.recentQueuedTasks
         }),
         metrics: clickFarmMetrics,
-        schedulerProcess: "scheduler 进程"
+        schedulerProcess: "后台调度服务"
       },
       urlSwapScheduler: {
         status: linkSwapStatus,
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
           recentQueuedTasks: linkSwapMetrics.recentQueuedTasks
         }),
         metrics: linkSwapMetrics,
-        schedulerProcess: "scheduler 进程"
+        schedulerProcess: "后台调度服务"
       }
     }
   });

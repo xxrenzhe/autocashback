@@ -128,7 +128,7 @@ export function AdminOperationsMonitor() {
           <p className="eyebrow">业务监控</p>
           <h3 className="mt-2 text-2xl font-semibold text-slate-900">管理员运维视图</h3>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            这里把 autobb 中已经验证过的业务监控能力接回当前项目，覆盖换链接、补点击、代理池和审计日志。
+            在一个视图里查看换链接、补点击、代理池和审计日志，便于管理员快速掌握系统运行情况。
           </p>
         </div>
         <button

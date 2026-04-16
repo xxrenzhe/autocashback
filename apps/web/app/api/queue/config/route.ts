@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     config,
     configSource: source,
     knownTaskTypes: KNOWN_TASK_TYPES,
-    note: "配置保存到数据库后，独立 scheduler 进程会在 60 秒内自动拉取并应用"
+    note: "配置保存后会在 60 秒内自动同步到后台调度服务"
   });
 }
 
@@ -66,6 +66,6 @@ export async function PUT(request: NextRequest) {
   return NextResponse.json({
     success: true,
     config,
-    message: "队列配置已保存，scheduler 进程会在 60 秒内自动应用"
+    message: "队列配置已保存，后台调度服务会在 60 秒内自动应用"
   });
 }
