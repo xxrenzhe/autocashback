@@ -26,6 +26,18 @@ function toNullableTimestamp(value: unknown) {
   return value ? String(value) : null;
 }
 
+function parseAuditDetails(value: unknown) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(String(value)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
 function isFutureTimestamp(value: string | null) {
   if (!value) {
     return false;
@@ -329,6 +341,21 @@ export type AdminUserSecurityAlert = {
     label: string;
     value: string;
   }>;
+};
+
+export type AdminUserLoginHistoryRecord = {
+  id: string;
+  source: "session" | "audit";
+  eventType: "login_success" | "login_failed" | "account_locked";
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  lastActivityAt: string | null;
+  expiresAt: string | null;
+  revokedAt: string | null;
+  status: "active" | "expired" | "revoked" | "failed" | "locked";
+  failureReason: string | null;
+  sessionId: string | null;
 };
 
 function generateTemporaryPassword(length = 14) {
@@ -745,7 +772,7 @@ export async function listUserLoginHistoryByAdmin(userId: number, limit = 50) {
   await ensureDatabaseReady();
   const sql = getSql();
   const safeLimit = Math.max(1, Math.min(100, Number(limit || 50)));
-  const rows = await sql<{
+  const sessionRows = await sql<{
     session_id: string;
     ip_address: string | null;
     user_agent: string | null;
@@ -768,7 +795,25 @@ export async function listUserLoginHistoryByAdmin(userId: number, limit = 50) {
     LIMIT ${safeLimit}
   `;
 
-  return rows.map((row) => ({
+  const failedAuditRows = await sql<{
+    id: number;
+    ip_address: string | null;
+    user_agent: string | null;
+    created_at: string;
+    details: string | null;
+  }[]>`
+    SELECT id, ip_address, user_agent, created_at, details
+    FROM audit_logs
+    WHERE user_id = ${userId}
+      AND event_type = ${"login_failed"}
+    ORDER BY created_at DESC
+    LIMIT ${safeLimit}
+  `;
+
+  const sessionRecords: AdminUserLoginHistoryRecord[] = sessionRows.map((row) => ({
+    id: `session-${row.session_id}`,
+    source: "session",
+    eventType: "login_success",
     sessionId: row.session_id,
     ipAddress: row.ip_address,
     userAgent: row.user_agent,
@@ -776,12 +821,38 @@ export async function listUserLoginHistoryByAdmin(userId: number, limit = 50) {
     lastActivityAt: row.last_activity_at,
     expiresAt: row.expires_at,
     revokedAt: row.revoked_at,
+    failureReason: null,
     status: row.revoked_at
       ? "revoked"
       : new Date(row.expires_at).getTime() <= Date.now()
         ? "expired"
         : "active"
   }));
+
+  const failedAuditRecords: AdminUserLoginHistoryRecord[] = failedAuditRows.map((row) => {
+    const details = parseAuditDetails(row.details);
+    const failureReason = details?.failureReason ? String(details.failureReason) : null;
+    const isLockEvent = failureReason?.includes("锁定");
+
+    return {
+      id: `audit-${row.id}`,
+      source: "audit",
+      eventType: isLockEvent ? "account_locked" : "login_failed",
+      sessionId: null,
+      ipAddress: row.ip_address,
+      userAgent: row.user_agent,
+      createdAt: row.created_at,
+      lastActivityAt: null,
+      expiresAt: null,
+      revokedAt: null,
+      failureReason,
+      status: isLockEvent ? "locked" : "failed"
+    };
+  });
+
+  return [...sessionRecords, ...failedAuditRecords]
+    .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))
+    .slice(0, safeLimit);
 }
 
 export async function getUserSecurityAlertsByAdmin(userId: number) {

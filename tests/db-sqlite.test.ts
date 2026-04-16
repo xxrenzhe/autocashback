@@ -30,6 +30,7 @@ import {
   getUserSecurityAlertsByAdmin,
   loginUser,
   listLinkSwapTasks,
+  listUserLoginHistoryByAdmin,
   restartClickFarmTask,
   setClickFarmTaskPaused,
   stopClickFarmTask,
@@ -987,7 +988,10 @@ describe.sequential("sqlite database bootstrap", () => {
       eventType: "login_failed",
       ipAddress: "198.51.100.9",
       userAgent: "Mozilla/5.0 Firefox/124.0",
-      details: { username: user.username }
+      details: {
+        username: user.username,
+        failureReason: "密码错误次数过多，账号已锁定 30 分钟"
+      }
     });
 
     const session = await loginUser(user.username, "password", {
@@ -1006,6 +1010,11 @@ describe.sequential("sqlite database bootstrap", () => {
     expect(alerts.some((alert) => alert.category === "failed-login")).toBe(true);
     expect(alerts.some((alert) => alert.category === "active-session-spread")).toBe(true);
     expect(alerts.some((alert) => alert.category === "recent-ip-spread")).toBe(true);
+
+    const loginHistory = await listUserLoginHistoryByAdmin(user.id, 10);
+    expect(loginHistory.some((record) => record.eventType === "login_success")).toBe(true);
+    expect(loginHistory.some((record) => record.eventType === "login_failed")).toBe(true);
+    expect(loginHistory.some((record) => record.eventType === "account_locked")).toBe(true);
 
     const activeSessionsBeforeDisable = await getSql()<{
       count: number;

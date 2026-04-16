@@ -45,7 +45,8 @@ export async function POST(request: NextRequest) {
       eventType: "login_failed",
       ...metadata,
       details: {
-        username: username.slice(0, 128)
+        username: username.slice(0, 128),
+        failureReason: message
       }
     });
 

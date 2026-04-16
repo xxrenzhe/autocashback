@@ -104,6 +104,9 @@ describe("admin users routes", () => {
     });
     listUserLoginHistoryByAdmin.mockResolvedValue([
       {
+        id: "session-session-1",
+        source: "session",
+        eventType: "login_success",
         sessionId: "session-1",
         ipAddress: "127.0.0.1",
         userAgent: "Mozilla/5.0",
@@ -111,7 +114,8 @@ describe("admin users routes", () => {
         lastActivityAt: "2026-04-16T12:30:00.000Z",
         expiresAt: "2026-04-23T12:00:00.000Z",
         revokedAt: null,
-        status: "active"
+        status: "active",
+        failureReason: null
       }
     ]);
     getUserSecurityAlertsByAdmin.mockResolvedValue([

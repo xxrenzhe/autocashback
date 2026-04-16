@@ -42,14 +42,18 @@ type Pagination = {
 };
 
 type LoginRecord = {
-  sessionId: string;
+  id: string;
+  source: "session" | "audit";
+  eventType: "login_success" | "login_failed" | "account_locked";
+  sessionId: string | null;
   ipAddress: string | null;
   userAgent: string | null;
   createdAt: string;
-  lastActivityAt: string;
-  expiresAt: string;
+  lastActivityAt: string | null;
+  expiresAt: string | null;
   revokedAt: string | null;
-  status: "active" | "expired" | "revoked";
+  status: "active" | "expired" | "revoked" | "failed" | "locked";
+  failureReason: string | null;
 };
 
 type SecurityAlert = {
@@ -983,7 +987,7 @@ export function AdminUsersManager() {
           <div className="space-y-3">
             {loginHistory.length ? (
               loginHistory.map((record) => (
-                <div className="rounded-[24px] border border-brand-line bg-stone-50 p-4" key={record.sessionId}>
+                <div className="rounded-[24px] border border-brand-line bg-stone-50 p-4" key={record.id}>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-2">
                       <span
@@ -992,24 +996,35 @@ export function AdminUsersManager() {
                             ? "bg-emerald-50 text-emerald-700"
                             : record.status === "expired"
                               ? "bg-stone-200 text-slate-700"
+                              : record.status === "locked"
+                                ? "bg-red-50 text-red-700"
+                                : record.status === "failed"
+                                  ? "bg-amber-50 text-amber-700"
                               : "bg-amber-50 text-amber-700"
                         }`}
                       >
-                        {record.status === "active"
-                          ? "活跃"
-                          : record.status === "expired"
-                            ? "已过期"
-                            : "已撤销"}
+                        {getLoginHistoryStatusLabel(record)}
                       </span>
-                      <span className="text-xs text-slate-500">{record.sessionId.slice(0, 12)}...</span>
+                      {record.sessionId ? (
+                        <span className="text-xs text-slate-500">{record.sessionId.slice(0, 12)}...</span>
+                      ) : (
+                        <span className="text-xs text-slate-500">{record.source === "audit" ? "审计事件" : "登录事件"}</span>
+                      )}
                     </div>
-                    <span className="text-xs text-slate-500">最后活动：{formatDateTime(record.lastActivityAt)}</span>
+                    <span className="text-xs text-slate-500">
+                      {record.lastActivityAt
+                        ? `最后活动：${formatDateTime(record.lastActivityAt)}`
+                        : `记录时间：${formatDateTime(record.createdAt)}`}
+                    </span>
                   </div>
                   <div className="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
                     <p>登录时间：{formatDateTime(record.createdAt)}</p>
-                    <p>过期时间：{formatDateTime(record.expiresAt)}</p>
+                    <p>{record.expiresAt ? `过期时间：${formatDateTime(record.expiresAt)}` : `事件类型：${getLoginHistoryEventLabel(record.eventType)}`}</p>
                     <p>IP：{record.ipAddress || "--"}</p>
                     <p className="sm:col-span-2">设备：{record.userAgent || "--"}</p>
+                    {record.failureReason ? (
+                      <p className="sm:col-span-2">原因：{record.failureReason}</p>
+                    ) : null}
                   </div>
                 </div>
               ))
@@ -1172,6 +1187,38 @@ function getUserRiskSummary(user: AdminUser) {
   }
 
   return "当前未发现登录侧风险，可继续保留账号运行。";
+}
+
+function getLoginHistoryStatusLabel(record: LoginRecord) {
+  if (record.status === "active") {
+    return "登录成功";
+  }
+
+  if (record.status === "expired") {
+    return "会话已过期";
+  }
+
+  if (record.status === "revoked") {
+    return "会话已撤销";
+  }
+
+  if (record.status === "locked") {
+    return "触发锁定";
+  }
+
+  return "登录失败";
+}
+
+function getLoginHistoryEventLabel(eventType: LoginRecord["eventType"]) {
+  if (eventType === "login_success") {
+    return "登录成功";
+  }
+
+  if (eventType === "account_locked") {
+    return "账号锁定";
+  }
+
+  return "登录失败";
 }
 
 function getAlertSeverityBadgeClass(severity: SecurityAlert["severity"]) {
