@@ -35,6 +35,7 @@ import {
   saveGoogleAdsCredentials,
   saveSettings,
   scheduleLinkSwapTaskNow,
+  updateGoogleAdsTokens,
   updateClickFarmTask,
   updateLinkSwapTask
 } from "@autocashback/db";
@@ -192,6 +193,18 @@ describe.sequential("sqlite database bootstrap", () => {
     const credentials = await getGoogleAdsCredentialStatus(user.id);
     expect(credentials.hasCredentials).toBe(true);
     expect(credentials.hasRefreshToken).toBe(false);
+    expect(credentials.refreshToken).toBeNull();
+
+    await updateGoogleAdsTokens(user.id, {
+      accessToken: "access-token",
+      refreshToken: "refresh-token-value",
+      tokenExpiresAt: "2026-04-16T12:00:00.000Z"
+    });
+
+    const authorizedCredentials = await getGoogleAdsCredentialStatus(user.id);
+    expect(authorizedCredentials.hasRefreshToken).toBe(true);
+    expect(authorizedCredentials.refreshToken).toBe("refresh-token-value");
+    expect(authorizedCredentials.tokenExpiresAt).toBe("2026-04-16T12:00:00.000Z");
 
     const [task] = await listLinkSwapTasks(user.id);
     expect(task).toBeTruthy();
@@ -220,6 +233,7 @@ describe.sequential("sqlite database bootstrap", () => {
     const clearedCredentials = await getGoogleAdsCredentialStatus(user.id);
     expect(clearedCredentials.hasCredentials).toBe(false);
     expect(clearedCredentials.hasRefreshToken).toBe(false);
+    expect(clearedCredentials.refreshToken).toBeNull();
 
     const scriptToken = "script-token-for-test";
     await getSql()`

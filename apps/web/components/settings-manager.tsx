@@ -62,6 +62,7 @@ export function SettingsManager() {
     developerToken: "",
     loginCustomerId: "",
     hasRefreshToken: false,
+    refreshToken: "",
     tokenExpiresAt: "",
     lastVerifiedAt: ""
   });
@@ -105,6 +106,7 @@ export function SettingsManager() {
       developerToken: googleAdsPayload.credentials?.developerToken || "",
       loginCustomerId: googleAdsPayload.credentials?.loginCustomerId || "",
       hasRefreshToken: Boolean(googleAdsPayload.credentials?.hasRefreshToken),
+      refreshToken: googleAdsPayload.credentials?.refreshToken || "",
       tokenExpiresAt: googleAdsPayload.credentials?.tokenExpiresAt || "",
       lastVerifiedAt: googleAdsPayload.credentials?.lastVerifiedAt || ""
     });
@@ -505,7 +507,9 @@ export function SettingsManager() {
         </div>
 
         <div className="mt-5 grid gap-3 rounded-[28px] border border-brand-line bg-stone-50 p-5 text-sm text-slate-600 lg:grid-cols-3">
-          <p>Refresh Token：{googleAdsConfig.hasRefreshToken ? "已连接" : "未授权"}</p>
+          <p className="break-all font-mono">
+            Refresh Token：{googleAdsConfig.refreshToken || (googleAdsConfig.hasRefreshToken ? "已连接但未返回值" : "未授权")}
+          </p>
           <p>最近验证：{googleAdsConfig.lastVerifiedAt || "尚未验证"}</p>
           <p>Token 过期：{googleAdsConfig.tokenExpiresAt || "未获取"}</p>
         </div>

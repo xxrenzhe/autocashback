@@ -291,6 +291,7 @@ export async function getGoogleAdsCredentialStatus(
     return {
       hasCredentials: false,
       hasRefreshToken: false,
+      refreshToken: null,
       clientId: null,
       clientSecret: null,
       developerToken: null,
@@ -308,6 +309,7 @@ export async function getGoogleAdsCredentialStatus(
         credentials.loginCustomerId
     ),
     hasRefreshToken: Boolean(credentials.refreshToken),
+    refreshToken: credentials.refreshToken,
     clientId: credentials.clientId || null,
     clientSecret: credentials.clientSecret || null,
     developerToken: credentials.developerToken || null,
