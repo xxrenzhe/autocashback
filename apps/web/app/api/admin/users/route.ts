@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { createUser, listUsers } from "@autocashback/db";
+import { createUser, listUsers, logAuditEvent } from "@autocashback/db";
 
 import { getRequestUser } from "@/lib/api-auth";
+import { getRequestMetadata } from "@/lib/request-metadata";
 
 export async function GET(request: NextRequest) {
   const user = await getRequestUser(request);
@@ -26,6 +27,16 @@ export async function POST(request: NextRequest) {
       email: body.email,
       password: body.password,
       role: body.role
+    });
+    await logAuditEvent({
+      userId: user.id,
+      eventType: "user_created",
+      ...getRequestMetadata(request),
+      details: {
+        createdUserId: created.id,
+        createdUsername: created.username,
+        createdRole: created.role
+      }
     });
     return NextResponse.json({ user: created });
   } catch (error: unknown) {

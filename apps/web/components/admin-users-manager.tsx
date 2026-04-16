@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { fetchJson } from "@/lib/api-error-handler";
+
 type AdminUser = {
   id: number;
   username: string;
@@ -23,9 +25,13 @@ export function AdminUsersManager() {
   const [message, setMessage] = useState("");
 
   async function loadUsers() {
-    const response = await fetch("/api/admin/users");
-    const payload = await response.json();
-    setUsers(payload.users || []);
+    const result = await fetchJson<{ users: AdminUser[] }>("/api/admin/users");
+    if (!result.success) {
+      setMessage(result.userMessage);
+      return;
+    }
+
+    setUsers(result.data.users || []);
   }
 
   useEffect(() => {
@@ -34,13 +40,13 @@ export function AdminUsersManager() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const response = await fetch("/api/admin/users", {
+    const result = await fetchJson<{ user?: AdminUser }>("/api/admin/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form)
     });
-    setMessage(response.ok ? "用户已创建" : "用户创建失败");
-    if (response.ok) {
+    setMessage(result.success ? "用户已创建" : result.userMessage);
+    if (result.success) {
       setForm(initialForm);
       await loadUsers();
     }

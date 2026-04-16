@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
+import { fetchJson } from "@/lib/api-error-handler";
+
 export function LoginForm(props: {
   className?: string;
   onContactClick: () => void;
@@ -18,15 +20,14 @@ export function LoginForm(props: {
     event.preventDefault();
     setError("");
 
-    const response = await fetch("/api/auth/login", {
+    const result = await fetchJson<{ user: { id: number } }>("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password })
     });
 
-    const payload = await response.json();
-    if (!response.ok) {
-      setError(payload.error || "登录失败");
+    if (!result.success) {
+      setError(result.userMessage);
       return;
     }
 

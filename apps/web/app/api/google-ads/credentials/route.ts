@@ -4,11 +4,13 @@ import {
   clearGoogleAdsCredentials,
   getGoogleAdsCredentialStatus,
   getGoogleAdsCredentials,
+  logAuditEvent,
   saveGoogleAdsCredentials,
   validateGoogleAdsCredentialInput
 } from "@autocashback/db";
 
 import { getRequestUser } from "@/lib/api-auth";
+import { getRequestMetadata } from "@/lib/request-metadata";
 
 export async function GET(request: NextRequest) {
   const user = await getRequestUser(request);
@@ -47,6 +49,16 @@ export async function PUT(request: NextRequest) {
   }
 
   const credentials = await saveGoogleAdsCredentials(user.id, validation.normalizedInput);
+  await logAuditEvent({
+    userId: user.id,
+    eventType: "configuration_changed",
+    ...getRequestMetadata(request),
+    details: {
+      scope: "google_ads_credentials",
+      loginCustomerId: validation.normalizedInput.loginCustomerId,
+      rotationRequired: Boolean(existing && existing.refreshToken)
+    }
+  });
 
   return NextResponse.json({ credentials });
 }
@@ -58,5 +70,14 @@ export async function DELETE(request: NextRequest) {
   }
 
   await clearGoogleAdsCredentials(user.id);
+  await logAuditEvent({
+    userId: user.id,
+    eventType: "configuration_changed",
+    ...getRequestMetadata(request),
+    details: {
+      scope: "google_ads_credentials",
+      action: "clear"
+    }
+  });
   return NextResponse.json({ success: true });
 }

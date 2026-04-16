@@ -1,13 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const { getGoogleAdsCredentialStatus, getOfferById, getProxyUrls, listLinkSwapTasks, updateLinkSwapTask } =
+const { listLinkSwapTasks, updateLinkSwapTask, validateLinkSwapTaskConfig, validateLinkSwapTaskPrerequisites } =
   vi.hoisted(() => ({
-    getGoogleAdsCredentialStatus: vi.fn(),
-    getOfferById: vi.fn(),
-    getProxyUrls: vi.fn(),
     listLinkSwapTasks: vi.fn(),
-    updateLinkSwapTask: vi.fn()
+    updateLinkSwapTask: vi.fn(),
+    validateLinkSwapTaskConfig: vi.fn(),
+    validateLinkSwapTaskPrerequisites: vi.fn()
   }));
 
 const { getRequestUser } = vi.hoisted(() => ({
@@ -15,11 +14,10 @@ const { getRequestUser } = vi.hoisted(() => ({
 }));
 
 vi.mock("@autocashback/db", () => ({
-  getGoogleAdsCredentialStatus,
-  getOfferById,
-  getProxyUrls,
   listLinkSwapTasks,
-  updateLinkSwapTask
+  updateLinkSwapTask,
+  validateLinkSwapTaskConfig,
+  validateLinkSwapTaskPrerequisites
 }));
 
 vi.mock("@/lib/api-auth", () => ({
@@ -32,15 +30,22 @@ describe("link swap tasks route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getRequestUser.mockResolvedValue({ id: 9 });
-    getOfferById.mockResolvedValue({ id: 21, targetCountry: "US" });
-    getProxyUrls.mockResolvedValue(["http://proxy.example.com:8080"]);
-    getGoogleAdsCredentialStatus.mockResolvedValue({
-      hasCredentials: true,
-      hasRefreshToken: true
+    validateLinkSwapTaskConfig.mockReturnValue({
+      valid: true
+    });
+    validateLinkSwapTaskPrerequisites.mockResolvedValue({
+      valid: true,
+      offer: { id: 21, targetCountry: "US" },
+      proxyUrls: ["http://proxy.example.com:8080"]
     });
   });
 
   it("rejects intervals outside the reused autobb allowlist", async () => {
+    validateLinkSwapTaskConfig.mockReturnValue({
+      valid: false,
+      error: "换链接间隔必须是以下值之一：5, 10, 15, 30, 60 分钟"
+    });
+
     const request = new NextRequest("https://www.autocashback.dev/api/link-swap/tasks", {
       method: "PUT",
       body: JSON.stringify({
@@ -91,6 +96,11 @@ describe("link swap tasks route", () => {
         mode: "script"
       })
     );
+    expect(validateLinkSwapTaskPrerequisites).toHaveBeenCalledWith({
+      userId: 9,
+      offerId: 21,
+      mode: "script"
+    });
   });
 
   it("returns autobb-compatible list payload with pagination metadata", async () => {
@@ -110,7 +120,11 @@ describe("link swap tasks route", () => {
   });
 
   it("rejects saving when the offer country has no proxy configured", async () => {
-    getProxyUrls.mockResolvedValue([]);
+    validateLinkSwapTaskPrerequisites.mockResolvedValue({
+      valid: false,
+      status: 400,
+      error: "未配置 US 国家的代理。请先前往设置页面补齐代理后再保存换链接任务。"
+    });
 
     const request = new NextRequest("https://www.autocashback.dev/api/link-swap/tasks", {
       method: "PUT",
@@ -135,9 +149,10 @@ describe("link swap tasks route", () => {
   });
 
   it("rejects google ads api mode when oauth authorization is missing", async () => {
-    getGoogleAdsCredentialStatus.mockResolvedValue({
-      hasCredentials: true,
-      hasRefreshToken: false
+    validateLinkSwapTaskPrerequisites.mockResolvedValue({
+      valid: false,
+      status: 400,
+      error: "请先在设置页面完成 Google Ads API 配置并完成 OAuth 授权"
     });
 
     const request = new NextRequest("https://www.autocashback.dev/api/link-swap/tasks", {

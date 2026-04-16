@@ -1,12 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import {
+  ensureQueueTaskEnqueued,
+  getDueClickFarmTasks,
+  getDueLinkSwapTasks,
   getClickFarmSchedulerMetrics,
   getLinkSwapSchedulerMetrics,
-  getQueueSchedulerHeartbeat
+  getQueueSchedulerHeartbeat,
+  logAuditEvent
 } from "@autocashback/db";
+import {
+  buildClickFarmTriggerQueueTaskId,
+  buildLinkSwapQueueTaskId
+} from "@autocashback/domain";
 
 import { getRequestUser } from "@/lib/api-auth";
+import { getRequestMetadata } from "@/lib/request-metadata";
 
 type SchedulerHealth = "healthy" | "warning" | "error";
 
@@ -119,12 +128,82 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  return NextResponse.json(
-    {
-      success: false,
-      error: "该接口不再支持手动调度；请通过独立 scheduler 进程管理和观测",
-      mode: "external_scheduler_process"
-    },
-    { status: 409 }
-  );
+  const body = await request.json().catch(() => ({}));
+  const target =
+    body.target === "click-farm" || body.target === "url-swap" ? body.target : "all";
+  const includeClickFarm = target === "all" || target === "click-farm";
+  const includeUrlSwap = target === "all" || target === "url-swap";
+  const [clickFarmTasks, urlSwapTasks] = await Promise.all([
+    includeClickFarm ? getDueClickFarmTasks() : Promise.resolve([]),
+    includeUrlSwap ? getDueLinkSwapTasks() : Promise.resolve([])
+  ]);
+
+  const clickFarmResult = {
+    due: clickFarmTasks.length,
+    inserted: 0,
+    duplicate: 0
+  };
+  const urlSwapResult = {
+    due: urlSwapTasks.length,
+    inserted: 0,
+    duplicate: 0
+  };
+
+  for (const task of clickFarmTasks) {
+    const result = await ensureQueueTaskEnqueued({
+      id: buildClickFarmTriggerQueueTaskId(task.id, task.nextRunAt),
+      type: "click-farm-trigger",
+      userId: task.userId,
+      payload: { clickFarmTaskId: task.id },
+      priority: "high",
+      maxRetries: 0
+    });
+    if (result.inserted) {
+      clickFarmResult.inserted += 1;
+    } else {
+      clickFarmResult.duplicate += 1;
+    }
+  }
+
+  for (const task of urlSwapTasks) {
+    const taskId = Number(task.id);
+    const taskUserId = Number(task.user_id);
+    const result = await ensureQueueTaskEnqueued({
+      id: buildLinkSwapQueueTaskId(taskId, task.next_run_at ? String(task.next_run_at) : null),
+      type: "url-swap",
+      userId: taskUserId,
+      payload: { linkSwapTaskId: taskId },
+      priority: "high",
+      maxRetries: 0
+    });
+    if (result.inserted) {
+      urlSwapResult.inserted += 1;
+    } else {
+      urlSwapResult.duplicate += 1;
+    }
+  }
+
+  await logAuditEvent({
+    userId: user.id,
+    eventType: "configuration_changed",
+    ...getRequestMetadata(request),
+    details: {
+      scope: "queue_scheduler",
+      action: "manual_dispatch",
+      target,
+      clickFarm: clickFarmResult,
+      urlSwap: urlSwapResult
+    }
+  });
+
+  return NextResponse.json({
+    success: true,
+    mode: "external_scheduler_process",
+    message: "已按当前条件补投待调度任务到统一队列",
+    data: {
+      target,
+      clickFarm: clickFarmResult,
+      urlSwap: urlSwapResult
+    }
+  });
 }

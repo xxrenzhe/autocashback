@@ -1,12 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { LINK_SWAP_ALLOWED_INTERVALS_MINUTES } from "@autocashback/domain";
 import {
-  getGoogleAdsCredentialStatus,
   getLinkSwapTaskById,
-  getOfferById,
-  getProxyUrls,
-  updateLinkSwapTask
+  updateLinkSwapTask,
+  validateLinkSwapTaskConfig,
+  validateLinkSwapTaskPrerequisites
 } from "@autocashback/db";
 
 import { getRequestUser } from "@/lib/api-auth";
@@ -87,49 +85,23 @@ export async function PUT(
       );
     }
 
-    if (!LINK_SWAP_ALLOWED_INTERVALS_MINUTES.includes(intervalMinutes)) {
+    const configValidation = validateLinkSwapTaskConfig(intervalMinutes, durationDays);
+    if (!configValidation.valid) {
+      return NextResponse.json({ error: configValidation.error }, { status: 400 });
+    }
+
+    const prerequisiteValidation = await validateLinkSwapTaskPrerequisites({
+      userId: user.id,
+      offerId: existingTask.offerId,
+      mode
+    });
+    if (!prerequisiteValidation.valid) {
       return NextResponse.json(
         {
-          error: `换链接间隔必须是以下值之一：${LINK_SWAP_ALLOWED_INTERVALS_MINUTES.join(", ")} 分钟`
+          error: prerequisiteValidation.error
         },
-        { status: 400 }
+        { status: prerequisiteValidation.status }
       );
-    }
-
-    if (durationDays !== -1 && (durationDays < 1 || durationDays > 365)) {
-      return NextResponse.json(
-        {
-          error: '任务持续天数必须在 1-365 天之间，或选择"不限期"'
-        },
-        { status: 400 }
-      );
-    }
-
-    const offer = await getOfferById(user.id, existingTask.offerId);
-    if (!offer) {
-      return NextResponse.json({ error: "Offer 不存在" }, { status: 404 });
-    }
-
-    const proxyUrls = await getProxyUrls(user.id, offer.targetCountry);
-    if (!proxyUrls.length) {
-      return NextResponse.json(
-        {
-          error: `未配置 ${offer.targetCountry} 国家的代理。请先前往设置页面补齐代理后再保存换链接任务。`
-        },
-        { status: 400 }
-      );
-    }
-
-    if (mode === "google_ads_api") {
-      const credentials = await getGoogleAdsCredentialStatus(user.id);
-      if (!credentials.hasCredentials || !credentials.hasRefreshToken) {
-        return NextResponse.json(
-          {
-            error: "请先在设置页面完成 Google Ads API 配置并完成 OAuth 授权"
-          },
-          { status: 400 }
-        );
-      }
     }
 
     const task = await updateLinkSwapTask(user.id, existingTask.offerId, {

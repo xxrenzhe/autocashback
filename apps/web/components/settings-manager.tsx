@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import type { ProxySettingEntry } from "@autocashback/domain";
+
+import { AccountSecurityPanel } from "@/components/account-security-panel";
+import { fetchJson } from "@/lib/api-error-handler";
 
 type SettingRow = {
   category: string;
@@ -77,16 +80,23 @@ export function SettingsManager() {
   const [loading, setLoading] = useState(true);
   const [rotatingToken, setRotatingToken] = useState(false);
 
-  async function loadSettings() {
+  const loadSettings = useCallback(async () => {
     setLoading(true);
-    const [settingsResponse, scriptResponse, googleAdsResponse] = await Promise.all([
-      fetch("/api/settings"),
-      fetch("/api/script/link-swap/template"),
-      fetch("/api/google-ads/credentials")
+    const [settingsResult, scriptResult, googleAdsResult] = await Promise.all([
+      fetchJson<{ settings: Array<{ category: string; key: string; value: string }> }>("/api/settings"),
+      fetchJson<ScriptTemplatePayload>("/api/script/link-swap/template"),
+      fetchJson<{ credentials?: typeof googleAdsConfig }>("/api/google-ads/credentials")
     ]);
-    const payload = await settingsResponse.json();
-    const scriptPayload = (await scriptResponse.json()) as ScriptTemplatePayload;
-    const googleAdsPayload = await googleAdsResponse.json();
+    const failure = [settingsResult, scriptResult, googleAdsResult].find((item) => !item.success);
+    if (failure && !failure.success) {
+      setMessage(failure.userMessage);
+      setLoading(false);
+      return;
+    }
+
+    const payload = settingsResult.success ? settingsResult.data : { settings: [] };
+    const scriptPayload = scriptResult.success ? scriptResult.data : { token: "", template: "" };
+    const googleAdsPayload = googleAdsResult.success ? googleAdsResult.data : {};
     const normalized: Record<string, string> = {};
     for (const row of payload.settings || []) {
       normalized[`${row.category}.${row.key}`] = row.value || "";
@@ -116,11 +126,11 @@ export function SettingsManager() {
     });
     setScriptAppUrl(window.location.origin);
     setLoading(false);
-  }
+  }, []);
 
   useEffect(() => {
-    loadSettings();
-  }, []);
+    void loadSettings();
+  }, [loadSettings]);
 
   async function saveSettings() {
     setMessage("");
@@ -157,14 +167,14 @@ export function SettingsManager() {
       }
     ];
 
-    const response = await fetch("/api/settings", {
+    const result = await fetchJson("/api/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ updates })
     });
 
-    setMessage(response.ok ? "已保存设置" : "保存失败");
-    if (response.ok) {
+    setMessage(result.success ? "已保存设置" : result.userMessage);
+    if (result.success) {
       await loadSettings();
     }
   }
@@ -174,13 +184,11 @@ export function SettingsManager() {
     setMessage("");
 
     try {
-      const response = await fetch("/api/script/link-swap/rotate-token", {
+      const result = await fetchJson("/api/script/link-swap/rotate-token", {
         method: "POST"
       });
-      const payload = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        setMessage(payload.error || "Token 更换失败");
+      if (!result.success) {
+        setMessage(result.userMessage);
         return;
       }
 
@@ -197,25 +205,27 @@ export function SettingsManager() {
     setMessage("");
 
     try {
-      const response = await fetch("/api/google-ads/credentials", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clientId: googleAdsConfig.clientId,
-          clientSecret: googleAdsConfig.clientSecret,
-          developerToken: googleAdsConfig.developerToken,
-          loginCustomerId: googleAdsConfig.loginCustomerId
-        })
-      });
-      const payload = await response.json();
-      if (!response.ok) {
-        setMessage(payload.error || "Google Ads 配置保存失败");
+      const result = await fetchJson<{ credentials?: { hasRefreshToken?: boolean } }>(
+        "/api/google-ads/credentials",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            clientId: googleAdsConfig.clientId,
+            clientSecret: googleAdsConfig.clientSecret,
+            developerToken: googleAdsConfig.developerToken,
+            loginCustomerId: googleAdsConfig.loginCustomerId
+          })
+        }
+      );
+      if (!result.success) {
+        setMessage(result.userMessage);
         return;
       }
 
       await loadSettings();
       setMessage(
-        payload.credentials?.hasRefreshToken
+        result.data.credentials?.hasRefreshToken
           ? "Google Ads 配置已保存"
           : "Google Ads 配置已保存，请重新发起 OAuth 授权"
       );
@@ -228,17 +238,16 @@ export function SettingsManager() {
     setMessage("");
 
     try {
-      const response = await fetch("/api/google-ads/credentials/verify", {
+      const result = await fetchJson<{ accountCount?: number }>("/api/google-ads/credentials/verify", {
         method: "POST"
       });
-      const payload = await response.json();
-      if (!response.ok) {
-        setMessage(payload.error || "Google Ads 配置验证失败");
+      if (!result.success) {
+        setMessage(result.userMessage);
         return;
       }
 
       await loadSettings();
-      setMessage(`Google Ads 配置验证成功，已同步 ${payload.accountCount || 0} 个账号`);
+      setMessage(`Google Ads 配置验证成功，已同步 ${result.data.accountCount || 0} 个账号`);
     } catch {
       setMessage("Google Ads 配置验证失败");
     }
@@ -248,12 +257,11 @@ export function SettingsManager() {
     setMessage("");
 
     try {
-      const response = await fetch("/api/google-ads/credentials", {
+      const result = await fetchJson("/api/google-ads/credentials", {
         method: "DELETE"
       });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setMessage(payload.error || "Google Ads 配置清除失败");
+      if (!result.success) {
+        setMessage(result.userMessage);
         return;
       }
 
@@ -291,17 +299,19 @@ export function SettingsManager() {
       [index]: { status: "loading", message: "验证中..." }
     }));
 
-    const response = await fetch("/api/settings/proxy/validate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ proxy_url: url })
-    });
-    const payload = await response.json();
+    const result = await fetchJson<{ success?: boolean; data?: { origin?: string } }>(
+      "/api/settings/proxy/validate",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proxy_url: url })
+      }
+    );
 
-    if (!response.ok || !payload.success) {
+    if (!result.success || !result.data.success) {
       setProxyValidation((current) => ({
         ...current,
-        [index]: { status: "error", message: payload.error || "验证失败" }
+        [index]: { status: "error", message: result.success ? "验证失败" : result.userMessage }
       }));
       return;
     }
@@ -310,8 +320,8 @@ export function SettingsManager() {
       ...current,
       [index]: {
         status: "success",
-        message: payload.data?.origin
-          ? `验证成功，出口 IP: ${payload.data.origin}`
+        message: result.data.data?.origin
+          ? `验证成功，出口 IP: ${result.data.data.origin}`
           : "验证成功"
       }
     }));
@@ -319,6 +329,8 @@ export function SettingsManager() {
 
   return (
     <div className="space-y-6">
+      <AccountSecurityPanel />
+
       <section className="surface-panel p-6">
         <div className="flex items-center justify-between gap-4">
           <div>

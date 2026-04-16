@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Noto_Sans_SC, Noto_Serif_SC } from "next/font/google";
 
+import { FrontendMonitoringReporter } from "@/components/frontend-monitoring-reporter";
+
 import "./globals.css";
 
 const bodyFont = Noto_Sans_SC({
@@ -27,6 +29,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className={`${bodyFont.variable} ${displayFont.variable} font-body`}>
+        <FrontendMonitoringReporter />
         {children}
       </body>
     </html>

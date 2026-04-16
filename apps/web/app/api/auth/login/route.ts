@@ -1,11 +1,27 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-import { getAuthCookieName, loginUser } from "@autocashback/db";
+import { getAuthCookieName, logAuditEvent, loginUser } from "@autocashback/db";
 
-export async function POST(request: Request) {
+import { getRequestMetadata } from "@/lib/request-metadata";
+
+export async function POST(request: NextRequest) {
+  const metadata = getRequestMetadata(request);
+  const body = await request.json().catch(() => ({}));
+  const username = String(body.username || "").trim();
+  const password = String(body.password || "");
+
   try {
-    const body = await request.json();
-    const result = await loginUser(body.username, body.password);
+    const result = await loginUser(username, password, metadata);
+
+    await logAuditEvent({
+      userId: result.user.id,
+      eventType: "login_success",
+      ...metadata,
+      details: {
+        username
+      }
+    });
+
     const response = NextResponse.json({ user: result.user });
     response.cookies.set(getAuthCookieName(), result.token, {
       httpOnly: true,
@@ -18,6 +34,14 @@ export async function POST(request: Request) {
     return response;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "登录失败";
+    await logAuditEvent({
+      eventType: "login_failed",
+      ...metadata,
+      details: {
+        username: username.slice(0, 128)
+      }
+    });
+
     return NextResponse.json({ error: message }, { status: 401 });
   }
 }

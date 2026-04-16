@@ -2,17 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const {
-  getGoogleAdsCredentialStatus,
   getLinkSwapTaskById,
-  getOfferById,
-  getProxyUrls,
-  updateLinkSwapTask
+  updateLinkSwapTask,
+  validateLinkSwapTaskConfig,
+  validateLinkSwapTaskPrerequisites
 } = vi.hoisted(() => ({
-  getGoogleAdsCredentialStatus: vi.fn(),
   getLinkSwapTaskById: vi.fn(),
-  getOfferById: vi.fn(),
-  getProxyUrls: vi.fn(),
-  updateLinkSwapTask: vi.fn()
+  updateLinkSwapTask: vi.fn(),
+  validateLinkSwapTaskConfig: vi.fn(),
+  validateLinkSwapTaskPrerequisites: vi.fn()
 }));
 
 const { getRequestUser } = vi.hoisted(() => ({
@@ -20,11 +18,10 @@ const { getRequestUser } = vi.hoisted(() => ({
 }));
 
 vi.mock("@autocashback/db", () => ({
-  getGoogleAdsCredentialStatus,
   getLinkSwapTaskById,
-  getOfferById,
-  getProxyUrls,
-  updateLinkSwapTask
+  updateLinkSwapTask,
+  validateLinkSwapTaskConfig,
+  validateLinkSwapTaskPrerequisites
 }));
 
 vi.mock("@/lib/api-auth", () => ({
@@ -37,11 +34,13 @@ describe("link swap task detail route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getRequestUser.mockResolvedValue({ id: 9 });
-    getOfferById.mockResolvedValue({ id: 21, targetCountry: "US" });
-    getProxyUrls.mockResolvedValue(["http://proxy.example.com:8080"]);
-    getGoogleAdsCredentialStatus.mockResolvedValue({
-      hasCredentials: true,
-      hasRefreshToken: true
+    validateLinkSwapTaskConfig.mockReturnValue({
+      valid: true
+    });
+    validateLinkSwapTaskPrerequisites.mockResolvedValue({
+      valid: true,
+      offer: { id: 21, targetCountry: "US" },
+      proxyUrls: ["http://proxy.example.com:8080"]
     });
   });
 
@@ -123,6 +122,10 @@ describe("link swap task detail route", () => {
       googleCustomerId: null,
       googleCampaignId: null
     });
+    validateLinkSwapTaskConfig.mockReturnValue({
+      valid: false,
+      error: '任务持续天数必须在 1-365 天之间，或选择"不限期"'
+    });
 
     const response = await PUT(
       new NextRequest("https://www.autocashback.dev/api/link-swap/tasks/5", {
@@ -189,6 +192,11 @@ describe("link swap task detail route", () => {
         enabled: true
       })
     );
+    expect(validateLinkSwapTaskPrerequisites).toHaveBeenCalledWith({
+      userId: 9,
+      offerId: 21,
+      mode: "script"
+    });
     expect(payload.success).toBe(true);
     expect(payload.task.intervalMinutes).toBe(60);
     expect(payload.message).toBe("换链接任务更新成功");

@@ -10,6 +10,9 @@ import type {
   QueueTaskType
 } from "@autocashback/domain";
 
+import { AdminOperationsMonitor } from "@/components/admin-operations-monitor";
+import { fetchJson } from "@/lib/api-error-handler";
+
 const emptyStats: QueueStats = {
   total: 0,
   pending: 0,
@@ -117,6 +120,7 @@ export function QueueMonitor() {
   const [configSaving, setConfigSaving] = useState(false);
   const [configMessage, setConfigMessage] = useState("");
   const [configError, setConfigError] = useState("");
+  const [manualScheduling, setManualScheduling] = useState<"all" | "click-farm" | "url-swap" | null>(null);
 
   const loadQueueData = useCallback(async () => {
     try {
@@ -129,23 +133,19 @@ export function QueueMonitor() {
       }
       query.set("limit", "100");
 
-      const [statsResponse, tasksResponse] = await Promise.all([
-        fetch("/api/queue/stats"),
-        fetch(`/api/queue/tasks?${query.toString()}`)
+      const [statsResult, tasksResult] = await Promise.all([
+        fetchJson<{ stats: QueueStats }>("/api/queue/stats"),
+        fetchJson<{ tasks: QueueTaskRecord[] }>(`/api/queue/tasks?${query.toString()}`)
       ]);
-      const statsPayload = await statsResponse.json();
-      const tasksPayload = await tasksResponse.json();
-
-      if (!statsResponse.ok) {
-        throw new Error(statsPayload.error || "加载队列统计失败");
+      if (!statsResult.success) {
+        throw new Error(statsResult.userMessage);
+      }
+      if (!tasksResult.success) {
+        throw new Error(tasksResult.userMessage);
       }
 
-      if (!tasksResponse.ok) {
-        throw new Error(tasksPayload.error || "加载队列任务失败");
-      }
-
-      setStats(statsPayload.stats || emptyStats);
-      setTasks(tasksPayload.tasks || []);
+      setStats(statsResult.data.stats || emptyStats);
+      setTasks(tasksResult.data.tasks || []);
       setMessage("");
     } catch (error: unknown) {
       setMessage(error instanceof Error ? error.message : "加载队列数据失败");
@@ -155,14 +155,12 @@ export function QueueMonitor() {
   async function loadSchedulerStatus() {
     try {
       setSchedulerLoading(true);
-      const schedulerResponse = await fetch("/api/queue/scheduler");
-      const schedulerPayload = await schedulerResponse.json().catch(() => ({}));
-
-      if (!schedulerResponse.ok) {
-        throw new Error(schedulerPayload.error || "加载调度器状态失败");
+      const schedulerResult = await fetchJson<{ data: SchedulerStatusPayload }>("/api/queue/scheduler");
+      if (!schedulerResult.success) {
+        throw new Error(schedulerResult.userMessage);
       }
 
-      setSchedulerStatus(schedulerPayload.data || null);
+      setSchedulerStatus(schedulerResult.data.data || null);
       setSchedulerError("");
     } catch (error: unknown) {
       const nextError = error instanceof Error ? error.message : "加载调度器状态失败";
@@ -175,17 +173,15 @@ export function QueueMonitor() {
   async function loadQueueConfig() {
     try {
       setConfigLoading(true);
-      const response = await fetch("/api/queue/config");
-      const payload = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(payload.error || "加载队列配置失败");
+      const result = await fetchJson<QueueConfigPayload>("/api/queue/config");
+      if (!result.success) {
+        throw new Error(result.userMessage);
       }
 
       setConfig({
-        config: payload.config,
-        configSource: payload.configSource || "default",
-        note: payload.note || ""
+        config: result.data.config,
+        configSource: result.data.configSource || "default",
+        note: result.data.note || ""
       });
       setConfigError("");
     } catch (error: unknown) {
@@ -205,29 +201,64 @@ export function QueueMonitor() {
       setConfigMessage("");
       setConfigError("");
 
-      const response = await fetch("/api/queue/config", {
+      const result = await fetchJson<{
+        config: QueueSystemConfig;
+        message?: string;
+      }>("/api/queue/config", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify(config.config)
       });
-      const payload = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(payload.error || "保存队列配置失败");
+      if (!result.success) {
+        throw new Error(result.userMessage);
       }
 
       setConfig({
-        config: payload.config,
+        config: result.data.config,
         configSource: "database",
         note: "配置保存到数据库后，独立 scheduler 进程会在 60 秒内自动拉取并应用"
       });
-      setConfigMessage(payload.message || "队列配置已保存");
+      setConfigMessage(result.data.message || "队列配置已保存");
     } catch (error: unknown) {
       setConfigError(error instanceof Error ? error.message : "保存队列配置失败");
     } finally {
       setConfigSaving(false);
+    }
+  }
+
+  async function triggerManualScheduling(target: "all" | "click-farm" | "url-swap") {
+    try {
+      setManualScheduling(target);
+      const result = await fetchJson<{
+        message?: string;
+        data?: {
+          clickFarm?: { inserted: number; duplicate: number };
+          urlSwap?: { inserted: number; duplicate: number };
+        };
+      }>("/api/queue/scheduler", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ target })
+      });
+      if (!result.success) {
+        throw new Error(result.userMessage);
+      }
+
+      const clickFarmInserted = result.data.data?.clickFarm?.inserted || 0;
+      const urlSwapInserted = result.data.data?.urlSwap?.inserted || 0;
+      setMessage(
+        result.data.message ||
+          `手动调度完成：补点击新增 ${clickFarmInserted}，换链接新增 ${urlSwapInserted}`
+      );
+      await Promise.all([loadQueueData(), loadSchedulerStatus()]);
+    } catch (error: unknown) {
+      setMessage(error instanceof Error ? error.message : "手动调度失败");
+    } finally {
+      setManualScheduling(null);
     }
   }
 
@@ -379,17 +410,39 @@ export function QueueMonitor() {
 
       <section className="surface-panel p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <button
-            className="flex-1 text-left"
-            onClick={() => setSchedulerCollapsed((value) => !value)}
-            type="button"
-          >
+          <button className="flex-1 text-left" onClick={() => setSchedulerCollapsed((value) => !value)} type="button">
             <p className="eyebrow">调度器状态</p>
             <h3 className="mt-2 text-2xl font-semibold text-slate-900">编排中心健康度</h3>
-            <p className="mt-2 text-sm text-slate-600">
-              {schedulerCollapsed ? "展开查看调度器健康检查" : "收起调度器健康检查"}
-            </p>
+            <p className="mt-2 text-sm text-slate-600">{schedulerCollapsed ? "展开查看调度器健康检查" : "收起调度器健康检查"}</p>
           </button>
+          {!schedulerCollapsed ? (
+            <div className="flex flex-wrap gap-3">
+              <button
+                className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                disabled={manualScheduling !== null}
+                onClick={() => triggerManualScheduling("click-farm")}
+                type="button"
+              >
+                {manualScheduling === "click-farm" ? "补投中..." : "补投补点击"}
+              </button>
+              <button
+                className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                disabled={manualScheduling !== null}
+                onClick={() => triggerManualScheduling("url-swap")}
+                type="button"
+              >
+                {manualScheduling === "url-swap" ? "补投中..." : "补投换链接"}
+              </button>
+              <button
+                className="rounded-2xl bg-brand-emerald px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                disabled={manualScheduling !== null}
+                onClick={() => triggerManualScheduling("all")}
+                type="button"
+              >
+                {manualScheduling === "all" ? "补投中..." : "补投全部待调度任务"}
+              </button>
+            </div>
+          ) : null}
         </div>
 
         {!schedulerCollapsed && schedulerLoading && !schedulerStatus ? (
@@ -414,7 +467,7 @@ export function QueueMonitor() {
           <>
             <p className="mt-4 rounded-2xl bg-sky-50 px-4 py-4 text-sm text-sky-800">{schedulerStatus.note}</p>
             <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
-              手动调度入口已关闭。当前实现与 autobb 一致，只允许通过独立 scheduler 进程执行编排，这里仅用于观测心跳、队列积压和配置状态。
+              默认仍以独立 scheduler 进程为主；这里新增的是管理员补投入口，只会把“已到期但尚未入队”的任务补回统一队列，不替代常驻调度。
             </p>
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
               <SchedulerCard
@@ -537,6 +590,8 @@ export function QueueMonitor() {
           )}
         </div>
       </section>
+
+      <AdminOperationsMonitor />
     </div>
   );
 }

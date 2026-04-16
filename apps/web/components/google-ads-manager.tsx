@@ -5,7 +5,44 @@ import Link from "next/link";
 
 import type { GoogleAdsAccountRecord, GoogleAdsCredentialStatus } from "@autocashback/domain";
 
+import { fetchJson } from "@/lib/api-error-handler";
+
 type MessageTone = "info" | "success" | "warning" | "error";
+type DiagnosePayload = {
+  loginCustomerId: string | null;
+  accessibleCustomers: string[];
+  sampledCount: number;
+  customers: Array<{
+    customerId: string;
+    ok: boolean;
+    descriptiveName?: string | null;
+    manager?: boolean | null;
+    testAccount?: boolean | null;
+    currencyCode?: string | null;
+    timeZone?: string | null;
+    status?: string | null;
+    error?: {
+      message: string;
+      code: string;
+      hint?: string;
+    };
+  }>;
+  probeCustomerId: string | null;
+  probe?: {
+    error?: {
+      message: string;
+      code: string;
+      hint?: string;
+    };
+  } | null;
+  summary: {
+    totalAccessible: number;
+    okCount: number;
+    errorCount: number;
+    testAccountTrue: number;
+    testAccountFalse: number;
+  };
+};
 
 function getGoogleAdsStatusMessage(code: string): { tone: MessageTone; text: string } {
   switch (code) {
@@ -69,6 +106,9 @@ export function GoogleAdsManager() {
   const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState("");
   const [messageTone, setMessageTone] = useState<MessageTone>("info");
+  const [diagnosing, setDiagnosing] = useState(false);
+  const [probeCustomerId, setProbeCustomerId] = useState("");
+  const [diagnoseResult, setDiagnoseResult] = useState<DiagnosePayload | null>(null);
 
   async function loadAll(options?: { refreshAccounts?: boolean; preserveMessage?: boolean }) {
     const refreshAccounts = Boolean(options?.refreshAccounts);
@@ -79,14 +119,15 @@ export function GoogleAdsManager() {
     }
 
     try {
-      const credentialsResponse = await fetch("/api/google-ads/credentials");
-      const credentialsPayload = await credentialsResponse.json();
+      const credentialsResult = await fetchJson<{ credentials: GoogleAdsCredentialStatus | null }>(
+        "/api/google-ads/credentials"
+      );
 
-      if (!credentialsResponse.ok) {
-        throw new Error(credentialsPayload.error || "加载 Google Ads 配置失败");
+      if (!credentialsResult.success) {
+        throw new Error(credentialsResult.userMessage);
       }
 
-      const nextCredentials = (credentialsPayload.credentials || null) as GoogleAdsCredentialStatus | null;
+      const nextCredentials = (credentialsResult.data.credentials || null) as GoogleAdsCredentialStatus | null;
       setCredentials(nextCredentials);
 
       if (!nextCredentials?.hasRefreshToken && !refreshAccounts) {
@@ -94,15 +135,14 @@ export function GoogleAdsManager() {
         return;
       }
 
-      const accountsResponse = await fetch(
+      const accountsResult = await fetchJson<{ accounts: GoogleAdsAccountRecord[] }>(
         `/api/google-ads/credentials/accounts${refreshAccounts ? "?refresh=true" : ""}`
       );
-      const accountsPayload = await accountsResponse.json();
-      if (!accountsResponse.ok) {
-        throw new Error(accountsPayload.error || "加载 Google Ads 账号失败");
+      if (!accountsResult.success) {
+        throw new Error(accountsResult.userMessage);
       }
 
-      setAccounts(accountsPayload.accounts || []);
+      setAccounts(accountsResult.data.accounts || []);
     } catch (error: unknown) {
       setMessageTone("error");
       setMessage(error instanceof Error ? error.message : "加载 Google Ads 数据失败");
@@ -141,12 +181,11 @@ export function GoogleAdsManager() {
     setMessage("");
 
     try {
-      const verifyResponse = await fetch("/api/google-ads/credentials/verify", {
+      const verifyResult = await fetchJson<{ accountCount?: number }>("/api/google-ads/credentials/verify", {
         method: "POST"
       });
-      const verifyPayload = await verifyResponse.json();
-      if (!verifyResponse.ok) {
-        throw new Error(verifyPayload.error || "验证失败");
+      if (!verifyResult.success) {
+        throw new Error(verifyResult.userMessage);
       }
 
       await loadAll({
@@ -154,7 +193,7 @@ export function GoogleAdsManager() {
         preserveMessage: true
       });
       setMessageTone("success");
-      setMessage(`Google Ads 配置验证成功，已同步 ${verifyPayload.accountCount || 0} 个账号。`);
+      setMessage(`Google Ads 配置验证成功，已同步 ${verifyResult.data.accountCount || 0} 个账号。`);
     } catch (error: unknown) {
       setMessageTone("error");
       setMessage(error instanceof Error ? error.message : "Google Ads 验证失败");
@@ -179,6 +218,35 @@ export function GoogleAdsManager() {
         : messageTone === "error"
           ? "text-red-600"
           : "text-slate-600";
+
+  async function diagnoseCredentials() {
+    setDiagnosing(true);
+    setMessage("");
+
+    const result = await fetchJson<{ data: DiagnosePayload }>("/api/google-ads/diagnose", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        probeCustomerId: probeCustomerId.trim() || undefined,
+        maxCustomers: 20
+      })
+    });
+
+    if (!result.success) {
+      setMessageTone("error");
+      setMessage(result.userMessage);
+      setDiagnoseResult(null);
+      setDiagnosing(false);
+      return;
+    }
+
+    setDiagnoseResult(result.data.data);
+    setMessageTone("success");
+    setMessage("Google Ads 诊断完成，可据此判断 MCC、Developer Token 和 OAuth 权限问题。");
+    setDiagnosing(false);
+  }
 
   return (
     <div className="space-y-6">
@@ -297,6 +365,98 @@ export function GoogleAdsManager() {
           </div>
         </div>
       </section>
+
+      <section className="surface-panel p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="eyebrow">诊断工具</p>
+            <h3 className="mt-2 text-2xl font-semibold text-slate-900">Google Ads OAuth / MCC 诊断</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              这一段直接借鉴 autobb 的只读诊断思路：不向浏览器返回敏感凭证，只读取可访问客户号、账号类型和权限错误分类。
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <input
+              className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm text-slate-700"
+              onChange={(event) => setProbeCustomerId(event.target.value)}
+              placeholder="可选：额外探测 Customer ID"
+              value={probeCustomerId}
+            />
+            <button
+              className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+              disabled={!credentials?.hasRefreshToken || diagnosing}
+              onClick={diagnoseCredentials}
+              type="button"
+            >
+              {diagnosing ? "诊断中..." : "执行诊断"}
+            </button>
+          </div>
+        </div>
+
+        {diagnoseResult ? (
+          <div className="mt-6 space-y-4">
+            <div className="grid gap-4 md:grid-cols-4">
+              <InfoCard label="可访问账号" value={diagnoseResult.summary.totalAccessible} />
+              <InfoCard label="读取成功" value={diagnoseResult.summary.okCount} />
+              <InfoCard label="读取失败" value={diagnoseResult.summary.errorCount} />
+              <InfoCard label="测试账号" value={diagnoseResult.summary.testAccountTrue} />
+            </div>
+
+            {diagnoseResult.probe?.error ? (
+              <div className="rounded-[28px] border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800">
+                <p className="font-semibold">探测 Customer ID 失败</p>
+                <p className="mt-2">{diagnoseResult.probe.error.code}</p>
+                {diagnoseResult.probe.error.hint ? <p className="mt-2">{diagnoseResult.probe.error.hint}</p> : null}
+              </div>
+            ) : null}
+
+            <div className="grid gap-3">
+              {diagnoseResult.customers.map((customer) => (
+                <div className="rounded-[28px] border border-brand-line bg-stone-50 p-5" key={customer.customerId}>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {customer.descriptiveName || `Customer ${customer.customerId}`}
+                      </p>
+                      <p className="mt-1 font-mono text-xs text-slate-500">{customer.customerId}</p>
+                    </div>
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        customer.ok ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                      }`}
+                    >
+                      {customer.ok ? "读取成功" : customer.error?.code || "失败"}
+                    </span>
+                  </div>
+
+                  {customer.ok ? (
+                    <div className="mt-4 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+                      <p>Manager：{customer.manager ? "是" : "否"}</p>
+                      <p>Test Account：{customer.testAccount ? "是" : "否"}</p>
+                      <p>币种：{customer.currencyCode || "--"}</p>
+                      <p>时区：{customer.timeZone || "--"}</p>
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+                      <p>{customer.error?.message || "未知错误"}</p>
+                      {customer.error?.hint ? <p className="mt-2">{customer.error.hint}</p> : null}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </section>
+    </div>
+  );
+}
+
+function InfoCard(props: { label: string; value: number }) {
+  return (
+    <div className="rounded-[28px] border border-brand-line bg-stone-50 p-5">
+      <p className="text-sm text-slate-500">{props.label}</p>
+      <p className="mt-3 font-mono text-3xl font-semibold text-slate-900">{props.value}</p>
     </div>
   );
 }
