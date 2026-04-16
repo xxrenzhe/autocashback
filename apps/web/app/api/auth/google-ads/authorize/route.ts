@@ -2,13 +2,20 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import {
   getGoogleAdsAuthorizationUrlForClient,
-  getGoogleAdsCredentials
+  getGoogleAdsCredentials,
+  validateGoogleAdsCredentialInput
 } from "@autocashback/db";
 
 import { getRequestUser } from "@/lib/api-auth";
 
 function encodeState(input: { userId: number; timestamp: number }) {
   return Buffer.from(JSON.stringify(input)).toString("base64url");
+}
+
+function buildGoogleAdsRedirect(request: NextRequest, error: string) {
+  return NextResponse.redirect(
+    new URL(`/google-ads?error=${encodeURIComponent(error)}`, request.url)
+  );
 }
 
 export async function GET(request: NextRequest) {
@@ -18,14 +25,27 @@ export async function GET(request: NextRequest) {
   }
 
   const credentials = await getGoogleAdsCredentials(user.id);
-  if (!credentials?.clientId || !credentials.clientSecret || !credentials.developerToken) {
-    return NextResponse.redirect(
-      new URL("/settings?googleAdsError=missing_config", request.url)
-    );
+  if (!credentials?.loginCustomerId) {
+    return buildGoogleAdsRedirect(request, "missing_login_customer_id");
+  }
+
+  const validation = validateGoogleAdsCredentialInput({
+    clientId: credentials?.clientId || "",
+    clientSecret: credentials?.clientSecret || "",
+    developerToken: credentials?.developerToken || "",
+    loginCustomerId: credentials?.loginCustomerId || ""
+  });
+
+  if (!validation.valid) {
+    if (validation.message.includes("Developer Token")) {
+      return buildGoogleAdsRedirect(request, "developer_token_invalid");
+    }
+
+    return buildGoogleAdsRedirect(request, "missing_google_ads_config");
   }
 
   const authUrl = getGoogleAdsAuthorizationUrlForClient(
-    credentials.clientId,
+    validation.normalizedInput.clientId,
     encodeState({
       userId: user.id,
       timestamp: Date.now()
