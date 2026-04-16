@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { Coins, Link2, ShieldCheck, WalletCards, Workflow } from "lucide-react";
+import { Coins, KeyRound, Link2, ShieldCheck, WalletCards, Workflow } from "lucide-react";
 
 import { BrandMark } from "@/components/brand-mark";
 import { ContactQrDialog } from "@/components/contact-qr-dialog";
@@ -12,20 +12,43 @@ import { LoginForm } from "@/components/login-form";
 const loginActions = [
   {
     icon: WalletCards,
-    text: "继续维护返利账号、收款方式与运营备注"
+    title: "继续维护返利账号",
+    text: "进入控制台后继续处理账号状态、国家覆盖和平台备注。"
   },
   {
     icon: Coins,
-    text: "查看 Offer 进度与佣金状态变化"
+    title: "查看 Offer 与佣金进度",
+    text: "快速确认当天重点 Offer、阈值状态和需要跟进的变更。"
   },
   {
     icon: Link2,
-    text: "同步更新推广链接，保持投放口径一致"
+    title: "执行换链与链接复核",
+    text: "把最新终链更新到系统，减少活动链路切换时的漏改风险。"
   },
   {
     icon: Workflow,
-    text: "承接团队协作与日常运营交接"
+    title: "承接交接与日常协作",
+    text: "从总览继续进入账号、Offer 或任务处理，不需要回头翻表。"
   }
+];
+
+const loginSignals = [
+  {
+    label: "账号开通",
+    value: "管理员统一创建",
+    note: "试用账号和正式账号都从后台统一开通。"
+  },
+  {
+    label: "登录后入口",
+    value: "直接进入控制台",
+    note: "继续处理账号、Offer 和换链等日常动作。"
+  }
+];
+
+const securityNotes = [
+  "管理员重置密码后，旧登录会话会自动失效。",
+  "如果最近登录设备或 IP 异常，建议联系管理员先复核账号状态。",
+  "没有账号时，先申请试用或联系开通，再使用统一入口登录。"
 ];
 
 function ContactButton(props: {
@@ -34,7 +57,7 @@ function ContactButton(props: {
   children: ReactNode;
 }) {
   return (
-    <button type="button" className={props.className} onClick={props.onClick}>
+    <button className={props.className} onClick={props.onClick} type="button">
       {props.children}
     </button>
   );
@@ -44,7 +67,7 @@ export function LoginPageShell() {
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(209,250,229,0.82),transparent_26%),radial-gradient(circle_at_top_right,rgba(254,240,138,0.75),transparent_22%),linear-gradient(180deg,#fafaf9_0%,#f5f5f4_100%)]">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_26%),radial-gradient(circle_at_top_right,rgba(245,158,11,0.12),transparent_22%),linear-gradient(180deg,#fafaf9_0%,#f5f5f4_100%)]">
       <div className="mx-auto max-w-7xl px-5 pt-5 lg:px-8">
         <header className="flex h-[4.5rem] items-center justify-between rounded-full border border-brand-line/80 bg-white/88 px-4 backdrop-blur sm:px-5 sm:shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
           <Link className="flex items-center gap-3" href="/">
@@ -78,26 +101,62 @@ export function LoginPageShell() {
             <ShieldCheck className="h-4 w-4 text-brand-emerald" />
             AutoCashBack 账号入口
           </p>
-          <h1 className="mt-6 max-w-4xl font-display text-5xl font-semibold leading-tight text-slate-900 lg:text-6xl">账号登录</h1>
+          <h1 className="mt-6 max-w-4xl font-display text-5xl font-semibold leading-tight text-slate-900 lg:text-6xl">
+            登录后，
+            <span className="block text-brand-emerald">继续当天返利运营</span>
+          </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-            先咨询开通试用账号，再登录使用系统。已有账号可直接进入控制台，继续管理账号、Offer、佣金与链接更新。
+            已有账号可直接进入控制台，继续处理账号、Offer、佣金和换链任务。还没有账号时，先申请试用或联系管理员统一开通。
           </p>
 
-          <div className="surface-panel mt-8 flex-1 p-6">
-            <p className="text-sm font-semibold text-slate-900">登录后你可直接继续这些动作：</p>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            {loginSignals.map((item) => (
+              <article className="surface-panel p-5" key={item.label}>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{item.label}</p>
+                <p className="mt-4 text-2xl font-semibold text-slate-900">{item.value}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{item.note}</p>
+              </article>
+            ))}
+          </div>
+
+          <div className="surface-panel mt-8 p-6">
+            <p className="text-sm font-semibold text-slate-900">登录后通常会先继续这些动作：</p>
             <div className="mt-5 grid gap-3">
               {loginActions.map((item) => {
                 const Icon = item.icon;
 
                 return (
-                  <div className="flex items-start gap-3 rounded-[22px] bg-stone-50 px-4 py-4" key={item.text}>
-                    <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+                  <div className="flex items-start gap-3 rounded-[22px] bg-stone-50 px-4 py-4" key={item.title}>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
                       <Icon className="h-4 w-4" />
                     </div>
-                    <p className="text-sm leading-6 text-slate-600">{item.text}</p>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">{item.text}</p>
+                    </div>
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          <div className="surface-panel mt-6 p-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+                <KeyRound className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">登录前提醒</p>
+                <p className="text-sm text-slate-500">先确认账号状态，再进入控制台。</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
+              {securityNotes.map((item) => (
+                <p className="flex items-start gap-2" key={item}>
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand-emerald" />
+                  <span>{item}</span>
+                </p>
+              ))}
             </div>
           </div>
         </section>
@@ -110,7 +169,7 @@ export function LoginPageShell() {
         </div>
       </div>
 
-      <ContactQrDialog open={isContactDialogOpen} onClose={() => setIsContactDialogOpen(false)} />
+      <ContactQrDialog onClose={() => setIsContactDialogOpen(false)} open={isContactDialogOpen} />
     </main>
   );
 }
