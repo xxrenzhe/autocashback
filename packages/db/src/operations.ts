@@ -647,13 +647,30 @@ export async function listLinkSwapRunsByTaskId(userId: number, taskId: number): 
 export async function getSettings(userId: number | null, category?: string) {
   await ensureDatabaseReady();
   const sql = getSql();
-  const rows = await sql<DbRow[]>`
-    SELECT *
-    FROM system_settings
-    WHERE (user_id = ${userId} OR user_id IS NULL)
-      AND (${category ?? null} IS NULL OR category = ${category ?? null})
-    ORDER BY CASE WHEN user_id IS NULL THEN 0 ELSE 1 END, category, key
-  `;
+  const conditions = [];
+  const params: unknown[] = [];
+
+  if (userId === null) {
+    conditions.push("user_id IS NULL");
+  } else {
+    conditions.push("(user_id = ? OR user_id IS NULL)");
+    params.push(userId);
+  }
+
+  if (category !== undefined) {
+    conditions.push("category = ?");
+    params.push(category);
+  }
+
+  const rows = await sql.unsafe<DbRow[]>(
+    `
+      SELECT *
+      FROM system_settings
+      WHERE ${conditions.join(" AND ")}
+      ORDER BY CASE WHEN user_id IS NULL THEN 0 ELSE 1 END, category, key
+    `,
+    params
+  );
 
   return rows.map((row) => ({
     category: String(row.category),
