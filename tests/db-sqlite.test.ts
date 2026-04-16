@@ -20,6 +20,7 @@ import {
   enqueueQueueTask,
   ensureDatabaseReady,
   getClickFarmTaskByOfferId,
+  getDueClickFarmTasks,
   getGoogleAdsCredentialStatus,
   getScriptSnapshot,
   getSql,
@@ -696,5 +697,83 @@ describe.sequential("sqlite database bootstrap", () => {
     `;
 
     expect(remainingQueueTasks).toHaveLength(0);
+  });
+
+  it("keeps future click-farm tasks out of immediate scheduling until their start date", async () => {
+    const user = await createUser({
+      username: "sqlite-user-future-click-farm",
+      email: "sqlite-user-future-click-farm@example.com",
+      password: "password",
+      role: "user"
+    });
+
+    const account = await createAccount(user.id, {
+      platformCode: "topcashback",
+      accountName: "Future Click Farm Account",
+      registerEmail: "sqlite-user-future-click-farm@example.com",
+      payoutMethod: "paypal",
+      notes: "future click farm"
+    });
+
+    const offer = await createOffer(user.id, {
+      platformCode: "topcashback",
+      cashbackAccountId: account.id,
+      promoLink: "https://example.com/future-click-farm",
+      targetCountry: "US",
+      brandName: "Brand Future Click Farm",
+      campaignLabel: "Campaign Future Click Farm",
+      commissionCapUsd: 66,
+      manualRecordedCommissionUsd: 10
+    });
+
+    const futureTask = await createClickFarmTask(user.id, {
+      offerId: offer.id,
+      dailyClickCount: 32,
+      startTime: "08:00",
+      endTime: "24:00",
+      durationDays: 14,
+      scheduledStartDate: "2099-04-16",
+      hourlyDistribution: Array.from({ length: 24 }, (_, hour) => (hour >= 8 ? 2 : 0)),
+      timezone: "America/New_York",
+      refererConfig: {
+        type: "random"
+      }
+    });
+
+    expect(Date.parse(futureTask.nextRunAt || "")).toBeGreaterThan(Date.now());
+
+    let dueTasks = await getDueClickFarmTasks();
+    expect(dueTasks.some((task) => task.id === futureTask.id)).toBe(false);
+
+    await getSql()`
+      UPDATE click_farm_tasks
+      SET started_at = CURRENT_TIMESTAMP
+      WHERE id = ${futureTask.id}
+    `;
+
+    const restartedTask = await restartClickFarmTask(user.id, futureTask.id);
+    expect(Date.parse(restartedTask.nextRunAt || "")).toBeGreaterThan(Date.now());
+
+    dueTasks = await getDueClickFarmTasks();
+    expect(dueTasks.some((task) => task.id === futureTask.id)).toBe(false);
+
+    const updatedTask = await updateClickFarmTask(user.id, futureTask.id, {
+      offerId: offer.id,
+      dailyClickCount: 48,
+      startTime: "09:00",
+      endTime: "24:00",
+      durationDays: 30,
+      scheduledStartDate: "2099-05-01",
+      hourlyDistribution: Array.from({ length: 24 }, (_, hour) => (hour >= 9 ? 3 : 0)),
+      timezone: "America/New_York",
+      refererConfig: {
+        type: "specific",
+        referer: "https://www.facebook.com/"
+      }
+    });
+
+    expect(Date.parse(updatedTask.nextRunAt || "")).toBeGreaterThan(Date.now());
+    dueTasks = await getDueClickFarmTasks();
+    expect(dueTasks.some((task) => task.id === futureTask.id)).toBe(false);
   });
 });

@@ -109,4 +109,57 @@ describe("click farm tasks route", () => {
       })
     );
   });
+
+  it("does not enqueue immediate trigger when created task starts in the future", async () => {
+    createClickFarmTask.mockResolvedValue({
+      id: 9,
+      durationDays: 14,
+      nextRunAt: "2099-04-16T04:10:00.000Z"
+    });
+
+    const response = await POST(
+      new NextRequest("https://www.autocashback.dev/api/click-farm/tasks", {
+        method: "POST",
+        body: JSON.stringify({
+          offerId: 12,
+          targetCountry: "US",
+          dailyClickCount: 80,
+          scheduledStartDate: "2099-04-16"
+        }),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(enqueueQueueTask).not.toHaveBeenCalled();
+  });
+
+  it("does not enqueue immediate trigger when updated task starts in the future", async () => {
+    updateClickFarmTask.mockResolvedValue({
+      id: 10,
+      durationDays: 14,
+      nextRunAt: "2099-04-16T04:20:00.000Z"
+    });
+
+    const response = await PUT(
+      new NextRequest("https://www.autocashback.dev/api/click-farm/tasks", {
+        method: "PUT",
+        body: JSON.stringify({
+          id: 10,
+          offerId: 12,
+          targetCountry: "US",
+          dailyClickCount: 120,
+          scheduledStartDate: "2099-04-16"
+        }),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(enqueueQueueTask).not.toHaveBeenCalled();
+  });
 });

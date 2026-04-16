@@ -52,4 +52,22 @@ describe("click farm restart route", () => {
     );
     expect(payload.task.status).toBe("pending");
   });
+
+  it("does not enqueue immediate trigger when restarted task is scheduled for the future", async () => {
+    restartClickFarmTask.mockResolvedValue({
+      id: 5,
+      status: "pending",
+      nextRunAt: "2099-04-16T04:30:00.000Z"
+    });
+
+    const response = await POST(
+      new NextRequest("https://www.autocashback.dev/api/click-farm/tasks/5/restart", {
+        method: "POST"
+      }),
+      { params: { id: "5" } }
+    );
+
+    expect(response.status).toBe(200);
+    expect(enqueueQueueTask).not.toHaveBeenCalled();
+  });
 });

@@ -5,6 +5,11 @@ import { buildClickFarmTriggerQueueTaskId } from "@autocashback/domain";
 
 import { getRequestUser } from "@/lib/api-auth";
 
+function shouldEnqueueImmediately(nextRunAt: string | null | undefined) {
+  const parsed = Date.parse(String(nextRunAt || ""));
+  return Number.isFinite(parsed) && parsed <= Date.now();
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -16,14 +21,16 @@ export async function POST(
 
   try {
     const task = await restartClickFarmTask(user.id, Number(params.id));
-    await enqueueQueueTask({
-      id: buildClickFarmTriggerQueueTaskId(task.id, task.nextRunAt),
-      type: "click-farm-trigger",
-      userId: user.id,
-      payload: { clickFarmTaskId: task.id },
-      priority: "high",
-      maxRetries: 0
-    });
+    if (shouldEnqueueImmediately(task.nextRunAt)) {
+      await enqueueQueueTask({
+        id: buildClickFarmTriggerQueueTaskId(task.id, task.nextRunAt),
+        type: "click-farm-trigger",
+        userId: user.id,
+        payload: { clickFarmTaskId: task.id },
+        priority: "high",
+        maxRetries: 0
+      });
+    }
 
     return NextResponse.json({
       task

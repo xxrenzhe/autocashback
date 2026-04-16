@@ -33,6 +33,104 @@ export type ClickFarmExecutionContext = ClickFarmTask & {
   brandName: string;
 };
 
+function getFormatter(timeZone: string) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  });
+}
+
+function getLocalParts(date: Date, timeZone: string) {
+  const parts = getFormatter(timeZone).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return {
+    year: Number(values.year || 0),
+    month: Number(values.month || 0),
+    day: Number(values.day || 0),
+    hour: Number(values.hour || 0),
+    minute: Number(values.minute || 0),
+    second: Number(values.second || 0)
+  };
+}
+
+function getLocalDateString(date: Date, timeZone: string) {
+  const parts = getLocalParts(date, timeZone);
+  return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+}
+
+function timeToMinutes(value: string) {
+  const [hours, minutes] = value.split(":").map((item) => Number(item || 0));
+  return hours * 60 + minutes;
+}
+
+function createDateInTimezone(dateStr: string, timeStr: string, timeZone: string) {
+  const [year, month, day] = dateStr.split("-").map((item) => Number(item || 0));
+  const [hour, minute] = timeStr.split(":").map((item) => Number(item || 0));
+  const utcGuess = new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
+  const parts = getLocalParts(utcGuess, timeZone);
+  const interpretedUtc = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second
+  );
+  const desiredUtc = Date.UTC(year, month - 1, day, hour, minute, 0);
+  return new Date(utcGuess.getTime() + (desiredUtc - interpretedUtc));
+}
+
+function getFirstScheduledHour(startTime: string, hourlyDistribution: number[]) {
+  const startHour = Math.max(0, Math.min(23, Math.floor(timeToMinutes(startTime) / 60)));
+  const firstActiveHour = Array.isArray(hourlyDistribution)
+    ? hourlyDistribution.findIndex((count) => Number(count || 0) > 0)
+    : -1;
+
+  return firstActiveHour === -1 ? startHour : Math.max(startHour, firstActiveHour);
+}
+
+function calculateClickFarmNextRunAt(input: {
+  scheduledStartDate: string;
+  startTime: string;
+  hourlyDistribution: number[];
+  timezone: string;
+  now?: Date;
+}) {
+  const now = input.now || new Date();
+  const todayInTaskTimezone = getLocalDateString(now, input.timezone);
+  const currentLocal = getLocalParts(now, input.timezone);
+  const currentLocalMinutes = currentLocal.hour * 60 + currentLocal.minute;
+  const firstScheduledHour = getFirstScheduledHour(input.startTime, input.hourlyDistribution);
+  const firstScheduledMinutes = firstScheduledHour * 60;
+
+  if (input.scheduledStartDate > todayInTaskTimezone) {
+    return createDateInTimezone(
+      input.scheduledStartDate,
+      `${String(firstScheduledHour).padStart(2, "0")}:00`,
+      input.timezone
+    ).toISOString();
+  }
+
+  if (
+    input.scheduledStartDate === todayInTaskTimezone &&
+    currentLocalMinutes < firstScheduledMinutes
+  ) {
+    return createDateInTimezone(
+      input.scheduledStartDate,
+      `${String(firstScheduledHour).padStart(2, "0")}:00`,
+      input.timezone
+    ).toISOString();
+  }
+
+  return now.toISOString();
+}
+
 function parseJsonArray<T>(value: unknown, fallback: T): T {
   if (!value) return fallback;
 
@@ -195,6 +293,12 @@ export async function createClickFarmTask(userId: number, input: SaveClickFarmTa
   }
 
   const timezone = input.timezone || getTimezoneForCountry(String(offer.target_country || ""));
+  const nextRunAt = calculateClickFarmNextRunAt({
+    scheduledStartDate: input.scheduledStartDate,
+    startTime: input.startTime,
+    hourlyDistribution: input.hourlyDistribution,
+    timezone
+  });
   const dailyHistory = [
     {
       date: input.scheduledStartDate,
@@ -237,7 +341,7 @@ export async function createClickFarmTask(userId: number, input: SaveClickFarmTa
       ${"pending"},
       ${0},
       ${JSON.stringify(dailyHistory)},
-      CURRENT_TIMESTAMP
+      ${nextRunAt}
     )
     RETURNING *
   `;
@@ -259,6 +363,12 @@ export async function updateClickFarmTask(
   }
 
   const timezone = input.timezone || getTimezoneForCountry(String(offer.target_country || ""));
+  const nextRunAt = calculateClickFarmNextRunAt({
+    scheduledStartDate: input.scheduledStartDate,
+    startTime: input.startTime,
+    hourlyDistribution: input.hourlyDistribution,
+    timezone
+  });
   const rows = await sql<DbRow[]>`
     UPDATE click_farm_tasks
     SET offer_id = ${input.offerId},
@@ -274,7 +384,7 @@ export async function updateClickFarmTask(
         pause_reason = ${null},
         pause_message = ${null},
         paused_at = ${null},
-        next_run_at = CURRENT_TIMESTAMP,
+        next_run_at = ${nextRunAt},
         updated_at = CURRENT_TIMESTAMP
     WHERE id = ${taskId}
       AND user_id = ${userId}
@@ -320,13 +430,30 @@ export async function stopClickFarmTask(userId: number, taskId: number) {
 export async function restartClickFarmTask(userId: number, taskId: number) {
   await ensureDatabaseReady();
   const sql = getSql();
+  const existingRows = await sql<DbRow[]>`
+    SELECT scheduled_start_date, start_time, hourly_distribution, timezone
+    FROM click_farm_tasks
+    WHERE id = ${taskId}
+      AND user_id = ${userId}
+      AND is_deleted = FALSE
+    LIMIT 1
+  `;
+  const existing = existingRows[0];
+  const nextRunAt = existing
+    ? calculateClickFarmNextRunAt({
+        scheduledStartDate: String(existing.scheduled_start_date),
+        startTime: String(existing.start_time),
+        hourlyDistribution: parseJsonArray<number[]>(existing.hourly_distribution, []),
+        timezone: String(existing.timezone || "UTC")
+      })
+    : new Date().toISOString();
   const rows = await sql<DbRow[]>`
     UPDATE click_farm_tasks
     SET status = ${"pending"},
         pause_reason = ${null},
         pause_message = ${null},
         paused_at = ${null},
-        next_run_at = CURRENT_TIMESTAMP,
+        next_run_at = ${nextRunAt},
         updated_at = CURRENT_TIMESTAMP
     WHERE id = ${taskId}
       AND user_id = ${userId}

@@ -36,6 +36,11 @@ function normalizeDistribution(value: unknown, dailyClickCount: number) {
   return distribution;
 }
 
+function shouldEnqueueImmediately(nextRunAt: string | null | undefined) {
+  const parsed = Date.parse(String(nextRunAt || ""));
+  return Number.isFinite(parsed) && parsed <= Date.now();
+}
+
 export async function GET(request: NextRequest) {
   const user = await getRequestUser(request);
   if (!user) {
@@ -67,14 +72,17 @@ export async function POST(request: NextRequest) {
       timezone: body.timezone ? String(body.timezone) : getTimezoneForCountry(body.targetCountry || ""),
       refererConfig: body.refererConfig || null
     });
-    await enqueueQueueTask({
-      id: buildClickFarmTriggerQueueTaskId(task.id, task.nextRunAt),
-      type: "click-farm-trigger",
-      userId: user.id,
-      payload: { clickFarmTaskId: task.id },
-      priority: "high",
-      maxRetries: 0
-    });
+
+    if (shouldEnqueueImmediately(task.nextRunAt)) {
+      await enqueueQueueTask({
+        id: buildClickFarmTriggerQueueTaskId(task.id, task.nextRunAt),
+        type: "click-farm-trigger",
+        userId: user.id,
+        payload: { clickFarmTaskId: task.id },
+        priority: "high",
+        maxRetries: 0
+      });
+    }
 
     return NextResponse.json({ task });
   } catch (error: unknown) {
@@ -105,14 +113,17 @@ export async function PUT(request: NextRequest) {
       timezone: body.timezone ? String(body.timezone) : getTimezoneForCountry(body.targetCountry || ""),
       refererConfig: body.refererConfig || null
     });
-    await enqueueQueueTask({
-      id: buildClickFarmTriggerQueueTaskId(task.id, task.nextRunAt),
-      type: "click-farm-trigger",
-      userId: user.id,
-      payload: { clickFarmTaskId: task.id },
-      priority: "high",
-      maxRetries: 0
-    });
+
+    if (shouldEnqueueImmediately(task.nextRunAt)) {
+      await enqueueQueueTask({
+        id: buildClickFarmTriggerQueueTaskId(task.id, task.nextRunAt),
+        type: "click-farm-trigger",
+        userId: user.id,
+        payload: { clickFarmTaskId: task.id },
+        priority: "high",
+        maxRetries: 0
+      });
+    }
 
     return NextResponse.json({ task });
   } catch (error: unknown) {
