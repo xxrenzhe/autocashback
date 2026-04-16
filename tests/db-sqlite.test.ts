@@ -14,6 +14,7 @@ import {
   deleteClickFarmTask,
   deleteOffer,
   disableLinkSwapTask,
+  enableLinkSwapTask,
   enqueueQueueTask,
   ensureDatabaseReady,
   getClickFarmTaskByOfferId,
@@ -23,10 +24,14 @@ import {
   getDashboardSummary,
   getSettings,
   listLinkSwapTasks,
+  restartClickFarmTask,
   stopClickFarmTask,
   listUsers,
   saveGoogleAdsCredentials,
-  saveSettings
+  saveSettings,
+  scheduleLinkSwapTaskNow,
+  updateClickFarmTask,
+  updateLinkSwapTask
 } from "@autocashback/db";
 
 const tempDir = mkdtempSync(path.join(tmpdir(), "autocashback-db-"));
@@ -441,5 +446,139 @@ describe.sequential("sqlite database bootstrap", () => {
     expect(remainingQueueTasks.map((task) => task.id)).toEqual([
       `offer-delete-unrelated-${offer.id}`
     ]);
+  });
+
+  it("replaces stale pending queue tasks when tasks are rescheduled", async () => {
+    const user = await createUser({
+      username: "sqlite-user-reschedule-cleanup",
+      email: "sqlite-user-reschedule-cleanup@example.com",
+      password: "password",
+      role: "user"
+    });
+
+    const account = await createAccount(user.id, {
+      platformCode: "topcashback",
+      accountName: "Reschedule Cleanup Account",
+      registerEmail: "sqlite-user-reschedule-cleanup@example.com",
+      payoutMethod: "paypal",
+      notes: "reschedule cleanup"
+    });
+
+    const offer = await createOffer(user.id, {
+      platformCode: "topcashback",
+      cashbackAccountId: account.id,
+      promoLink: "https://example.com/reschedule-cleanup",
+      targetCountry: "US",
+      brandName: "Brand Reschedule",
+      campaignLabel: "Campaign Reschedule",
+      commissionCapUsd: 99,
+      manualRecordedCommissionUsd: 10
+    });
+
+    const [linkSwapTask] = await listLinkSwapTasks(user.id);
+    expect(linkSwapTask).toBeTruthy();
+
+    const clickFarmTask = await createClickFarmTask(user.id, {
+      offerId: offer.id,
+      dailyClickCount: 36,
+      startTime: "06:00",
+      endTime: "24:00",
+      durationDays: 14,
+      scheduledStartDate: "2026-04-16",
+      hourlyDistribution: Array.from({ length: 24 }, (_, hour) => (hour >= 6 ? 2 : 0)),
+      refererConfig: {
+        type: "random"
+      }
+    });
+
+    await enqueueQueueTask({
+      id: `reschedule-url-swap-old-${linkSwapTask?.id}`,
+      type: "url-swap",
+      userId: user.id,
+      payload: { linkSwapTaskId: linkSwapTask?.id }
+    });
+    await enqueueQueueTask({
+      id: `reschedule-click-trigger-old-${clickFarmTask.id}`,
+      type: "click-farm-trigger",
+      userId: user.id,
+      payload: { clickFarmTaskId: clickFarmTask.id }
+    });
+    await enqueueQueueTask({
+      id: `reschedule-click-batch-old-${clickFarmTask.id}`,
+      type: "click-farm-batch",
+      userId: user.id,
+      payload: { clickFarmTaskId: clickFarmTask.id }
+    });
+
+    await updateLinkSwapTask(user.id, offer.id, {
+      enabled: true,
+      intervalMinutes: 120,
+      durationDays: 30,
+      mode: "script",
+      googleCustomerId: null,
+      googleCampaignId: null
+    });
+
+    await updateClickFarmTask(user.id, clickFarmTask.id, {
+      offerId: offer.id,
+      dailyClickCount: 48,
+      startTime: "07:00",
+      endTime: "23:00",
+      durationDays: 30,
+      scheduledStartDate: "2026-04-17",
+      hourlyDistribution: Array.from({ length: 24 }, (_, hour) => (hour >= 7 && hour <= 22 ? 3 : 0)),
+      timezone: "America/New_York",
+      refererConfig: {
+        type: "specific",
+        referer: "https://www.facebook.com/"
+      }
+    });
+
+    let remainingQueueTasks = await getSql()<{
+      id: string;
+    }[]>`
+      SELECT id
+      FROM unified_queue_tasks
+      WHERE user_id = ${user.id}
+      ORDER BY id ASC
+    `;
+
+    expect(remainingQueueTasks).toHaveLength(0);
+
+    await enqueueQueueTask({
+      id: `reschedule-url-swap-enable-old-${linkSwapTask?.id}`,
+      type: "url-swap",
+      userId: user.id,
+      payload: { linkSwapTaskId: linkSwapTask?.id }
+    });
+    await enqueueQueueTask({
+      id: `reschedule-click-trigger-restart-old-${clickFarmTask.id}`,
+      type: "click-farm-trigger",
+      userId: user.id,
+      payload: { clickFarmTaskId: clickFarmTask.id }
+    });
+    await enqueueQueueTask({
+      id: `reschedule-click-run-restart-old-${clickFarmTask.id}`,
+      type: "click-farm",
+      userId: user.id,
+      payload: { clickFarmTaskId: clickFarmTask.id }
+    });
+
+    await disableLinkSwapTask(user.id, Number(linkSwapTask?.id));
+    await enableLinkSwapTask(user.id, Number(linkSwapTask?.id));
+    await scheduleLinkSwapTaskNow(user.id, Number(linkSwapTask?.id));
+    await stopClickFarmTask(user.id, clickFarmTask.id);
+    await restartClickFarmTask(user.id, clickFarmTask.id);
+
+    remainingQueueTasks = await getSql()<{
+      id: string;
+    }[]>`
+      SELECT id
+      FROM unified_queue_tasks
+      WHERE user_id = ${user.id}
+      ORDER BY id ASC
+    `;
+
+    expect(remainingQueueTasks).toHaveLength(0);
   });
 });

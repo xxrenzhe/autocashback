@@ -286,6 +286,8 @@ export async function updateClickFarmTask(
     throw new Error("补点击任务不存在");
   }
 
+  await removePendingClickFarmQueueTasksByTaskIds([taskId], userId);
+
   return toClickFarmTask(rows[0]);
 }
 
@@ -335,6 +337,8 @@ export async function restartClickFarmTask(userId: number, taskId: number) {
   if (!rows[0]) {
     throw new Error("补点击任务不存在");
   }
+
+  await removePendingClickFarmQueueTasksByTaskIds([taskId], userId);
 
   return toClickFarmTask(rows[0]);
 }

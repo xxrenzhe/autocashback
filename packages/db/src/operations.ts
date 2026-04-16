@@ -493,6 +493,8 @@ export async function updateLinkSwapTask(
     throw new Error("换链接任务不存在");
   }
 
+  await removePendingLinkSwapQueueTasksByTaskIds([rows[0].id as number], userId);
+
   return toLinkSwapTaskRecord(rows[0]);
 }
 
@@ -531,6 +533,8 @@ export async function enableLinkSwapTask(userId: number, taskId: number) {
   if (!rows[0]) {
     throw new Error("换链接任务不存在");
   }
+
+  await removePendingLinkSwapQueueTasksByTaskIds([taskId], userId);
 
   return toLinkSwapTaskRecord(rows[0]);
 }
@@ -603,6 +607,8 @@ export async function scheduleLinkSwapTaskNow(userId: number, taskId: number) {
   if (!rows[0]) {
     throw new Error("换链接任务不存在");
   }
+
+  await removePendingLinkSwapQueueTasksByTaskIds([taskId], userId);
 
   return toLinkSwapTaskRecord(rows[0]);
 }
