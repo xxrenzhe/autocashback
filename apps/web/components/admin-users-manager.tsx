@@ -87,6 +87,25 @@ type AdminUsersQuery = {
   sortDirection?: SortDirection;
 };
 
+type ActionQueueItem = {
+  key: string;
+  tone: "critical" | "warning" | "info";
+  title: string;
+  description: string;
+  user: AdminUser;
+  primaryAction:
+    | "unlock"
+    | "view-alerts"
+    | "view-history"
+    | "enable"
+    | "reset-password";
+  secondaryAction?: "view-alerts" | "view-history" | "reset-password" | "enable";
+};
+
+type RankedActionQueueItem = ActionQueueItem & {
+  priority: number;
+};
+
 const ANIMALS = [
   "wolf",
   "eagle",
@@ -514,21 +533,123 @@ export function AdminUsersManager() {
     window.setTimeout(() => setCopied(false), 2000);
   }
 
+  async function runQueueAction(item: ActionQueueItem, action: ActionQueueItem["primaryAction"] | ActionQueueItem["secondaryAction"]) {
+    if (!action) {
+      return;
+    }
+
+    if (action === "unlock") {
+      await handleUnlockUser(item.user);
+      return;
+    }
+
+    if (action === "view-alerts") {
+      await handleLoadSecurityAlerts(item.user);
+      return;
+    }
+
+    if (action === "view-history") {
+      await handleLoadLoginHistory(item.user);
+      return;
+    }
+
+    if (action === "enable") {
+      await handleToggleUserState(item.user);
+      return;
+    }
+
+    await handleResetPassword(item.user);
+  }
+
   const emptyState = !loading && users.length === 0;
   const overview = useMemo(() => {
-    const pageEnabledCount = users.filter((user) => user.isActive).length;
+    const pageSessionUsersCount = users.filter((user) => user.activeSessionCount > 0).length;
     const pageLockedCount = users.filter((user) => isUserLocked(user)).length;
     const pageDisabledCount = users.filter((user) => !user.isActive).length;
     const pageRiskCount = users.filter((user) => !user.isActive || isUserLocked(user) || user.failedLoginCount > 0).length;
 
     return {
       totalUsers: pagination.total,
-      pageEnabledCount,
+      pageSessionUsersCount,
       pageLockedCount,
       pageDisabledCount,
       pageRiskCount
     };
   }, [pagination.total, users]);
+
+  const actionQueue = useMemo<ActionQueueItem[]>(() => {
+    const candidates = users.reduce<RankedActionQueueItem[]>((items, user) => {
+      if (isUserLocked(user)) {
+        items.push({
+          key: `locked-${user.id}`,
+          tone: "critical",
+          title: "优先解除锁定",
+          description: `${user.username} 当前被登录保护锁定，先解除锁定，再判断是否需要重置密码或核查来源。`,
+          user,
+          primaryAction: "unlock",
+          secondaryAction: "view-alerts",
+          priority: 100 + user.failedLoginCount
+        });
+        return items;
+      }
+
+      if (!user.isActive) {
+        items.push({
+          key: `disabled-${user.id}`,
+          tone: "warning",
+          title: "确认停用去向",
+          description: `${user.username} 已停用，可继续保持下线，或在交接完成后恢复登录能力。`,
+          user,
+          primaryAction: "enable",
+          secondaryAction: "view-history",
+          priority: 70 + (user.role === "admin" ? 10 : 0)
+        });
+        return items;
+      }
+
+      if (user.failedLoginCount >= 3) {
+        items.push({
+          key: `failed-${user.id}`,
+          tone: "warning",
+          title: "复核失败登录",
+          description: `${user.username} 近期失败登录偏高，建议先看安全告警，再决定是否清空失败记录或重置密码。`,
+          user,
+          primaryAction: "view-alerts",
+          secondaryAction: "reset-password",
+          priority: 60 + user.failedLoginCount
+        });
+        return items;
+      }
+
+      if (user.activeSessionCount > 1) {
+        items.push({
+          key: `session-${user.id}`,
+          tone: "info",
+          title: "检查并发会话",
+          description: `${user.username} 当前存在 ${user.activeSessionCount} 个活跃会话，适合先核查是否为多人共用或交接未完成。`,
+          user,
+          primaryAction: "view-alerts",
+          secondaryAction: "view-history",
+          priority: 40 + user.activeSessionCount
+        });
+      }
+
+      return items;
+    }, []);
+
+    return candidates
+      .sort((left, right) => right.priority - left.priority)
+      .slice(0, 3)
+      .map((candidate) => ({
+        key: candidate.key,
+        tone: candidate.tone,
+        title: candidate.title,
+        description: candidate.description,
+        user: candidate.user,
+        primaryAction: candidate.primaryAction,
+        secondaryAction: candidate.secondaryAction
+      }));
+  }, [users]);
 
   return (
     <div className="space-y-6">
@@ -590,36 +711,90 @@ export function AdminUsersManager() {
               <AdminOverviewCard
                 label="总用户数"
                 note="当前筛选条件下的全部用户总量。"
+                onClick={() => setStatusFilter("all")}
+                selected={statusFilter === "all"}
                 tone="slate"
                 value={String(overview.totalUsers)}
               />
               <AdminOverviewCard
-                label="本页启用账号"
-                note="仍保留登录能力的账号数量，用来判断当前可用席位。"
-                tone={overview.pageEnabledCount > 0 ? "emerald" : "slate"}
-                value={String(overview.pageEnabledCount)}
+                label="本页在线账号"
+                note="当前仍处于登录态、适合核查交接和共享风险的账号。"
+                onClick={() => setStatusFilter("active-session")}
+                selected={statusFilter === "active-session"}
+                tone={overview.pageSessionUsersCount > 0 ? "emerald" : "slate"}
+                value={String(overview.pageSessionUsersCount)}
               />
               <AdminOverviewCard
                 label="本页锁定账号"
                 note="因连续失败登录被临时锁定的账号数量。"
+                onClick={() => setStatusFilter("locked")}
+                selected={statusFilter === "locked"}
                 tone={overview.pageLockedCount > 0 ? "amber" : "slate"}
                 value={String(overview.pageLockedCount)}
               />
               <AdminOverviewCard
                 label="本页风险账号"
                 note="包含停用、锁定或存在失败登录记录的账号。"
+                onClick={() => setStatusFilter("risk")}
+                selected={statusFilter === "risk"}
                 tone={overview.pageRiskCount > 0 ? "amber" : "slate"}
                 value={String(overview.pageRiskCount)}
               />
             </div>
 
             {overview.pageDisabledCount > 0 ? (
-              <div className="mt-4 rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4 text-sm text-slate-600">
-                当前页有 {overview.pageDisabledCount} 个已停用账号。删除用户前需要先保持停用状态，避免误删仍在使用中的账号。
+              <div className="mt-4 flex flex-col gap-3 rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+                <p>当前页有 {overview.pageDisabledCount} 个已停用账号。删除用户前需要先保持停用状态，避免误删仍在使用中的账号。</p>
+                <button
+                  className="inline-flex items-center justify-center rounded-2xl border border-brand-line bg-white px-4 py-2 font-semibold text-slate-700 transition hover:border-emerald-200 hover:text-brand-emerald"
+                  onClick={() => setStatusFilter("disabled")}
+                  type="button"
+                >
+                  查看停用账号
+                </button>
               </div>
             ) : null}
           </div>
         </div>
+      </section>
+
+      <section className="surface-panel p-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="eyebrow">Action</p>
+            <h3 className="mt-3 text-2xl font-semibold text-slate-900">行动队列</h3>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+              从当前页用户里挑出最该优先处理的账号。先解锁、再核查共享风险，最后再做恢复、停用或密码收口。
+            </p>
+          </div>
+          <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-3 text-sm text-slate-600">
+            {actionQueue.length
+              ? `已为你挑出 ${actionQueue.length} 个优先动作`
+              : "当前页暂无需要立即处理的账号"}
+          </div>
+        </div>
+
+        {actionQueue.length ? (
+          <div className="mt-6 grid gap-4 xl:grid-cols-3">
+            {actionQueue.map((item) => (
+              <ActionQueueCard
+                item={item}
+                key={item.key}
+                onRunAction={runQueueAction}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-6 rounded-[28px] border border-brand-line bg-[linear-gradient(180deg,rgba(236,253,245,0.8)_0%,rgba(255,255,255,0.95)_100%)] px-6 py-8 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+              <Check className="h-6 w-6" />
+            </div>
+            <p className="mt-4 text-base font-semibold text-slate-900">当前页没有待优先处理项</p>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              可以切到“风险账号”“已锁定”或“活跃会话”视角继续巡检，或直接新建后台账号。
+            </p>
+          </div>
+        )}
       </section>
 
       <section className="surface-panel p-6">
@@ -1374,6 +1549,8 @@ function AdminOverviewCard(props: {
   value: string;
   note: string;
   tone: "emerald" | "amber" | "slate";
+  selected?: boolean;
+  onClick?: () => void;
 }) {
   const toneClass =
     props.tone === "emerald"
@@ -1388,13 +1565,111 @@ function AdminOverviewCard(props: {
         ? "text-amber-700"
         : "text-slate-900";
 
-  return (
-    <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4">
+  const content = (
+    <>
       <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${toneClass}`}>
         {props.label}
       </span>
       <p className={`mt-4 font-mono text-3xl font-semibold ${valueClass}`}>{props.value}</p>
       <p className="mt-2 text-sm leading-6 text-slate-500">{props.note}</p>
+    </>
+  );
+
+  if (props.onClick) {
+    return (
+      <button
+        className={`rounded-[24px] border px-4 py-4 text-left transition ${
+          props.selected
+            ? "border-emerald-300 bg-[linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] shadow-[0_12px_30px_rgba(5,150,105,0.08)]"
+            : "border-brand-line bg-stone-50 hover:border-emerald-200 hover:bg-white"
+        }`}
+        onClick={props.onClick}
+        type="button"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4">
+      {content}
+    </div>
+  );
+}
+
+function ActionQueueCard(props: {
+  item: ActionQueueItem;
+  onRunAction: (
+    item: ActionQueueItem,
+    action: ActionQueueItem["primaryAction"] | ActionQueueItem["secondaryAction"]
+  ) => Promise<void>;
+}) {
+  const toneClass =
+    props.item.tone === "critical"
+      ? "border-red-200 bg-red-50/80"
+      : props.item.tone === "warning"
+        ? "border-amber-200 bg-amber-50/80"
+        : "border-brand-line bg-stone-50";
+  const badgeClass =
+    props.item.tone === "critical"
+      ? "bg-red-100 text-red-700"
+      : props.item.tone === "warning"
+        ? "bg-amber-100 text-amber-700"
+        : "bg-brand-mist text-brand-emerald";
+
+  return (
+    <div className={`rounded-[28px] border px-5 py-5 ${toneClass}`}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${badgeClass}`}>
+            {getActionQueueToneLabel(props.item.tone)}
+          </span>
+          <p className="mt-3 text-base font-semibold text-slate-900">{props.item.title}</p>
+        </div>
+        <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-600">
+          {props.item.user.role === "admin" ? "管理员" : "普通用户"}
+        </span>
+      </div>
+
+      <div className="mt-4 rounded-[24px] bg-white/80 px-4 py-4">
+        <p className="text-sm font-semibold text-slate-900">{props.item.user.username}</p>
+        <p className="mt-1 text-xs text-slate-500">{props.item.user.email || "未设置邮箱"}</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <span className={getStatusBadgeClass(props.item.user)}>{getStatusBadgeLabel(props.item.user)}</span>
+          {props.item.user.activeSessionCount > 0 ? (
+            <span className="rounded-full bg-brand-mist px-3 py-1 text-xs font-semibold text-brand-emerald">
+              {props.item.user.activeSessionCount} 个活跃会话
+            </span>
+          ) : null}
+          {props.item.user.failedLoginCount > 0 ? (
+            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+              失败 {props.item.user.failedLoginCount} 次
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      <p className="mt-4 text-sm leading-6 text-slate-600">{props.item.description}</p>
+      <p className="mt-2 text-xs text-slate-500">
+        上次活动：{formatDateTimeLabel(props.item.user.lastLoginAt)} · 创建时间：{formatDateTimeLabel(props.item.user.createdAt)}
+      </p>
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        <ActionButton
+          icon={getQueueActionIcon(props.item.primaryAction)}
+          label={getQueueActionLabel(props.item.primaryAction)}
+          onClick={() => void props.onRunAction(props.item, props.item.primaryAction)}
+          tone={getQueueActionTone(props.item.primaryAction)}
+        />
+        {props.item.secondaryAction ? (
+          <ActionButton
+            icon={getQueueActionIcon(props.item.secondaryAction)}
+            label={getQueueActionLabel(props.item.secondaryAction)}
+            onClick={() => void props.onRunAction(props.item, props.item.secondaryAction)}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -1427,4 +1702,83 @@ function ActionButton(props: {
       {props.label}
     </button>
   );
+}
+
+function getActionQueueToneLabel(tone: ActionQueueItem["tone"]) {
+  if (tone === "critical") {
+    return "立即处理";
+  }
+
+  if (tone === "warning") {
+    return "优先检查";
+  }
+
+  return "建议跟进";
+}
+
+function getQueueActionIcon(
+  action: ActionQueueItem["primaryAction"] | ActionQueueItem["secondaryAction"]
+) {
+  switch (action) {
+    case "unlock":
+      return RefreshCcw;
+    case "view-alerts":
+      return ShieldAlert;
+    case "view-history":
+      return History;
+    case "enable":
+      return Check;
+    case "reset-password":
+      return KeyRound;
+    default:
+      return ShieldAlert;
+  }
+}
+
+function getQueueActionLabel(
+  action: ActionQueueItem["primaryAction"] | ActionQueueItem["secondaryAction"]
+) {
+  switch (action) {
+    case "unlock":
+      return "解除锁定";
+    case "view-alerts":
+      return "查看告警";
+    case "view-history":
+      return "查看记录";
+    case "enable":
+      return "恢复启用";
+    case "reset-password":
+      return "重置密码";
+    default:
+      return "处理";
+  }
+}
+
+function getQueueActionTone(action: ActionQueueItem["primaryAction"] | ActionQueueItem["secondaryAction"]) {
+  if (action === "unlock") {
+    return "amber";
+  }
+
+  if (action === "enable") {
+    return "emerald";
+  }
+
+  if (action === "reset-password") {
+    return "danger";
+  }
+
+  return "default";
+}
+
+function formatDateTimeLabel(value: string | null) {
+  if (!value) {
+    return "--";
+  }
+
+  return new Date(value).toLocaleString("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 }
