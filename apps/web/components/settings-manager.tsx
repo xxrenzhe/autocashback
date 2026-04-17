@@ -80,8 +80,8 @@ function OverviewCard({
       icon: "bg-primary/10 text-primary"
     },
     amber: {
-      badge: "bg-amber-500/10 text-amber-600",
-      icon: "bg-amber-500/10 text-amber-600"
+      badge: "bg-amber-500/100/10 text-amber-600",
+      icon: "bg-amber-500/100/10 text-amber-600"
     },
     slate: {
       badge: "bg-slate-100 text-foreground",
@@ -99,7 +99,7 @@ function OverviewCard({
           <Icon className="h-4 w-4" />
         </span>
       </div>
-      <p className="mt-5 font-mono text-4xl font-semibold text-foreground">{value}</p>
+      <p className="mt-5 font-mono tabular-nums text-4xl font-semibold text-foreground">{value}</p>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
     </div>
   );
@@ -752,7 +752,7 @@ export function SettingsManager() {
           <label className="block text-sm font-medium text-foreground">
             Login Customer ID
             <input
-              className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono"
+              className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono tabular-nums"
               placeholder="1234567890"
               value={googleAdsConfig.loginCustomerId}
               onChange={(event) =>
@@ -865,7 +865,7 @@ export function SettingsManager() {
           </div>
           <div className="rounded-xl border border-border bg-muted/40 px-3 py-2">
             <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Script Token</p>
-            <p className="mt-2 font-mono text-sm text-foreground">{script.token || "尚未生成"}</p>
+            <p className="mt-2 font-mono tabular-nums text-sm text-foreground">{script.token || "尚未生成"}</p>
           </div>
         </div>
 
@@ -879,7 +879,7 @@ export function SettingsManager() {
             </div>
           ) : (
             <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
+              <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/100/10 text-amber-600">
                 <AlertTriangle className="h-4 w-4" />
               </span>
               <p>脚本模板或 Token 尚未生成，建议先确认基础配置和当前登录状态。</p>
@@ -908,11 +908,11 @@ export function SettingsManager() {
 
         <div className="mt-4 space-y-2 text-sm leading-6 text-muted-foreground">
           <p>复制后无需再修改脚本内容。若你更换 Token，旧 Token 会立即失效，你需要重新复制一次最新脚本。</p>
-          <p>快照接口地址：<span className="font-mono text-xs text-foreground">{scriptAppUrl}/api/script/link-swap/snapshot</span></p>
+          <p>快照接口地址：<span className="font-mono tabular-nums text-xs text-foreground">{scriptAppUrl}/api/script/link-swap/snapshot</span></p>
         </div>
 
         <textarea
-          className="mt-5 min-h-72 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono text-xs"
+          className="mt-5 min-h-72 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono tabular-nums text-xs"
           readOnly
           value={script.template}
         />

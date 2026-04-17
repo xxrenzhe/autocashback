@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDateTime } from "@/lib/format";
+
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -22,7 +24,6 @@ import type {
   QueueTaskType
 } from "@autocashback/domain";
 import { cn } from "@autocashback/ui";
-
 import { AdminOperationsMonitor } from "@/components/admin-operations-monitor";
 import { fetchJson } from "@/lib/api-error-handler";
 import {
@@ -57,7 +58,6 @@ type QueueConfigPayload = {
   note: string;
 };
 
-type MessageTone = "success" | "info";
 
 const queueConfigTaskLabels: Array<{ key: QueueTaskType; label: string }> = [
   { key: "click-farm-trigger", label: "补点击触发" },
@@ -89,18 +89,7 @@ const sortOptions: Array<{ value: QueueConsoleSort; label: string }> = [
   { value: "failed-first", label: "失败优先" }
 ];
 
-function formatDateTime(value: string | null) {
-  if (!value) {
-    return "--";
-  }
 
-  const timestamp = Date.parse(value);
-  if (!Number.isFinite(timestamp)) {
-    return value;
-  }
-
-  return new Date(timestamp).toLocaleString("zh-CN");
-}
 
 function OverviewCard({
   label,
@@ -137,7 +126,7 @@ function OverviewCard({
       <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", toneStyles[tone].badge)}>
         {label}
       </span>
-      <p className={cn("mt-5 font-mono text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
+      <p className={cn("mt-5 font-mono tabular-nums text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
     </div>
   );
@@ -219,9 +208,7 @@ export function QueueMonitor() {
   const [typeFilter, setTypeFilter] = useState<QueueTaskType | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sort, setSort] = useState<QueueConsoleSort>("recent");
-  const [message, setMessage] = useState("");
-  const [messageTone, setMessageTone] = useState<MessageTone>("success");
-  const [schedulerError, setSchedulerError] = useState("");
+      const [schedulerError, setSchedulerError] = useState("");
   const [configError, setConfigError] = useState("");
   const [manualScheduling, setManualScheduling] = useState<"all" | "click-farm" | "url-swap" | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -248,8 +235,7 @@ export function QueueMonitor() {
     }
 
     if (!options?.preserveMessage) {
-      setMessage("");
-    }
+          }
 
     try {
       const query = new URLSearchParams();
@@ -278,8 +264,7 @@ export function QueueMonitor() {
       setStats(statsResult.data.stats || emptyStats);
       setTasks(tasksResult.data.tasks || []);
     } catch (error: unknown) {
-      setMessageTone("info");
-      setMessage(error instanceof Error ? error.message : "加载队列数据失败");
+            setMessage(error instanceof Error ? error.message : "加载队列数据失败");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -353,8 +338,7 @@ export function QueueMonitor() {
         configSource: "database",
         note: "配置保存后会在 60 秒内自动同步到后台调度服务"
       });
-      setMessageTone("success");
-      setMessage(result.data.message || "队列配置已保存。");
+            setMessage(result.data.message || "队列配置已保存。");
     } catch (error: unknown) {
       setConfigError(error instanceof Error ? error.message : "保存队列配置失败");
     } finally {
@@ -382,8 +366,7 @@ export function QueueMonitor() {
 
       const clickFarmInserted = result.data.data?.clickFarm?.inserted || 0;
       const urlSwapInserted = result.data.data?.urlSwap?.inserted || 0;
-      setMessageTone("success");
-      setMessage(
+            setMessage(
         result.data.message ||
           `手动调度完成：补点击新增 ${clickFarmInserted}，换链接新增 ${urlSwapInserted}`
       );
@@ -392,8 +375,7 @@ export function QueueMonitor() {
         loadSchedulerStatus({ silent: true })
       ]);
     } catch (error: unknown) {
-      setMessageTone("info");
-      setMessage(error instanceof Error ? error.message : "手动调度失败");
+            setMessage(error instanceof Error ? error.message : "手动调度失败");
     } finally {
       setManualScheduling(null);
     }
@@ -498,18 +480,7 @@ export function QueueMonitor() {
             </div>
           </div>
 
-          {message ? (
-            <div
-              className={cn(
-                "mt-5 rounded-xl p-4 text-sm",
-                messageTone === "success"
-                  ? "border border-emerald-200 bg-primary/10 text-primary"
-                  : "border border-slate-200 bg-muted/40 text-foreground"
-              )}
-            >
-              {message}
-            </div>
-          ) : null}
+          
         </div>
 
         <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
@@ -674,7 +645,7 @@ export function QueueMonitor() {
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-mono text-sm font-semibold text-foreground">{row.task.id}</p>
+                            <p className="font-mono tabular-nums text-sm font-semibold text-foreground">{row.task.id}</p>
                             <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                               {row.task.type}
                             </span>

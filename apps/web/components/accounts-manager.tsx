@@ -6,9 +6,11 @@ import {
   useEffect,
   useMemo,
   useState,
-  type FormEvent
+  type FormEvent,
+  useCallback
 } from "react";
 import Link from "next/link";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   CirclePlus,
@@ -27,8 +29,10 @@ import {
   type OfferRecord
 } from "@autocashback/domain";
 import { cn } from "@autocashback/ui";
+import { toast } from "sonner";
 
 import { fetchJson } from "@/lib/api-error-handler";
+import { SheetFrame } from "./sheet-frame";
 import {
   buildAccountsConsole,
   type AccountsConsoleSort
@@ -43,7 +47,6 @@ type AccountFormState = {
   status: CashbackAccount["status"];
 };
 
-type MessageTone = "success" | "info";
 
 const initialForm: AccountFormState = {
   platformCode: "topcashback",
@@ -78,7 +81,7 @@ function OverviewCard({
       value: "text-primary"
     },
     amber: {
-      badge: "bg-amber-500/10 text-amber-600",
+      badge: "bg-amber-500/100/10 text-amber-600",
       value: "text-amber-600"
     },
     slate: {
@@ -92,7 +95,7 @@ function OverviewCard({
       <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", toneStyles[tone].badge)}>
         {label}
       </span>
-      <p className={cn("mt-5 font-mono text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
+      <p className={cn("mt-5 font-mono tabular-nums text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
     </div>
   );
@@ -134,7 +137,7 @@ function statusMeta(status: CashbackAccount["status"]) {
       }
     : {
         label: "已暂停",
-        className: "bg-amber-500/10 text-amber-600"
+        className: "bg-amber-500/100/10 text-amber-600"
       };
 }
 
@@ -143,17 +146,61 @@ export function AccountsManager() {
   const [offers, setOffers] = useState<OfferRecord[]>([]);
   const [form, setForm] = useState<AccountFormState>(initialForm);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [messageTone, setMessageTone] = useState<MessageTone>("success");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [platformFilter, setPlatformFilter] = useState<CashbackAccount["platformCode"] | "all">("all");
-  const [statusFilter, setStatusFilter] = useState<CashbackAccount["status"] | "all">("all");
-  const [payoutFilter, setPayoutFilter] = useState<CashbackAccount["payoutMethod"] | "all">("all");
-  const [sort, setSort] = useState<AccountsConsoleSort>("recent");
+        const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [searchQuery, setSearchQueryState] = useState(searchParams.get("q") || "");
+  const [platformFilter, setPlatformFilterState] = useState<CashbackAccount["platformCode"] | "all">(
+    (searchParams.get("platform") as CashbackAccount["platformCode"]) || "all"
+  );
+  const [statusFilter, setStatusFilterState] = useState<CashbackAccount["status"] | "all">(
+    (searchParams.get("status") as CashbackAccount["status"]) || "all"
+  );
+  const [payoutFilter, setPayoutFilterState] = useState<CashbackAccount["payoutMethod"] | "all">(
+    (searchParams.get("payout") as CashbackAccount["payoutMethod"]) || "all"
+  );
+  const [sort, setSortState] = useState<AccountsConsoleSort>(
+    (searchParams.get("sort") as AccountsConsoleSort) || "recent"
+  );
+
+  const createQueryString = useCallback(
+    (name: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value && value !== "all") {
+        params.set(name, value);
+      } else {
+        params.delete(name);
+      }
+      return params.toString();
+    },
+    [searchParams]
+  );
+
+  const setSearchQuery = (val: string) => {
+    setSearchQueryState(val);
+    router.replace(pathname + "?" + createQueryString("q", val), { scroll: false });
+  };
+  const setPlatformFilter = (val: CashbackAccount["platformCode"] | "all") => {
+    setPlatformFilterState(val);
+    router.replace(pathname + "?" + createQueryString("platform", val), { scroll: false });
+  };
+  const setStatusFilter = (val: CashbackAccount["status"] | "all") => {
+    setStatusFilterState(val);
+    router.replace(pathname + "?" + createQueryString("status", val), { scroll: false });
+  };
+  const setPayoutFilter = (val: CashbackAccount["payoutMethod"] | "all") => {
+    setPayoutFilterState(val);
+    router.replace(pathname + "?" + createQueryString("payout", val), { scroll: false });
+  };
+  const setSort = (val: AccountsConsoleSort) => {
+    setSortState(val);
+    router.replace(pathname + "?" + createQueryString("sort", val), { scroll: false });
+  };
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const allConsole = useMemo(
@@ -197,9 +244,7 @@ export function AccountsManager() {
     }
 
     if (!options?.preserveNotice) {
-      setError("");
-      setMessage("");
-    }
+                }
 
     try {
       const [accountsResult, offersResult] = await Promise.all([
@@ -217,8 +262,8 @@ export function AccountsManager() {
 
       setAccounts(accountsResult.data.accounts || []);
       setOffers(offersResult.data.offers || []);
-    } catch (loadError: unknown) {
-      setError(loadError instanceof Error ? loadError.message : "加载账号数据失败");
+    } catch {
+      toast.error("加载数据失败");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -232,46 +277,41 @@ export function AccountsManager() {
   function resetForm() {
     setForm(initialForm);
     setEditingId(null);
-    setError("");
+        setEditorOpen(false);
   }
 
-  function scrollEditorIntoView() {
-    document.getElementById("account-editor")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
-  }
+  
 
   function startCreateAccount() {
-    resetForm();
-    scrollEditorIntoView();
+    setForm(initialForm);
+    setEditingId(null);
+        setEditorOpen(true);
   }
 
   function clearFilters() {
     startTransition(() => {
-      setSearchQuery("");
-      setPlatformFilter("all");
-      setStatusFilter("all");
-      setPayoutFilter("all");
-      setSort("recent");
+      setSearchQueryState("");
+      setPlatformFilterState("all");
+      setStatusFilterState("all");
+      setPayoutFilterState("all");
+      setSortState("recent");
+      router.replace(pathname, { scroll: false });
     });
   }
 
   async function submitForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
-    setError("");
-    setMessage("");
-
+        
     if (!form.accountName.trim()) {
       setPending(false);
-      setError("请填写账号名");
+      toast.error("请填写必填项");
       return;
     }
 
     if (!form.registerEmail.trim()) {
       setPending(false);
-      setError("请填写注册邮箱");
+      toast.error("请填写必填项");
       return;
     }
 
@@ -299,12 +339,11 @@ export function AccountsManager() {
     setPending(false);
 
     if (!result.success) {
-      setError(result.userMessage || "保存失败");
+      toast.error(result.userMessage || "保存失败");
       return;
     }
 
-    setMessageTone("success");
-    setMessage(editingId ? "账号已更新。" : "账号已创建，可以继续去挂接 Offer。");
+    toast.success(editingId ? "账号已更新" : "账号已创建");
     resetForm();
     await loadData({ background: true, preserveNotice: true });
   }
@@ -314,9 +353,7 @@ export function AccountsManager() {
       return;
     }
 
-    setError("");
-    setMessage("");
-
+        
     const result = await fetchJson<{ success: boolean }>("/api/cashback-accounts", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -324,7 +361,7 @@ export function AccountsManager() {
     });
 
     if (!result.success) {
-      setError(result.userMessage || "删除失败");
+      toast.error(result.userMessage || "删除失败");
       return;
     }
 
@@ -332,8 +369,7 @@ export function AccountsManager() {
       resetForm();
     }
 
-    setMessageTone("success");
-    setMessage("账号已删除。");
+    toast.success("账号已删除");
     await loadData({ background: true, preserveNotice: true });
   }
 
@@ -347,9 +383,7 @@ export function AccountsManager() {
       notes: account.notes || "",
       status: account.status
     });
-    setMessage("");
-    setError("");
-    scrollEditorIntoView();
+            setEditorOpen(true);
   }
 
   const hasActiveFilters = Boolean(
@@ -399,24 +433,7 @@ export function AccountsManager() {
             </div>
           </div>
 
-          {error ? (
-            <div className="mt-5 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
-              {error}
-            </div>
-          ) : null}
-
-          {message ? (
-            <div
-              className={cn(
-                "mt-5 rounded-xl p-4 text-sm",
-                messageTone === "success"
-                  ? "border border-emerald-200 bg-primary/10 text-primary"
-                  : "border border-slate-200 bg-muted/40 text-foreground"
-              )}
-            >
-              {message}
-            </div>
-          ) : null}
+          
         </div>
 
         <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
@@ -591,7 +608,7 @@ export function AccountsManager() {
             ) : consoleData.rows.length ? (
               <div className="overflow-x-auto p-5">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="text-muted-foreground font-medium text-xs border-b border-border">
+                  <thead className="text-muted-foreground font-medium text-xs border-b border-border sticky top-0 bg-background/95 backdrop-blur z-10">
                     <tr>
                       <th className="pb-3 pr-4">账号</th>
                       <th className="pb-3 pr-4">平台 / 提现</th>
@@ -637,7 +654,7 @@ export function AccountsManager() {
 
                           <td className="py-4 pr-4">
                             <div className="min-w-[140px]">
-                              <p className="font-mono text-foreground">{row.linkedOfferCount}</p>
+                              <p className="font-mono tabular-nums text-foreground">{row.linkedOfferCount}</p>
                               <p className="mt-2 text-xs text-muted-foreground">
                                 {row.linkedOfferCount > 0 ? "已挂接 Offer" : "尚未挂接 Offer"}
                               </p>
@@ -706,16 +723,14 @@ export function AccountsManager() {
         </div>
 
         <div className="space-y-6">
-          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" id="account-editor">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">{editingId ? "编辑账号" : "新建账号"}</p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
-              {editingId ? "更新当前返利账号" : "补齐新的返利平台账号"}
-            </h3>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              建议按运营人、平台角色或国家维度命名，后续在 Offer 和任务页更容易识别。
-            </p>
-
-            <form className="mt-6 space-y-4" onSubmit={submitForm}>
+          <SheetFrame
+            open={editorOpen}
+            onClose={resetForm}
+            eyebrow={editingId ? "编辑账号" : "新建账号"}
+            title={editingId ? "更新当前返利账号" : "补齐新的返利平台账号"}
+            description="建议按运营人、平台角色或国家维度命名，后续在 Offer 和任务页更容易识别。"
+          >
+            <form className="space-y-4" onSubmit={submitForm}>
               <label className="block text-sm font-medium text-foreground">
                 平台
                 <select
@@ -806,27 +821,17 @@ export function AccountsManager() {
                 />
               </label>
 
-              <div className="flex flex-wrap gap-3 pt-2">
+              <div className="flex flex-wrap gap-3 pt-6">
                 <button
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 w-full"
                   disabled={pending}
                   type="submit"
                 >
                   {pending ? "保存中…" : editingId ? "更新账号" : "创建账号"}
                 </button>
-                {editingId ? (
-                  <button
-                    className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
-                    onClick={resetForm}
-                    type="button"
-                  >
-                    取消编辑
-                  </button>
-                ) : null}
               </div>
             </form>
-          </section>
-
+          </SheetFrame>
           <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">重点提醒</p>
             <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">优先检查这些账号</h3>
@@ -840,7 +845,7 @@ export function AccountsManager() {
                   type="button"
                 >
                   <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
+                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/100/10 text-amber-600">
                       <CreditCard className="h-4 w-4" />
                     </span>
                     <div className="min-w-0">

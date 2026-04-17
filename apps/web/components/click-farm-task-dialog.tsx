@@ -70,8 +70,7 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
   const [form, setForm] = useState<FormState>(toFormState(null));
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
-
+  
   useEffect(() => {
     if (!open || !offer) {
       return;
@@ -82,8 +81,7 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
 
     async function loadTask() {
       setLoading(true);
-      setMessage("");
-
+      
       try {
         const response = await fetch(`/api/offers/${currentOffer.id}/click-farm-task`);
         const payload = await response.json();
@@ -121,8 +119,7 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
     if (!offer) return;
 
     setSaving(true);
-    setMessage("");
-
+    
     try {
       const response = await fetch("/api/click-farm/tasks", {
         method: task ? "PUT" : "POST",
@@ -170,8 +167,7 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
     if (!task) return;
 
     setSaving(true);
-    setMessage("");
-
+    
     try {
       const endpoint =
         action === "delete"
@@ -188,7 +184,7 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
       if (action === "delete") {
         setTask(null);
         setForm(toFormState(null));
-        setMessage("补点击任务已删除");
+        toast.success(("补点击任务已删除"));
       } else {
         setTask((payload.task || null) as ClickFarmTask | null);
         setMessage(action === "stop" ? "补点击任务已暂停" : "补点击任务已恢复");
@@ -216,7 +212,7 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
             <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
               {offer.targetCountry} · {offer.campaignLabel || "未设置 Campaign Label"}
             </p>
-            <p className="mt-3 break-all font-mono text-xs text-muted-foreground">{offer.promoLink}</p>
+            <p className="mt-3 break-all font-mono tabular-nums text-xs text-muted-foreground">{offer.promoLink}</p>
           </div>
 
           {loading ? (
@@ -227,7 +223,7 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
                 <label className="block text-sm font-medium text-foreground">
                   每日点击数
                   <input
-                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono tabular-nums"
                     min={1}
                     step={1}
                     type="number"
@@ -260,7 +256,7 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
                 <label className="block text-sm font-medium text-foreground">
                   开始时间
                   <input
-                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono tabular-nums"
                     type="time"
                     value={form.startTime}
                     onChange={(event) =>
@@ -275,7 +271,7 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
                 <label className="block text-sm font-medium text-foreground">
                   结束时间
                   <input
-                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono tabular-nums"
                     type="time"
                     value={form.endTime === "24:00" ? "23:59" : form.endTime}
                     onChange={(event) =>
@@ -310,7 +306,7 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
                 <label className="block text-sm font-medium text-foreground">
                   开始日期
                   <input
-                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono tabular-nums"
                     type="date"
                     value={form.scheduledStartDate}
                     onChange={(event) =>

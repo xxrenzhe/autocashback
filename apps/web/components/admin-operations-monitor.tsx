@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDateTime } from "@/lib/format";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -28,15 +30,6 @@ import {
   type AdminUrlSwapStats
 } from "@/lib/admin-operations-console";
 
-function formatDateTime(value: string | null) {
-  if (!value) {
-    return "--";
-  }
-
-  const parsed = Date.parse(value);
-  return Number.isFinite(parsed) ? new Date(parsed).toLocaleString("zh-CN") : value;
-}
-
 function formatPercent(value: number | null) {
   if (value === null) {
     return "--";
@@ -57,8 +50,8 @@ function toneStyles(tone: "emerald" | "amber" | "red" | "slate") {
 
   if (tone === "amber") {
     return {
-      badge: "bg-amber-500/10 text-amber-600",
-      icon: "bg-amber-500/10 text-amber-600",
+      badge: "bg-amber-500/100/10 text-amber-600",
+      icon: "bg-amber-500/100/10 text-amber-600",
       value: "text-amber-600"
     };
   }
@@ -103,7 +96,7 @@ function OverviewCard({
           <Icon className="h-4 w-4" />
         </span>
       </div>
-      <p className={cn("mt-5 font-mono text-4xl font-semibold", styles.value)}>{value}</p>
+      <p className={cn("mt-5 font-mono tabular-nums text-4xl font-semibold", styles.value)}>{value}</p>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
     </div>
   );
@@ -158,7 +151,7 @@ function MetricGroup({
               <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", styles.badge)}>
                 {metric.label}
               </span>
-              <p className={cn("mt-4 font-mono text-xl font-semibold tracking-tight tracking-tight", styles.value)}>{metric.value}</p>
+              <p className={cn("mt-4 font-mono tabular-nums text-xl font-semibold tracking-tight tracking-tight", styles.value)}>{metric.value}</p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{metric.note}</p>
             </div>
           );
@@ -178,7 +171,7 @@ function taskStatusMeta(status: string) {
   }
 
   if (status === "paused" || status === "stopped") {
-    return { label: "已暂停", className: "bg-amber-500/10 text-amber-600" };
+    return { label: "已暂停", className: "bg-amber-500/100/10 text-amber-600" };
   }
 
   if (status === "completed") {
@@ -412,7 +405,7 @@ export function AdminOperationsMonitor() {
                             risk.tone === "red"
                               ? "bg-destructive/10 text-destructive"
                               : risk.tone === "amber"
-                                ? "bg-amber-500/10 text-amber-600"
+                                ? "bg-amber-500/100/10 text-amber-600"
                                 : "bg-slate-100 text-foreground"
                           )}
                         >
@@ -465,7 +458,7 @@ export function AdminOperationsMonitor() {
                         <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", styles.badge)}>
                           {metric.label}
                         </span>
-                        <p className={cn("mt-4 font-mono text-xl font-semibold tracking-tight tracking-tight", styles.value)}>{metric.value}</p>
+                        <p className={cn("mt-4 font-mono tabular-nums text-xl font-semibold tracking-tight tracking-tight", styles.value)}>{metric.value}</p>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">{metric.note}</p>
                       </div>
                     );
@@ -481,7 +474,7 @@ export function AdminOperationsMonitor() {
                           country.tone === "emerald"
                             ? "border-emerald-200 bg-primary/10 text-primary"
                             : country.tone === "amber"
-                              ? "border-amber-200 bg-amber-500/10 text-amber-600"
+                              ? "border-amber-200 bg-amber-500/100/10 text-amber-600"
                               : "border-border bg-background text-muted-foreground"
                         )}
                         key={country.country}
@@ -528,7 +521,7 @@ export function AdminOperationsMonitor() {
                                   task.tone === "red"
                                     ? "bg-destructive/10 text-destructive"
                                     : task.tone === "amber"
-                                      ? "bg-amber-500/10 text-amber-600"
+                                      ? "bg-amber-500/100/10 text-amber-600"
                                       : "bg-slate-100 text-foreground"
                                 )}
                               >
@@ -585,7 +578,7 @@ export function AdminOperationsMonitor() {
                                   user.tone === "red"
                                     ? "bg-destructive/10 text-destructive"
                                     : user.tone === "amber"
-                                      ? "bg-amber-500/10 text-amber-600"
+                                      ? "bg-amber-500/100/10 text-amber-600"
                                       : "bg-slate-100 text-foreground"
                                 )}
                               >
@@ -632,7 +625,7 @@ export function AdminOperationsMonitor() {
                               item.tone === "red"
                                 ? "bg-destructive/10 text-destructive"
                                 : item.tone === "amber"
-                                  ? "bg-amber-500/10 text-amber-600"
+                                  ? "bg-amber-500/100/10 text-amber-600"
                                   : "bg-slate-100 text-foreground"
                             )}
                           >

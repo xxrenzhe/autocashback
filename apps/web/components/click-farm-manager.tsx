@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDateTime } from "@/lib/format";
+
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -19,6 +21,7 @@ import {
 
 import type { ClickFarmTask, OfferRecord } from "@autocashback/domain";
 import { cn } from "@autocashback/ui";
+import { toast } from "sonner";
 
 import { ClickFarmTaskDialog } from "@/components/click-farm-task-dialog";
 import { fetchJson } from "@/lib/api-error-handler";
@@ -27,7 +30,6 @@ import {
   type ClickFarmConsoleSort
 } from "@/lib/click-farm-console";
 
-type MessageTone = "success" | "info";
 
 const sortOptions: Array<{ value: ClickFarmConsoleSort; label: string }> = [
   { value: "recent", label: "按最新创建" },
@@ -36,14 +38,7 @@ const sortOptions: Array<{ value: ClickFarmConsoleSort; label: string }> = [
   { value: "progress", label: "按任务进度" }
 ];
 
-function formatDateTime(value: string | null) {
-  if (!value) {
-    return "待调度";
-  }
 
-  const parsed = Date.parse(value);
-  return Number.isFinite(parsed) ? new Date(parsed).toLocaleString("zh-CN") : value;
-}
 
 function formatPercent(value: number | null) {
   if (value === null) {
@@ -84,7 +79,7 @@ function OverviewCard({
       <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", toneStyles[tone].badge)}>
         {label}
       </span>
-      <p className={cn("mt-5 font-mono text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
+      <p className={cn("mt-5 font-mono tabular-nums text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
     </div>
   );
@@ -155,10 +150,7 @@ export function ClickFarmManager() {
   const [offers, setOffers] = useState<OfferRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [messageTone, setMessageTone] = useState<MessageTone>("success");
-  const [searchQuery, setSearchQuery] = useState("");
+        const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<ClickFarmTask["status"] | "all">("all");
   const [countryFilter, setCountryFilter] = useState("all");
   const [sort, setSort] = useState<ClickFarmConsoleSort>("recent");
@@ -221,9 +213,7 @@ export function ClickFarmManager() {
     }
 
     if (!options?.preserveNotice) {
-      setError("");
-      setMessage("");
-    }
+                }
 
     try {
       const [tasksResult, offersResult] = await Promise.all([
@@ -241,8 +231,8 @@ export function ClickFarmManager() {
 
       setTasks(tasksResult.data.tasks || []);
       setOffers(offersResult.data.offers || []);
-    } catch (loadError: unknown) {
-      setError(loadError instanceof Error ? loadError.message : "加载补点击任务失败");
+    } catch {
+      toast.error("加载数据失败");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -282,8 +272,7 @@ export function ClickFarmManager() {
     }
 
     setTaskActionLoading(`${action}-${task.id}`);
-    setError("");
-
+    
     const endpoint =
       action === "delete"
         ? `/api/click-farm/tasks/${task.id}`
@@ -296,12 +285,11 @@ export function ClickFarmManager() {
     setTaskActionLoading(null);
 
     if (!result.success) {
-      setError(result.userMessage || "任务操作失败");
+      toast.error(result.userMessage || "操作失败");
       return;
     }
 
-    setMessageTone("success");
-    setMessage(
+        setMessage(
       action === "stop"
         ? "任务已暂停。"
         : action === "restart"
@@ -352,24 +340,9 @@ export function ClickFarmManager() {
             </div>
           </div>
 
-          {error ? (
-            <div className="mt-5 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
-              {error}
-            </div>
-          ) : null}
+          
 
-          {message ? (
-            <div
-              className={cn(
-                "mt-5 rounded-xl p-4 text-sm",
-                messageTone === "success"
-                  ? "border border-emerald-200 bg-primary/10 text-primary"
-                  : "border border-slate-200 bg-muted/40 text-foreground"
-              )}
-            >
-              {message}
-            </div>
-          ) : null}
+          
         </div>
 
         <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
@@ -543,7 +516,7 @@ export function ClickFarmManager() {
             ) : consoleData.rows.length ? (
               <div className="overflow-x-auto p-5">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="text-muted-foreground font-medium text-xs border-b border-border">
+                  <thead className="text-muted-foreground font-medium text-xs border-b border-border sticky top-0 bg-background/95 backdrop-blur z-10">
                     <tr>
                       <th className="pb-3 pr-4">Offer</th>
                       <th className="pb-3 pr-4">状态</th>

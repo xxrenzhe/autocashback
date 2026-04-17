@@ -25,6 +25,7 @@ import {
 
 import type { LinkSwapRunRecord, LinkSwapTaskRecord, OfferRecord } from "@autocashback/domain";
 import { cn } from "@autocashback/ui";
+import { toast } from "sonner";
 
 import { LinkSwapTaskDialog } from "@/components/link-swap-task-dialog";
 import { ModalFrame } from "@/components/modal-frame";
@@ -39,13 +40,6 @@ type ScriptTemplatePayload = {
   template: string;
   token: string;
 };
-
-type FeedbackState =
-  | {
-      tone: "success" | "error";
-      text: string;
-    }
-  | null;
 
 type SortField = "offer" | "status" | "mode" | "interval" | "lastRun" | "nextRun" | "failures";
 type SortDirection = "asc" | "desc";
@@ -180,8 +174,8 @@ function SummaryCard({
       icon: "bg-primary/10 text-primary"
     },
     amber: {
-      badge: "bg-amber-500/10 text-amber-600",
-      icon: "bg-amber-500/10 text-amber-600"
+      badge: "bg-amber-500/100/100/10 text-amber-600",
+      icon: "bg-amber-500/100/100/10 text-amber-600"
     },
     slate: {
       badge: "bg-slate-100 text-foreground",
@@ -199,7 +193,7 @@ function SummaryCard({
           <Icon className="h-4 w-4" />
         </span>
       </div>
-      <p className="mt-5 font-mono text-4xl font-semibold text-foreground">{value}</p>
+      <p className="mt-5 font-mono tabular-nums text-4xl font-semibold text-foreground">{value}</p>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
     </div>
   );
@@ -212,7 +206,7 @@ function statusPill(status: LinkSwapConsoleStatus) {
     case "paused":
       return "bg-slate-100 text-foreground";
     case "warning":
-      return "bg-amber-500/10 text-amber-600";
+      return "bg-amber-500/100/100/10 text-amber-600";
     case "error":
       return "bg-destructive/10 text-destructive";
     default:
@@ -245,8 +239,7 @@ export function LinkSwapManager() {
   const [script, setScript] = useState<ScriptTemplatePayload>({ template: "", token: "" });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [feedback, setFeedback] = useState<FeedbackState>(null);
-  const [rotatingToken, setRotatingToken] = useState(false);
+    const [rotatingToken, setRotatingToken] = useState(false);
   const [activeOffer, setActiveOffer] = useState<OfferRecord | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -280,7 +273,7 @@ export function LinkSwapManager() {
 
     const failedResult = [tasksResult, runsResult, offersResult, scriptResult].find((result) => !result.success);
     if (failedResult && !failedResult.success) {
-      setFeedback({ tone: "error", text: failedResult.userMessage });
+      toast.error(failedResult.userMessage);
       setLoading(false);
       setRefreshing(false);
       return;
@@ -346,14 +339,13 @@ export function LinkSwapManager() {
 
   async function handleTaskAction(taskId: number, action: "enable" | "disable" | "swap-now") {
     setTaskActionLoading(`${action}-${taskId}`);
-    setFeedback(null);
-
+    
     const result = await fetchJson<{ message?: string }>(`/api/link-swap/tasks/${taskId}/${action}`, {
       method: "POST"
     });
 
     if (!result.success) {
-      setFeedback({ tone: "error", text: result.userMessage });
+      toast.error(result.userMessage);
       setTaskActionLoading(null);
       return;
     }
@@ -380,7 +372,7 @@ export function LinkSwapManager() {
     );
 
     if (!result.success) {
-      setFeedback({ tone: "error", text: result.userMessage });
+      toast.error(result.userMessage);
       setHistoryLoading(false);
       return;
     }
@@ -391,15 +383,14 @@ export function LinkSwapManager() {
 
   async function rotateToken() {
     setRotatingToken(true);
-    setFeedback(null);
-
+    
     const result = await fetchJson<{ message?: string }>(
       "/api/script/link-swap/rotate-token",
       { method: "POST" }
     );
 
     if (!result.success) {
-      setFeedback({ tone: "error", text: result.userMessage });
+      toast.error(result.userMessage);
       setRotatingToken(false);
       return;
     }
@@ -414,15 +405,15 @@ export function LinkSwapManager() {
 
   async function copyScriptTemplate() {
     if (!script.template) {
-      setFeedback({ tone: "error", text: "当前没有可复制的脚本模板" });
+      toast.error("当前没有可复制的脚本模板");
       return;
     }
 
     try {
       await navigator.clipboard.writeText(script.template);
-      setFeedback({ tone: "success", text: "最新换链脚本已复制到剪贴板" });
+      toast.success("最新换链脚本已复制到剪贴板");
     } catch {
-      setFeedback({ tone: "error", text: "复制失败，请检查浏览器剪贴板权限" });
+      toast.error("复制失败，请检查浏览器剪贴板权限");
     }
   }
 
@@ -561,7 +552,7 @@ export function LinkSwapManager() {
 
             <div className="mt-5 rounded-xl border border-border bg-muted/40 p-5">
               <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Script Token</p>
-              <p className="mt-2 break-all font-mono text-sm text-foreground">{script.token || "尚未生成"}</p>
+              <p className="mt-2 break-all font-mono tabular-nums text-sm text-foreground">{script.token || "尚未生成"}</p>
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
                   className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
@@ -905,7 +896,7 @@ export function LinkSwapManager() {
             <div className="mt-5 space-y-3">
               <div className="rounded-xl border border-border bg-muted/40 p-4">
                 <div className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
+                  <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/100/100/10 text-amber-600">
                     <AlertTriangle className="h-4 w-4" />
                   </span>
                   <div>
@@ -1033,7 +1024,7 @@ export function LinkSwapManager() {
                     {run.status === "success" ? "成功" : "失败"}
                   </span>
                 </div>
-                <p className="mt-3 break-all font-mono text-xs text-foreground">
+                <p className="mt-3 break-all font-mono tabular-nums text-xs text-foreground">
                   {run.resolvedSuffix || run.errorMessage || "本次执行未返回 suffix"}
                 </p>
               </div>

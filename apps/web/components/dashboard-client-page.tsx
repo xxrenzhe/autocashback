@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDateTime } from "@/lib/format";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -17,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@autocashback/ui";
+import { toast } from "sonner";
 
 import type {
   DashboardActionItem,
@@ -53,14 +56,7 @@ const coreEntryLinks = [
   }
 ] as const;
 
-function formatDateTime(value: string | null) {
-  if (!value) {
-    return "暂无记录";
-  }
 
-  const parsed = Date.parse(value);
-  return Number.isFinite(parsed) ? new Date(parsed).toLocaleString("zh-CN") : value;
-}
 
 function resolveActionIcon(href: string) {
   if (href.startsWith("/accounts")) {
@@ -113,7 +109,7 @@ function OverviewCard({
       <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", toneStyles[tone].badge)}>
         {label}
       </span>
-      <p className={cn("mt-5 font-mono text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
+      <p className={cn("mt-5 font-mono tabular-nums text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
     </div>
   );
@@ -227,8 +223,7 @@ export function DashboardClientPage({ username }: { username: string }) {
   const [data, setData] = useState<DashboardConsoleData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
-
+  
   async function loadSummary(refresh = false) {
     if (refresh) {
       setRefreshing(true);
@@ -241,15 +236,14 @@ export function DashboardClientPage({ username }: { username: string }) {
     });
 
     if (!result.success) {
-      setError(result.userMessage);
+      toast.error(result.userMessage || "操作失败");
       setLoading(false);
       setRefreshing(false);
       return;
     }
 
     setData(result.data);
-    setError("");
-    setLoading(false);
+        setLoading(false);
     setRefreshing(false);
   }
 

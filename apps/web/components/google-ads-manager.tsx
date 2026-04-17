@@ -147,7 +147,7 @@ function OverviewCard({
           <Icon className="h-4 w-4" />
         </span>
       </div>
-      <p className="mt-5 font-mono text-4xl font-semibold text-foreground">{value}</p>
+      <p className="mt-5 font-mono tabular-nums text-4xl font-semibold text-foreground">{value}</p>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
     </div>
   );
@@ -525,7 +525,7 @@ export function GoogleAdsManager() {
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">账号映射</p>
               <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">可访问 Google Ads 账号</h3>
             </div>
-            <span className="rounded-full bg-muted px-3 py-2 font-mono text-xs text-muted-foreground">
+            <span className="rounded-full bg-muted px-3 py-2 font-mono tabular-nums text-xs text-muted-foreground">
               {accounts.length} accounts
             </span>
           </div>
@@ -552,7 +552,7 @@ export function GoogleAdsManager() {
                           <p className="font-semibold text-foreground">
                             {account.descriptiveName || `Customer ${account.customerId}`}
                           </p>
-                          <p className="mt-1 font-mono text-xs text-muted-foreground">{account.customerId}</p>
+                          <p className="mt-1 font-mono tabular-nums text-xs text-muted-foreground">{account.customerId}</p>
                         </div>
                       </td>
                       <td className="py-4 pr-4">
@@ -644,7 +644,7 @@ export function GoogleAdsManager() {
                       <p className="text-sm font-semibold text-foreground">
                         {customer.descriptiveName || `Customer ${customer.customerId}`}
                       </p>
-                      <p className="mt-1 font-mono text-xs text-muted-foreground">{customer.customerId}</p>
+                      <p className="mt-1 font-mono tabular-nums text-xs text-muted-foreground">{customer.customerId}</p>
                     </div>
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-semibold ${
@@ -682,7 +682,7 @@ function InfoCard(props: { label: string; value: number }) {
   return (
     <div className="rounded-xl border border-border bg-muted/40 p-5">
       <p className="text-sm text-muted-foreground">{props.label}</p>
-      <p className="mt-3 font-mono text-xl font-semibold tracking-tight tracking-tight text-foreground">{props.value}</p>
+      <p className="mt-3 font-mono tabular-nums text-xl font-semibold tracking-tight tracking-tight text-foreground">{props.value}</p>
     </div>
   );
 }

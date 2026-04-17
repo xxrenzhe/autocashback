@@ -64,8 +64,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
   const [enabling, setEnabling] = useState(false);
   const [disabling, setDisabling] = useState(false);
   const [swappingNow, setSwappingNow] = useState(false);
-  const [message, setMessage] = useState("");
-  const [proxyWarning, setProxyWarning] = useState("");
+    const [proxyWarning, setProxyWarning] = useState("");
   const [history, setHistory] = useState<LinkSwapRunRecord[]>([]);
 
   const canEnableTask = Boolean(
@@ -84,8 +83,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
 
     async function loadTask() {
       setLoading(true);
-      setMessage("");
-      setProxyWarning("");
+            setProxyWarning("");
       setHistory([]);
 
       try {
@@ -157,7 +155,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
       form.mode === "google_ads_api" &&
       (!form.googleCustomerId.trim() || !form.googleCampaignId.trim())
     ) {
-      setMessage("Google Ads API 模式必须填写 Customer ID 和 Campaign ID");
+      toast.success(("Google Ads API 模式必须填写 Customer ID 和 Campaign ID"));
       return;
     }
 
@@ -179,8 +177,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
     }
 
     setSaving(true);
-    setMessage("");
-
+    
     try {
       const endpoint = task?.id ? `/api/link-swap/tasks/${task.id}` : "/api/link-swap/tasks";
       const response = await fetch(endpoint, {
@@ -229,8 +226,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
     }
 
     setEnabling(true);
-    setMessage("");
-
+    
     try {
       const response = await fetch(`/api/link-swap/tasks/${task.id}/enable`, {
         method: "POST"
@@ -268,8 +264,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
     }
 
     setDisabling(true);
-    setMessage("");
-
+    
     try {
       const response = await fetch(`/api/link-swap/tasks/${task.id}/disable`, {
         method: "POST"
@@ -307,8 +302,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
     }
 
     setSwappingNow(true);
-    setMessage("");
-
+    
     try {
       const response = await fetch(`/api/link-swap/tasks/${task.id}/swap-now`, {
         method: "POST"
@@ -349,7 +343,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
             <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
               {offer.targetCountry} · {offer.campaignLabel || "未设置 Campaign Label"}
             </p>
-            <p className="mt-3 break-all font-mono text-xs text-muted-foreground">
+            <p className="mt-3 break-all font-mono tabular-nums text-xs text-muted-foreground">
               最近 Suffix: {offer.latestResolvedSuffix || "尚未解析"}
             </p>
           </div>
@@ -394,7 +388,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
                 <label className="block text-sm font-medium text-foreground">
                   执行间隔（分钟）
                   <select
-                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono tabular-nums"
                     value={form.intervalMinutes}
                     onChange={(event) =>
                       setForm((current) => ({
@@ -454,7 +448,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
                   <label className="block text-sm font-medium text-foreground">
                     Customer ID
                     <input
-                      className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono"
+                      className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono tabular-nums"
                       placeholder="1234567890"
                       value={form.googleCustomerId}
                       onChange={(event) =>
@@ -469,7 +463,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
                   <label className="block text-sm font-medium text-foreground">
                     Campaign ID
                     <input
-                      className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono"
+                      className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono tabular-nums"
                       placeholder="987654321"
                       value={form.googleCampaignId}
                       onChange={(event) =>
@@ -515,7 +509,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
                             </p>
                             <p className="text-xs text-muted-foreground">{run.createdAt}</p>
                           </div>
-                          <p className="mt-2 break-all font-mono text-xs text-foreground">
+                          <p className="mt-2 break-all font-mono tabular-nums text-xs text-foreground">
                             {run.resolvedSuffix || run.errorMessage || "无 suffix"}
                           </p>
                           <p className="mt-2 text-xs text-muted-foreground">

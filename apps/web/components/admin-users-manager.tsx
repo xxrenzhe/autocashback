@@ -197,9 +197,7 @@ export function AdminUsersManager() {
     totalPages: 1
   });
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+      const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "user">("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortField, setSortField] = useState<SortField>("createdAt");
@@ -255,8 +253,7 @@ export function AdminUsersManager() {
 
   const loadUsers = useCallback(async (input?: AdminUsersQuery) => {
     setLoading(true);
-    setError("");
-    const result = await requestAdminUsers({
+        const result = await requestAdminUsers({
       page: input?.page || 1,
       limit: input?.limit || pagination.limit,
       searchQuery: input?.searchQuery ?? deferredSearchQuery,
@@ -266,7 +263,7 @@ export function AdminUsersManager() {
       sortDirection: input?.sortDirection ?? sortDirection
     });
     if (!result.success) {
-      setError(result.userMessage);
+      toast.error(result.userMessage || "操作失败");
       setLoading(false);
       return;
     }
@@ -309,8 +306,7 @@ export function AdminUsersManager() {
     }
 
     setSubmitting(true);
-    setError("");
-    const result = await fetchJson<{
+        const result = await fetchJson<{
       user: AdminUser;
       defaultPassword?: string;
     }>("/api/admin/users", {
@@ -321,11 +317,11 @@ export function AdminUsersManager() {
     setSubmitting(false);
 
     if (!result.success) {
-      setError(result.userMessage);
+      toast.error(result.userMessage || "操作失败");
       return;
     }
 
-    setMessage("用户已创建");
+    toast.success(("用户已创建"));
     setCreateOpen(false);
     setResetPasswordData({
       username: result.data.user.username,
@@ -361,11 +357,11 @@ export function AdminUsersManager() {
     setSubmitting(false);
 
     if (!result.success) {
-      setError(result.userMessage);
+      toast.error(result.userMessage || "操作失败");
       return;
     }
 
-    setMessage("用户信息已更新");
+    toast.success(("用户信息已更新"));
     setEditOpen(false);
     setSelectedUser(null);
     await loadUsers({ page: pagination.page });
@@ -387,11 +383,11 @@ export function AdminUsersManager() {
     });
     setActionLoading(null);
     if (!result.success) {
-      setError(result.userMessage);
+      toast.error(result.userMessage || "操作失败");
       return;
     }
 
-    setMessage("用户已删除");
+    toast.success(("用户已删除"));
     const nextPage =
       users.length === 1 && pagination.page > 1 ? pagination.page - 1 : pagination.page;
     await loadUsers({
@@ -411,7 +407,7 @@ export function AdminUsersManager() {
     );
     setActionLoading(null);
     if (!result.success) {
-      setError(result.userMessage);
+      toast.error(result.userMessage || "操作失败");
       return;
     }
 
@@ -421,7 +417,7 @@ export function AdminUsersManager() {
     });
     setResetPasswordOpen(true);
     setCopied(false);
-    setMessage("密码已重置，失败记录和现有会话已清空");
+    toast.success(("密码已重置，失败记录和现有会话已清空"));
   }
 
   async function handleToggleUserState(user: AdminUser) {
@@ -437,8 +433,7 @@ export function AdminUsersManager() {
     }
 
     setActionLoading(`toggle-${user.id}`);
-    setError("");
-    const result = await fetchJson<{ user: AdminUser }>(`/api/admin/users/${user.id}`, {
+        const result = await fetchJson<{ user: AdminUser }>(`/api/admin/users/${user.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isActive: nextIsActive })
@@ -446,7 +441,7 @@ export function AdminUsersManager() {
     setActionLoading(null);
 
     if (!result.success) {
-      setError(result.userMessage);
+      toast.error(result.userMessage || "操作失败");
       return;
     }
 
@@ -466,8 +461,7 @@ export function AdminUsersManager() {
     }
 
     setActionLoading(`unlock-${user.id}`);
-    setError("");
-    const result = await fetchJson<{ user: AdminUser }>(`/api/admin/users/${user.id}`, {
+        const result = await fetchJson<{ user: AdminUser }>(`/api/admin/users/${user.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ unlock: true })
@@ -475,11 +469,11 @@ export function AdminUsersManager() {
     setActionLoading(null);
 
     if (!result.success) {
-      setError(result.userMessage);
+      toast.error(result.userMessage || "操作失败");
       return;
     }
 
-    setMessage("锁定状态和失败记录已清空");
+    toast.success(("锁定状态和失败记录已清空"));
     await loadUsers({ page: pagination.page });
   }
 
@@ -495,7 +489,7 @@ export function AdminUsersManager() {
     setHistoryLoading(false);
 
     if (!result.success) {
-      setError(result.userMessage);
+      toast.error(result.userMessage || "操作失败");
       return;
     }
 
@@ -514,7 +508,7 @@ export function AdminUsersManager() {
     setAlertsLoading(false);
 
     if (!result.success) {
-      setError(result.userMessage);
+      toast.error(result.userMessage || "操作失败");
       return;
     }
 
@@ -875,7 +869,7 @@ export function AdminUsersManager() {
 
         <div className="mt-6 overflow-x-auto rounded-xl border border-border">
           <table className="min-w-[1160px] w-full text-left text-sm">
-            <thead className="bg-muted/40 text-muted-foreground">
+            <thead className="bg-muted/40 text-muted-foreground sticky top-0 bg-background/95 backdrop-blur z-10 sticky top-0 bg-background/95 backdrop-blur z-10">
               <tr className="border-b border-border/70">
                 <SortableHeader field="username" label="用户" onSort={handleSort} renderIcon={renderSortIcon} />
                 <SortableHeader field="role" label="角色" onSort={handleSort} renderIcon={renderSortIcon} />
@@ -922,7 +916,7 @@ export function AdminUsersManager() {
                         <span
                           className={`rounded-full px-3 py-1 text-xs font-semibold ${
                             user.role === "admin"
-                              ? "bg-amber-500/10 text-amber-600"
+                              ? "bg-amber-500/100/100/10 text-amber-600"
                               : "bg-slate-100 text-foreground"
                           }`}
                         >
@@ -936,7 +930,7 @@ export function AdminUsersManager() {
                               {getStatusBadgeLabel(user)}
                             </span>
                             {user.failedLoginCount > 0 ? (
-                              <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
+                              <span className="rounded-full bg-amber-500/100/100/10 px-3 py-1 text-xs font-semibold text-amber-600">
                                 失败 {user.failedLoginCount} 次
                               </span>
                             ) : null}
@@ -1203,7 +1197,7 @@ export function AdminUsersManager() {
               <p className="text-sm text-muted-foreground">用户名</p>
               <p className="mt-1 font-medium text-foreground">{resetPasswordData.username}</p>
               <p className="mt-4 text-sm text-muted-foreground">密码</p>
-              <p className="mt-1 font-mono text-base text-foreground">{resetPasswordData.password}</p>
+              <p className="mt-1 font-mono tabular-nums text-base text-foreground">{resetPasswordData.password}</p>
             </div>
 
             <div className="flex justify-end gap-3">
@@ -1245,8 +1239,8 @@ export function AdminUsersManager() {
                               : record.status === "locked"
                                 ? "bg-destructive/10 text-destructive"
                                 : record.status === "failed"
-                                  ? "bg-amber-500/10 text-amber-600"
-                              : "bg-amber-500/10 text-amber-600"
+                                  ? "bg-amber-500/100/100/10 text-amber-600"
+                              : "bg-amber-500/100/100/10 text-amber-600"
                         }`}
                       >
                         {getLoginHistoryStatusLabel(record)}
@@ -1298,7 +1292,7 @@ export function AdminUsersManager() {
                   alert.severity === "critical"
                     ? "border-destructive/20 bg-destructive/10"
                     : alert.severity === "warning"
-                      ? "border-amber-200 bg-amber-500/10"
+                      ? "border-amber-200 bg-amber-500/100/100/10"
                       : "border-border bg-muted/40"
                 }`}
                 key={alert.id}
@@ -1400,7 +1394,7 @@ function getStatusBadgeClass(user: AdminUser) {
   }
 
   if (isUserLocked(user)) {
-    return "rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600";
+    return "rounded-full bg-amber-500/100/100/10 px-3 py-1 text-xs font-semibold text-amber-600";
   }
 
   return "rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary";
@@ -1441,7 +1435,7 @@ function getUserRowClassName(user: AdminUser) {
   }
 
   if (isUserLocked(user) || user.failedLoginCount > 0) {
-    return "border-b border-border/40 bg-amber-500/10/35 align-top last:border-b-0";
+    return "border-b border-border/40 bg-amber-500/100/100/10/35 align-top last:border-b-0";
   }
 
   if (user.activeSessionCount > 0) {
@@ -1556,7 +1550,7 @@ function AdminOverviewCard(props: {
     props.tone === "emerald"
       ? "bg-primary/10 text-primary"
       : props.tone === "amber"
-        ? "bg-amber-500/10 text-amber-600"
+        ? "bg-amber-500/100/100/10 text-amber-600"
         : "bg-slate-100 text-foreground";
   const valueClass =
     props.tone === "emerald"
@@ -1570,7 +1564,7 @@ function AdminOverviewCard(props: {
       <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${toneClass}`}>
         {props.label}
       </span>
-      <p className={`mt-4 font-mono text-xl font-semibold tracking-tight tracking-tight ${valueClass}`}>{props.value}</p>
+      <p className={`mt-4 font-mono tabular-nums text-xl font-semibold tracking-tight tracking-tight ${valueClass}`}>{props.value}</p>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">{props.note}</p>
     </>
   );
@@ -1609,7 +1603,7 @@ function ActionQueueCard(props: {
     props.item.tone === "critical"
       ? "border-destructive/20 bg-destructive/10/80"
       : props.item.tone === "warning"
-        ? "border-amber-200 bg-amber-500/10/80"
+        ? "border-amber-200 bg-amber-500/100/100/10/80"
         : "border-border bg-muted/40";
   const badgeClass =
     props.item.tone === "critical"
@@ -1643,7 +1637,7 @@ function ActionQueueCard(props: {
             </span>
           ) : null}
           {props.item.user.failedLoginCount > 0 ? (
-            <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
+            <span className="rounded-full bg-amber-500/100/100/10 px-3 py-1 text-xs font-semibold text-amber-600">
               失败 {props.item.user.failedLoginCount} 次
             </span>
           ) : null}
@@ -1688,7 +1682,7 @@ function ActionButton(props: {
       : props.tone === "emerald"
         ? "border-emerald-200 bg-emerald-50 text-emerald-700 disabled:border-emerald-100 disabled:bg-emerald-50/60"
         : props.tone === "amber"
-          ? "border-amber-200 bg-amber-500/10 text-amber-600 disabled:border-amber-100 disabled:bg-amber-500/10/60"
+          ? "border-amber-200 bg-amber-500/100/100/10 text-amber-600 disabled:border-amber-100 disabled:bg-amber-500/100/100/10/60"
           : "border-border bg-background text-foreground";
 
   return (

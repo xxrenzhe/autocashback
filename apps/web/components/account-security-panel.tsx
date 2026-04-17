@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDateTime } from "@/lib/format";
+
 import { useEffect, useState } from "react";
 
 import { fetchJson } from "@/lib/api-error-handler";
@@ -14,14 +16,7 @@ type SessionRecord = {
   expiresAt: string;
 };
 
-function formatDateTime(value: string | null) {
-  if (!value) {
-    return "--";
-  }
 
-  const parsed = Date.parse(value);
-  return Number.isFinite(parsed) ? new Date(parsed).toLocaleString("zh-CN") : value;
-}
 
 export function AccountSecurityPanel() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
@@ -30,15 +25,13 @@ export function AccountSecurityPanel() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(true);
   const [changingPassword, setChangingPassword] = useState(false);
-  const [message, setMessage] = useState("");
-
+  
   async function loadSessions() {
     setLoading(true);
     const result = await fetchJson<{ sessions: SessionRecord[] }>("/api/auth/sessions");
     if (result.success) {
       setSessions(result.data.sessions || []);
-      setMessage("");
-    } else {
+          } else {
       setMessage(result.userMessage);
     }
     setLoading(false);

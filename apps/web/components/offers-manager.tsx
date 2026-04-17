@@ -1,13 +1,17 @@
 "use client";
 
+import { formatDateTime } from "@/lib/format";
+
 import {
-  startTransition,
   useDeferredValue,
   useEffect,
   useMemo,
   useState,
-  type FormEvent
+  type FormEvent,
+  useCallback
 } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { SheetFrame } from "./sheet-frame";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -26,6 +30,7 @@ import {
   type OfferRecord
 } from "@autocashback/domain";
 import { cn } from "@autocashback/ui";
+import { toast } from "sonner";
 
 import { ClickFarmTaskDialog } from "@/components/click-farm-task-dialog";
 import { LinkSwapTaskDialog } from "@/components/link-swap-task-dialog";
@@ -39,7 +44,6 @@ import {
   resolveLinkSwapTaskMode
 } from "@/lib/task-modal-helpers";
 
-type MessageTone = "info" | "success";
 
 type OfferFormState = {
   promoLink: string;
@@ -70,14 +74,7 @@ const sortOptions: Array<{ value: OfferConsoleSort; label: string }> = [
   { value: "remaining-cap", label: "按剩余额度" }
 ];
 
-function formatDateTime(value: string | null) {
-  if (!value) {
-    return "暂无记录";
-  }
 
-  const parsed = Date.parse(value);
-  return Number.isFinite(parsed) ? new Date(parsed).toLocaleString("zh-CN") : value;
-}
 
 function OverviewCard({
   label,
@@ -110,7 +107,7 @@ function OverviewCard({
       <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", toneStyles[tone].badge)}>
         {label}
       </span>
-      <p className={cn("mt-5 font-mono text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
+      <p className={cn("mt-5 font-mono tabular-nums text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
     </div>
   );
@@ -173,15 +170,64 @@ export function OffersManager() {
   const [pending, setPending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [messageTone, setMessageTone] = useState<MessageTone>("success");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [platformFilter, setPlatformFilter] = useState<OfferRecord["platformCode"] | "all">("all");
-  const [statusFilter, setStatusFilter] = useState<OfferRecord["status"] | "all">("all");
-  const [countryFilter, setCountryFilter] = useState("all");
-  const [resolutionFilter, setResolutionFilter] = useState<"all" | "resolved" | "unresolved">("all");
-  const [sort, setSort] = useState<OfferConsoleSort>("recent");
+        const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [editorOpen, setEditorOpen] = useState(false);
+
+  const [searchQuery, setSearchQueryState] = useState(searchParams.get("q") || "");
+  const [platformFilter, setPlatformFilterState] = useState<OfferRecord["platformCode"] | "all">(
+    (searchParams.get("platform") as OfferRecord["platformCode"]) || "all"
+  );
+  const [statusFilter, setStatusFilterState] = useState<OfferRecord["status"] | "all">(
+    (searchParams.get("status") as OfferRecord["status"]) || "all"
+  );
+  const [countryFilter, setCountryFilterState] = useState(searchParams.get("country") || "all");
+  const [resolutionFilter, setResolutionFilterState] = useState<"all" | "resolved" | "unresolved">(
+    (searchParams.get("resolution") as "all" | "resolved" | "unresolved") || "all"
+  );
+  const [sort, setSortState] = useState<OfferConsoleSort>(
+    (searchParams.get("sort") as OfferConsoleSort) || "recent"
+  );
+
+  const createQueryString = useCallback(
+    (name: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value && value !== "all") {
+        params.set(name, value);
+      } else {
+        params.delete(name);
+      }
+      return params.toString();
+    },
+    [searchParams]
+  );
+
+  const setSearchQuery = (val: string) => {
+    setSearchQueryState(val);
+    router.replace(pathname + "?" + createQueryString("q", val), { scroll: false });
+  };
+  const setPlatformFilter = (val: OfferRecord["platformCode"] | "all") => {
+    setPlatformFilterState(val);
+    router.replace(pathname + "?" + createQueryString("platform", val), { scroll: false });
+  };
+  const setStatusFilter = (val: OfferRecord["status"] | "all") => {
+    setStatusFilterState(val);
+    router.replace(pathname + "?" + createQueryString("status", val), { scroll: false });
+  };
+  const setCountryFilter = (val: string) => {
+    setCountryFilterState(val);
+    router.replace(pathname + "?" + createQueryString("country", val), { scroll: false });
+  };
+  const setResolutionFilter = (val: "all" | "resolved" | "unresolved") => {
+    setResolutionFilterState(val);
+    router.replace(pathname + "?" + createQueryString("resolution", val), { scroll: false });
+  };
+  const setSort = (val: OfferConsoleSort) => {
+    setSortState(val);
+    router.replace(pathname + "?" + createQueryString("sort", val), { scroll: false });
+  };
   const [activeClickFarmOffer, setActiveClickFarmOffer] = useState<OfferRecord | null>(null);
   const [activeLinkSwapOffer, setActiveLinkSwapOffer] = useState<OfferRecord | null>(null);
   const [taskActionLoading, setTaskActionLoading] = useState<string | null>(null);
@@ -244,9 +290,7 @@ export function OffersManager() {
     }
 
     if (!options?.preserveNotice) {
-      setError("");
-      setMessage("");
-    }
+                }
 
     try {
       const [offersResult, accountsResult] = await Promise.all([
@@ -264,8 +308,8 @@ export function OffersManager() {
 
       setOffers(offersResult.data.offers || []);
       setAccounts(accountsResult.data.accounts || []);
-    } catch (loadError: unknown) {
-      setError(loadError instanceof Error ? loadError.message : "加载 Offer 数据失败");
+    } catch {
+      toast.error("加载数据失败");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -276,22 +320,18 @@ export function OffersManager() {
     void loadAll();
   }, []);
 
-  function scrollEditorIntoView() {
-    document.getElementById("offer-editor")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
-  }
+  
 
   function resetForm() {
     setForm(initialForm);
     setEditingId(null);
-    setError("");
+        setEditorOpen(false);
   }
 
   function startCreateOffer() {
-    resetForm();
-    scrollEditorIntoView();
+    setForm(initialForm);
+    setEditingId(null);
+        setEditorOpen(true);
   }
 
   function applyFilters(next: Partial<{
@@ -302,49 +342,55 @@ export function OffersManager() {
     resolutionFilter: "all" | "resolved" | "unresolved";
     sort: OfferConsoleSort;
   }>) {
-    startTransition(() => {
-      if (next.searchQuery !== undefined) {
-        setSearchQuery(next.searchQuery);
-      }
-      if (next.platformFilter !== undefined) {
-        setPlatformFilter(next.platformFilter);
-      }
-      if (next.statusFilter !== undefined) {
-        setStatusFilter(next.statusFilter);
-      }
-      if (next.countryFilter !== undefined) {
-        setCountryFilter(next.countryFilter);
-      }
-      if (next.resolutionFilter !== undefined) {
-        setResolutionFilter(next.resolutionFilter);
-      }
-      if (next.sort !== undefined) {
-        setSort(next.sort);
-      }
-    });
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (next.searchQuery !== undefined) {
+      setSearchQueryState(next.searchQuery);
+      if (next.searchQuery) params.set("q", next.searchQuery); else params.delete("q");
+    }
+    if (next.platformFilter !== undefined) {
+      setPlatformFilterState(next.platformFilter);
+      if (next.platformFilter !== "all") params.set("platform", next.platformFilter); else params.delete("platform");
+    }
+    if (next.statusFilter !== undefined) {
+      setStatusFilterState(next.statusFilter);
+      if (next.statusFilter !== "all") params.set("status", next.statusFilter); else params.delete("status");
+    }
+    if (next.countryFilter !== undefined) {
+      setCountryFilterState(next.countryFilter);
+      if (next.countryFilter !== "all") params.set("country", next.countryFilter); else params.delete("country");
+    }
+    if (next.resolutionFilter !== undefined) {
+      setResolutionFilterState(next.resolutionFilter);
+      if (next.resolutionFilter !== "all") params.set("resolution", next.resolutionFilter); else params.delete("resolution");
+    }
+    if (next.sort !== undefined) {
+      setSortState(next.sort);
+      if (next.sort !== "recent") params.set("sort", next.sort); else params.delete("sort");
+    }
+    
+    router.replace(pathname + "?" + params.toString(), { scroll: false });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
-    setError("");
-    setMessage("");
-
+        
     if (!form.promoLink.trim()) {
       setPending(false);
-      setError("请填写推广链接");
+      toast.error("请填写必填项");
       return;
     }
 
     if (!form.brandName.trim()) {
       setPending(false);
-      setError("请填写品牌名");
+      toast.error("请填写必填项");
       return;
     }
 
     if (!form.cashbackAccountId) {
       setPending(false);
-      setError("请选择返利网账号");
+      toast.error("请选择返利网账号");
       return;
     }
 
@@ -368,12 +414,11 @@ export function OffersManager() {
     setPending(false);
 
     if (!result.success) {
-      setError(result.userMessage || "保存失败");
+      toast.error(result.userMessage || "保存失败");
       return;
     }
 
-    setMessageTone("success");
-    setMessage(editingId ? "Offer 已更新，列表已同步。" : "Offer 已创建，后续可直接补点击或配置换链。");
+    toast.success(editingId ? "Offer 已更新" : "Offer 已创建");
     resetForm();
     await loadAll({ background: true, preserveNotice: true });
   }
@@ -390,9 +435,7 @@ export function OffersManager() {
       commissionCapUsd: offer.commissionCapUsd,
       manualRecordedCommissionUsd: offer.manualRecordedCommissionUsd
     });
-    setError("");
-    setMessage("");
-    scrollEditorIntoView();
+            setEditorOpen(true);
   }
 
   async function handleDelete(offerId: number) {
@@ -400,9 +443,7 @@ export function OffersManager() {
       return;
     }
 
-    setError("");
-    setMessage("");
-
+        
     const result = await fetchJson<{ success: boolean }>("/api/offers", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -410,7 +451,7 @@ export function OffersManager() {
     });
 
     if (!result.success) {
-      setError(result.userMessage || "删除失败");
+      toast.error(result.userMessage || "删除失败");
       return;
     }
 
@@ -418,8 +459,7 @@ export function OffersManager() {
       resetForm();
     }
 
-    setMessageTone("success");
-    setMessage("Offer 已删除。");
+    toast.success("Offer 已删除");
     await loadAll({ background: true, preserveNotice: true });
   }
 
@@ -429,8 +469,7 @@ export function OffersManager() {
     try {
       const { infoMessage } = await resolveClickFarmTaskMode(offer.id);
       if (infoMessage) {
-        setMessageTone("info");
-        setMessage(infoMessage);
+        toast.info(infoMessage);
       }
       setActiveClickFarmOffer(offer);
     } finally {
@@ -444,8 +483,7 @@ export function OffersManager() {
     try {
       const { infoMessage } = await resolveLinkSwapTaskMode(offer.id);
       if (infoMessage) {
-        setMessageTone("info");
-        setMessage(infoMessage);
+        toast.info(infoMessage);
       }
       setActiveLinkSwapOffer(offer);
     } finally {
@@ -492,24 +530,7 @@ export function OffersManager() {
             </div>
           </div>
 
-          {error ? (
-            <div className="mt-5 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
-              {error}
-            </div>
-          ) : null}
-
-          {message ? (
-            <div
-              className={cn(
-                "mt-5 rounded-xl p-4 text-sm",
-                messageTone === "success"
-                  ? "border border-emerald-200 bg-primary/10 text-primary"
-                  : "border border-slate-200 bg-muted/40 text-foreground"
-              )}
-            >
-              {message}
-            </div>
-          ) : null}
+          
         </div>
 
         <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
@@ -750,7 +771,7 @@ export function OffersManager() {
             ) : consoleData.rows.length ? (
               <div className="overflow-x-auto p-5">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="text-muted-foreground font-medium text-xs border-b border-border">
+                  <thead className="text-muted-foreground font-medium text-xs border-b border-border sticky top-0 bg-background/95 backdrop-blur z-10">
                     <tr>
                       <th className="pb-3 pr-4">Offer</th>
                       <th className="pb-3 pr-4">账号</th>
@@ -800,7 +821,7 @@ export function OffersManager() {
 
                           <td className="py-4 pr-4">
                             <div className="min-w-[180px]">
-                              <p className="font-mono text-foreground">
+                              <p className="font-mono tabular-nums text-foreground">
                                 {offer.manualRecordedCommissionUsd.toFixed(2)} / {offer.commissionCapUsd.toFixed(2)}
                               </p>
                               <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-stone-200">
@@ -820,7 +841,7 @@ export function OffersManager() {
 
                           <td className="py-4 pr-4">
                             <div className="min-w-[220px]">
-                              <p className="break-all font-mono text-xs text-muted-foreground">
+                              <p className="break-all font-mono tabular-nums text-xs text-muted-foreground">
                                 {offer.latestResolvedSuffix || "尚未解析到 suffix"}
                               </p>
                               <p className="mt-2 text-xs text-muted-foreground">
@@ -918,16 +939,14 @@ export function OffersManager() {
         </div>
 
         <div className="space-y-6">
-          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" id="offer-editor">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">{editingId ? "编辑 Offer" : "新建 Offer"}</p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
-              {editingId ? "更新当前 Offer" : "补齐新的投放条目"}
-            </h3>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              这里维护单个 Offer 的链接、归属平台、绑定账号和佣金阈值。保存后可以继续配置补点击或换链任务。
-            </p>
-
-            <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+          <SheetFrame
+            open={editorOpen}
+            onClose={resetForm}
+            eyebrow={editingId ? "编辑 Offer" : "新建 Offer"}
+            title={editingId ? "更新当前 Offer" : "补齐新的投放条目"}
+            description="这里维护单个 Offer 的链接、归属平台、绑定账号和佣金阈值。保存后可以继续配置补点击或换链任务。"
+          >
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <label className="block text-sm font-medium text-foreground">
                 推广链接
                 <textarea
@@ -1026,7 +1045,7 @@ export function OffersManager() {
                 <label className="block text-sm font-medium text-foreground">
                   佣金阈值 USD
                   <input
-                    className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+                    className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono tabular-nums transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
                     min={0}
                     onChange={(event) =>
                       setForm({ ...form, commissionCapUsd: Number(event.target.value) })
@@ -1040,7 +1059,7 @@ export function OffersManager() {
                 <label className="block text-sm font-medium text-foreground">
                   已记录佣金 USD
                   <input
-                    className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+                    className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono tabular-nums transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
                     min={0}
                     onChange={(event) =>
                       setForm({ ...form, manualRecordedCommissionUsd: Number(event.target.value) })
@@ -1058,27 +1077,17 @@ export function OffersManager() {
                 </div>
               ) : null}
 
-              <div className="flex flex-wrap gap-3 pt-2">
+              <div className="flex flex-wrap gap-3 pt-6">
                 <button
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 w-full"
                   disabled={pending}
                   type="submit"
                 >
                   {pending ? "保存中…" : editingId ? "更新 Offer" : "创建 Offer"}
                 </button>
-                {editingId ? (
-                  <button
-                    className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
-                    onClick={resetForm}
-                    type="button"
-                  >
-                    取消编辑
-                  </button>
-                ) : null}
               </div>
             </form>
-          </section>
-
+          </SheetFrame>
           <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">重点提醒</p>
             <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">优先处理这些 Offer</h3>

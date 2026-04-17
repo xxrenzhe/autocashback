@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 
 import { cn } from "@autocashback/ui";
+import { CommandPalette } from "./command-palette";
+import { Toaster } from "sonner";
 import type { CurrentUser } from "@autocashback/domain";
 
 type NavItem = {
@@ -155,6 +157,8 @@ export function AppShell({
 
   return (
     <div className="min-h-screen bg-muted/30">
+      <CommandPalette />
+      <Toaster position="bottom-right" richColors />
       {/* Mobile Nav Overlay */}
       {mobileNavOpen ? (
         <button
@@ -272,7 +276,13 @@ export function AppShell({
             <h1 className="text-lg font-semibold tracking-tight text-foreground">{pageTitle}</h1>
           </div>
 
-          <div className="hidden items-center gap-2 sm:flex">
+          <div className="hidden items-center gap-4 sm:flex">
+            <div className="flex items-center gap-1.5 rounded-md border bg-muted/40 px-2 py-1 text-xs text-muted-foreground shadow-sm">
+              <span>搜索</span>
+              <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </div>
             <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary/10 text-primary">
               <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
               在线
