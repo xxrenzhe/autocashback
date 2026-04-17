@@ -74,26 +74,26 @@ function OverviewCard({
 }) {
   const toneStyles = {
     emerald: {
-      badge: "bg-brand-mist text-brand-emerald",
-      value: "text-brand-emerald"
+      badge: "bg-primary/10 text-primary",
+      value: "text-primary"
     },
     amber: {
-      badge: "bg-amber-50 text-amber-700",
-      value: "text-amber-700"
+      badge: "bg-amber-500/10 text-amber-600",
+      value: "text-amber-600"
     },
     slate: {
-      badge: "bg-slate-100 text-slate-700",
-      value: "text-slate-900"
+      badge: "bg-slate-100 text-foreground",
+      value: "text-foreground"
     }
   } as const;
 
   return (
-    <div className="surface-panel p-5">
+    <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
       <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", toneStyles[tone].badge)}>
         {label}
       </span>
       <p className={cn("mt-5 font-mono text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
-      <p className="mt-3 text-sm leading-6 text-slate-600">{note}</p>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
     </div>
   );
 }
@@ -111,17 +111,17 @@ function ShortcutCard({
 }) {
   return (
     <Link
-      className="group rounded-[24px] border border-brand-line bg-white/90 px-4 py-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-editorial motion-reduce:transform-none"
+      className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
       href={href}
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+        <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <Icon className="h-5 w-5" />
         </span>
-        <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:text-brand-emerald" />
+        <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
       </div>
-      <p className="mt-4 text-sm font-semibold text-slate-900">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
+      <p className="mt-4 text-sm font-semibold text-foreground">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
     </Link>
   );
 }
@@ -130,11 +130,11 @@ function statusMeta(status: CashbackAccount["status"]) {
   return status === "active"
     ? {
         label: "启用中",
-        className: "bg-brand-mist text-brand-emerald"
+        className: "bg-primary/10 text-primary"
       }
     : {
         label: "已暂停",
-        className: "bg-amber-50 text-amber-700"
+        className: "bg-amber-500/10 text-amber-600"
       };
 }
 
@@ -362,25 +362,25 @@ export function AccountsManager() {
 
   return (
     <div className="space-y-6">
-      <section className="surface-panel overflow-hidden p-0">
-        <div className="border-b border-brand-line/70 px-6 py-6">
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+      <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
+        <div className="border-b border-border/70 p-5">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
             <div className="max-w-3xl">
-              <p className="eyebrow">Accounts</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Accounts</p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
-                <h2 className="text-3xl font-semibold text-slate-900">返利账号控制台</h2>
-                <span className="rounded-full bg-brand-mist px-3 py-1 text-xs font-semibold text-brand-emerald">
+                <h2 className="text-xl font-semibold tracking-tight tracking-tight text-foreground">返利账号控制台</h2>
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                   {allConsole.overview.totalAccounts} accounts
                 </span>
               </div>
-              <p className="mt-4 text-sm leading-7 text-slate-600">
+              <p className="mt-4 text-sm leading-7 text-muted-foreground">
                 在这里统一维护返利平台账号、收款方式和挂接的 Offer。先看账号覆盖，再补齐平台和投放归属。
               </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
               <button
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
                 onClick={startCreateAccount}
                 type="button"
               >
@@ -388,19 +388,19 @@ export function AccountsManager() {
                 新建账号
               </button>
               <button
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
                 disabled={refreshing}
                 onClick={() => void loadData({ background: true, preserveNotice: true })}
                 type="button"
               >
                 <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
-                {refreshing ? "刷新中..." : "刷新列表"}
+                {refreshing ? "刷新中…" : "刷新列表"}
               </button>
             </div>
           </div>
 
           {error ? (
-            <div className="mt-5 rounded-[24px] border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
+            <div className="mt-5 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
               {error}
             </div>
           ) : null}
@@ -408,10 +408,10 @@ export function AccountsManager() {
           {message ? (
             <div
               className={cn(
-                "mt-5 rounded-[24px] px-4 py-4 text-sm",
+                "mt-5 rounded-xl p-4 text-sm",
                 messageTone === "success"
-                  ? "border border-emerald-200 bg-brand-mist text-brand-emerald"
-                  : "border border-slate-200 bg-stone-50 text-slate-700"
+                  ? "border border-emerald-200 bg-primary/10 text-primary"
+                  : "border border-slate-200 bg-muted/40 text-foreground"
               )}
             >
               {message}
@@ -419,7 +419,7 @@ export function AccountsManager() {
           ) : null}
         </div>
 
-        <div className="grid gap-4 px-6 py-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
           <ShortcutCard
             description="账号创建后通常下一步就是挂接 Offer，方便后续进入换链或补点击流程。"
             href="/offers"
@@ -468,20 +468,20 @@ export function AccountsManager() {
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr),420px]">
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr),420px]">
         <div className="space-y-6">
-          <section className="surface-panel p-6">
+          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p className="eyebrow">筛选与查看</p>
-                <h3 className="mt-2 text-2xl font-semibold text-slate-900">先看账号覆盖，再决定补齐哪一类账号</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">筛选与查看</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">先看账号覆盖，再决定补齐哪一类账号</h3>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
                   支持按平台、状态、提现方式和挂接规模快速筛选，方便你优先处理关键账号。
                 </p>
               </div>
               {hasActiveFilters ? (
                 <button
-                  className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+                  className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
                   onClick={clearFilters}
                   type="button"
                 >
@@ -491,12 +491,12 @@ export function AccountsManager() {
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <label className="block text-sm font-medium text-slate-700 md:col-span-2 xl:col-span-1">
+              <label className="block text-sm font-medium text-foreground md:col-span-2 xl:col-span-1">
                 搜索账号
-                <div className="mt-2 flex items-center gap-3 rounded-2xl border border-brand-line bg-stone-50 px-4 py-3">
-                  <Search className="h-4 w-4 text-slate-400" />
+                <div className="mt-2 flex items-center gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
+                  <Search className="h-4 w-4 text-muted-foreground/80" />
                   <input
-                    className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                    className="w-full bg-transparent text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground/80"
                     onChange={(event) => setSearchQuery(event.target.value)}
                     placeholder="账号名、邮箱、备注、域名"
                     value={searchQuery}
@@ -504,10 +504,10 @@ export function AccountsManager() {
                 </div>
               </label>
 
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 平台
                 <select
-                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                   onChange={(event) =>
                     setPlatformFilter(event.target.value as CashbackAccount["platformCode"] | "all")
                   }
@@ -522,10 +522,10 @@ export function AccountsManager() {
                 </select>
               </label>
 
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 状态
                 <select
-                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                   onChange={(event) =>
                     setStatusFilter(event.target.value as CashbackAccount["status"] | "all")
                   }
@@ -537,10 +537,10 @@ export function AccountsManager() {
                 </select>
               </label>
 
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 提现方式
                 <select
-                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                   onChange={(event) =>
                     setPayoutFilter(event.target.value as CashbackAccount["payoutMethod"] | "all")
                   }
@@ -555,10 +555,10 @@ export function AccountsManager() {
                 </select>
               </label>
 
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 排序
                 <select
-                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                   onChange={(event) => setSort(event.target.value as AccountsConsoleSort)}
                   value={sort}
                 >
@@ -572,16 +572,16 @@ export function AccountsManager() {
             </div>
           </section>
 
-          <section className="surface-panel overflow-hidden p-0">
-            <div className="border-b border-brand-line/70 px-6 py-5">
-              <p className="eyebrow">账号列表</p>
-              <h3 className="mt-2 text-2xl font-semibold text-slate-900">按平台、角色和挂接规模管理账号</h3>
+          <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
+            <div className="border-b border-border/70 p-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">账号列表</p>
+              <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按平台、角色和挂接规模管理账号</h3>
             </div>
 
             {loading ? (
-              <div className="space-y-4 px-6 py-6">
+              <div className="space-y-4 p-5">
                 {Array.from({ length: 4 }).map((_, index) => (
-                  <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-5" key={index}>
+                  <div className="rounded-xl border border-border bg-muted/40 px-4 py-5" key={index}>
                     <div className="h-4 w-32 animate-pulse rounded-full bg-stone-200" />
                     <div className="mt-4 h-4 w-full animate-pulse rounded-full bg-stone-200" />
                     <div className="mt-3 h-4 w-5/6 animate-pulse rounded-full bg-stone-200" />
@@ -589,9 +589,9 @@ export function AccountsManager() {
                 ))}
               </div>
             ) : consoleData.rows.length ? (
-              <div className="overflow-x-auto px-6 py-6">
+              <div className="overflow-x-auto p-5">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="text-slate-500">
+                  <thead className="text-muted-foreground font-medium text-xs border-b border-border">
                     <tr>
                       <th className="pb-3 pr-4">账号</th>
                       <th className="pb-3 pr-4">平台 / 提现</th>
@@ -606,16 +606,16 @@ export function AccountsManager() {
                       const currentStatus = statusMeta(row.account.status);
 
                       return (
-                        <tr className="border-t border-brand-line/60 align-top" key={row.account.id}>
+                        <tr className="border-b border-border hover:bg-muted/30 transition-colors" key={row.account.id}>
                           <td className="py-4 pr-4">
                             <div className="min-w-[220px]">
                               <div className="flex flex-wrap items-center gap-2">
-                                <p className="font-semibold text-slate-900">{row.account.accountName}</p>
-                                <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                                <p className="font-semibold text-foreground">{row.account.accountName}</p>
+                                <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                                   {row.platformLabel}
                                 </span>
                               </div>
-                              <p className="mt-2 text-xs text-slate-500">
+                              <p className="mt-2 text-xs text-muted-foreground">
                                 {row.account.notes?.trim() || "暂无运营备注"}
                               </p>
                             </div>
@@ -623,22 +623,22 @@ export function AccountsManager() {
 
                           <td className="py-4 pr-4">
                             <div className="min-w-[140px]">
-                              <p className="text-slate-700">{row.platformLabel}</p>
-                              <p className="mt-2 text-xs text-slate-500">{row.payoutLabel}</p>
+                              <p className="text-foreground">{row.platformLabel}</p>
+                              <p className="mt-2 text-xs text-muted-foreground">{row.payoutLabel}</p>
                             </div>
                           </td>
 
                           <td className="py-4 pr-4">
                             <div className="min-w-[180px]">
-                              <p className="text-slate-700">{row.account.registerEmail}</p>
-                              <p className="mt-2 text-xs text-slate-500">{row.emailDomain || "--"}</p>
+                              <p className="text-foreground">{row.account.registerEmail}</p>
+                              <p className="mt-2 text-xs text-muted-foreground">{row.emailDomain || "--"}</p>
                             </div>
                           </td>
 
                           <td className="py-4 pr-4">
                             <div className="min-w-[140px]">
-                              <p className="font-mono text-slate-700">{row.linkedOfferCount}</p>
-                              <p className="mt-2 text-xs text-slate-500">
+                              <p className="font-mono text-foreground">{row.linkedOfferCount}</p>
+                              <p className="mt-2 text-xs text-muted-foreground">
                                 {row.linkedOfferCount > 0 ? "已挂接 Offer" : "尚未挂接 Offer"}
                               </p>
                             </div>
@@ -653,14 +653,14 @@ export function AccountsManager() {
                           <td className="py-4">
                             <div className="flex min-w-[160px] flex-wrap justify-end gap-2">
                               <button
-                                className="rounded-full border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+                                className="rounded-full border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground"
                                 onClick={() => handleEdit(row.account)}
                                 type="button"
                               >
                                 编辑
                               </button>
                               <button
-                                className="rounded-full border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600"
+                                className="rounded-full border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive"
                                 onClick={() => void handleDelete(row.account.id)}
                                 type="button"
                               >
@@ -676,16 +676,16 @@ export function AccountsManager() {
               </div>
             ) : (
               <div className="px-6 py-10 text-center">
-                <p className="text-base font-semibold text-slate-900">
+                <p className="text-base font-semibold text-foreground">
                   {hasActiveFilters ? "当前筛选条件下没有账号" : "还没有返利账号"}
                 </p>
-                <p className="mt-3 text-sm leading-6 text-slate-500">
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
                   先创建返利平台账号，再继续挂接 Offer 和自动化任务。
                 </p>
                 <div className="mt-5 flex flex-wrap justify-center gap-3">
                   {hasActiveFilters ? (
                     <button
-                      className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700"
+                      className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
                       onClick={clearFilters}
                       type="button"
                     >
@@ -693,7 +693,7 @@ export function AccountsManager() {
                     </button>
                   ) : null}
                   <button
-                    className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white"
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
                     onClick={startCreateAccount}
                     type="button"
                   >
@@ -706,20 +706,20 @@ export function AccountsManager() {
         </div>
 
         <div className="space-y-6">
-          <section className="surface-panel p-6" id="account-editor">
-            <p className="eyebrow">{editingId ? "编辑账号" : "新建账号"}</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">
+          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" id="account-editor">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">{editingId ? "编辑账号" : "新建账号"}</p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
               {editingId ? "更新当前返利账号" : "补齐新的返利平台账号"}
             </h3>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
               建议按运营人、平台角色或国家维度命名，后续在 Offer 和任务页更容易识别。
             </p>
 
             <form className="mt-6 space-y-4" onSubmit={submitForm}>
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 平台
                 <select
-                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 outline-none transition focus:border-brand-emerald focus:bg-white"
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
                   onChange={(event) =>
                     setForm({
                       ...form,
@@ -736,20 +736,20 @@ export function AccountsManager() {
                 </select>
               </label>
 
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 账号名
                 <input
-                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-brand-emerald focus:bg-white"
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
                   onChange={(event) => setForm({ ...form, accountName: event.target.value })}
                   placeholder="例如：TopCashback-US-Main"
                   value={form.accountName}
                 />
               </label>
 
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 注册邮箱
                 <input
-                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-brand-emerald focus:bg-white"
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
                   onChange={(event) => setForm({ ...form, registerEmail: event.target.value })}
                   placeholder="用于登录或收款确认的邮箱"
                   type="email"
@@ -758,10 +758,10 @@ export function AccountsManager() {
               </label>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   提现方式
                   <select
-                    className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 outline-none transition focus:border-brand-emerald focus:bg-white"
+                    className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
                     onChange={(event) =>
                       setForm({
                         ...form,
@@ -778,10 +778,10 @@ export function AccountsManager() {
                   </select>
                 </label>
 
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   状态
                   <select
-                    className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 outline-none transition focus:border-brand-emerald focus:bg-white"
+                    className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
                     onChange={(event) =>
                       setForm({
                         ...form,
@@ -796,10 +796,10 @@ export function AccountsManager() {
                 </label>
               </div>
 
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 备注
                 <textarea
-                  className="mt-2 min-h-28 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-brand-emerald focus:bg-white"
+                  className="mt-2 min-h-28 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
                   onChange={(event) => setForm({ ...form, notes: event.target.value })}
                   placeholder="记录收款规则、登录注意事项、账号负责人等"
                   value={form.notes}
@@ -808,15 +808,15 @@ export function AccountsManager() {
 
               <div className="flex flex-wrap gap-3 pt-2">
                 <button
-                  className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                   disabled={pending}
                   type="submit"
                 >
-                  {pending ? "保存中..." : editingId ? "更新账号" : "创建账号"}
+                  {pending ? "保存中…" : editingId ? "更新账号" : "创建账号"}
                 </button>
                 {editingId ? (
                   <button
-                    className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700"
+                    className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
                     onClick={resetForm}
                     type="button"
                   >
@@ -827,25 +827,25 @@ export function AccountsManager() {
             </form>
           </section>
 
-          <section className="surface-panel p-6">
-            <p className="eyebrow">重点提醒</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">优先检查这些账号</h3>
+          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">重点提醒</p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">优先检查这些账号</h3>
 
             <div className="mt-5 space-y-4">
               {pausedRows.map((row) => (
                 <button
-                  className="w-full rounded-[24px] border border-brand-line bg-white px-4 py-4 text-left transition hover:bg-stone-50"
+                  className="w-full rounded-xl border border-border bg-background p-4 text-left transition hover:bg-muted/40"
                   key={`paused-${row.account.id}`}
                   onClick={() => handleEdit(row.account)}
                   type="button"
                 >
                   <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
                       <CreditCard className="h-4 w-4" />
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900">{row.account.accountName}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                      <p className="text-sm font-semibold text-foreground">{row.account.accountName}</p>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
                         当前账号已暂停，建议确认是否仍有挂接 Offer 或是否需要重新启用。
                       </p>
                     </div>
@@ -855,18 +855,18 @@ export function AccountsManager() {
 
               {denseRows.map((row) => (
                 <button
-                  className="w-full rounded-[24px] border border-brand-line bg-white px-4 py-4 text-left transition hover:bg-stone-50"
+                  className="w-full rounded-xl border border-border bg-background p-4 text-left transition hover:bg-muted/40"
                   key={`dense-${row.account.id}`}
                   onClick={() => handleEdit(row.account)}
                   type="button"
                 >
                   <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                       <WalletCards className="h-4 w-4" />
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900">{row.account.accountName}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                      <p className="text-sm font-semibold text-foreground">{row.account.accountName}</p>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
                         当前已挂接 {row.linkedOfferCount} 个 Offer，属于核心账号，建议保证备注和收款方式信息完整。
                       </p>
                     </div>
@@ -875,7 +875,7 @@ export function AccountsManager() {
               ))}
 
               {!pausedRows.length && !denseRows.length ? (
-                <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4 text-sm leading-6 text-slate-600">
+                <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
                   当前没有明显需要优先处理的账号，可以继续补齐新的平台账号。
                 </div>
               ) : null}

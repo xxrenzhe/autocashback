@@ -292,13 +292,13 @@ export function AdminUsersManager() {
 
   function renderSortIcon(field: SortField) {
     if (sortField !== field) {
-      return <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />;
+      return <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/80" />;
     }
 
     return sortDirection === "asc" ? (
-      <ArrowUp className="h-3.5 w-3.5 text-slate-700" />
+      <ArrowUp className="h-3.5 w-3.5 text-foreground" />
     ) : (
-      <ArrowDown className="h-3.5 w-3.5 text-slate-700" />
+      <ArrowDown className="h-3.5 w-3.5 text-foreground" />
     );
   }
 
@@ -653,21 +653,21 @@ export function AdminUsersManager() {
 
   return (
     <div className="space-y-6">
-      <section className="surface-panel overflow-hidden p-0">
+      <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
         <div className="grid gap-0 xl:grid-cols-[1.05fr,0.95fr]">
           <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="eyebrow">Admin</p>
-                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">用户管理</h2>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Admin</p>
+                <h2 className="mt-3 text-xl font-semibold tracking-tight tracking-tight tracking-tight text-foreground">用户管理</h2>
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
                   管理后台账号、角色边界、登录会话和密码重置，优先保证运营账号可用、管理员权限收敛。
                 </p>
               </div>
 
               <div className="flex flex-wrap gap-2">
                 <button
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-brand-line bg-white/90 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-emerald-200 hover:text-brand-emerald disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background/90 px-3 py-2 text-sm font-semibold text-foreground transition hover:border-emerald-200 hover:text-primary disabled:opacity-60"
                   disabled={loading}
                   onClick={() => void loadUsers({ page: pagination.page })}
                   type="button"
@@ -676,7 +676,7 @@ export function AdminUsersManager() {
                   刷新列表
                 </button>
                 <button
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
                   onClick={() => setCreateOpen(true)}
                   type="button"
                 >
@@ -700,10 +700,10 @@ export function AdminUsersManager() {
             </div>
           </div>
 
-          <div className="bg-white px-6 py-7 sm:px-8">
-            <p className="eyebrow">Overview</p>
-            <h3 className="mt-3 text-2xl font-semibold text-slate-900">当前页用户态势</h3>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
+          <div className="bg-background px-6 py-7 sm:px-8">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Overview</p>
+            <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">当前页用户态势</h3>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
               先看启用率、锁定数和风险账号，再决定是做权限调整、密码重置还是停用处理。
             </p>
 
@@ -743,10 +743,10 @@ export function AdminUsersManager() {
             </div>
 
             {overview.pageDisabledCount > 0 ? (
-              <div className="mt-4 flex flex-col gap-3 rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
                 <p>当前页有 {overview.pageDisabledCount} 个已停用账号。删除用户前需要先保持停用状态，避免误删仍在使用中的账号。</p>
                 <button
-                  className="inline-flex items-center justify-center rounded-2xl border border-brand-line bg-white px-4 py-2 font-semibold text-slate-700 transition hover:border-emerald-200 hover:text-brand-emerald"
+                  className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-4 py-2 font-semibold text-foreground transition hover:border-emerald-200 hover:text-primary"
                   onClick={() => setStatusFilter("disabled")}
                   type="button"
                 >
@@ -758,16 +758,16 @@ export function AdminUsersManager() {
         </div>
       </section>
 
-      <section className="surface-panel p-6">
+      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="eyebrow">Action</p>
-            <h3 className="mt-3 text-2xl font-semibold text-slate-900">行动队列</h3>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Action</p>
+            <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">行动队列</h3>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
               从当前页用户里挑出最该优先处理的账号。先解锁、再核查共享风险，最后再做恢复、停用或密码收口。
             </p>
           </div>
-          <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-3 text-sm text-slate-600">
+          <div className="rounded-xl border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
             {actionQueue.length
               ? `已为你挑出 ${actionQueue.length} 个优先动作`
               : "当前页暂无需要立即处理的账号"}
@@ -785,25 +785,25 @@ export function AdminUsersManager() {
             ))}
           </div>
         ) : (
-          <div className="mt-6 rounded-[28px] border border-brand-line bg-[linear-gradient(180deg,rgba(236,253,245,0.8)_0%,rgba(255,255,255,0.95)_100%)] px-6 py-8 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+          <div className="mt-6 rounded-xl border border-border bg-[linear-gradient(180deg,rgba(236,253,245,0.8)_0%,rgba(255,255,255,0.95)_100%)] px-6 py-8 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Check className="h-6 w-6" />
             </div>
-            <p className="mt-4 text-base font-semibold text-slate-900">当前页没有待优先处理项</p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
+            <p className="mt-4 text-base font-semibold text-foreground">当前页没有待优先处理项</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
               可以切到“风险账号”“已锁定”或“活跃会话”视角继续巡检，或直接新建后台账号。
             </p>
           </div>
         )}
       </section>
 
-      <section className="surface-panel p-6">
+      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
             <label className="relative flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/80" />
               <input
-                className="w-full rounded-2xl border border-brand-line bg-stone-50 py-3 pl-11 pr-4 text-sm text-slate-800"
+                className="w-full rounded-lg border border-border bg-muted/40 py-3 pl-11 pr-4 text-sm text-foreground"
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="搜索用户名或邮箱"
                 value={searchQuery}
@@ -811,7 +811,7 @@ export function AdminUsersManager() {
             </label>
 
             <select
-              className="rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 text-sm text-slate-800"
+              className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground"
               onChange={(event) => setRoleFilter(event.target.value as "all" | "admin" | "user")}
               value={roleFilter}
             >
@@ -821,7 +821,7 @@ export function AdminUsersManager() {
             </select>
 
             <select
-              className="rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 text-sm text-slate-800"
+              className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground"
               onChange={(event) => void loadUsers({ page: 1, limit: Number(event.target.value || 10) })}
               value={pagination.limit}
             >
@@ -831,7 +831,7 @@ export function AdminUsersManager() {
             </select>
           </div>
 
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             共 {pagination.total} 个用户，当前第 {pagination.page} / {pagination.totalPages} 页
           </p>
         </div>
@@ -840,24 +840,24 @@ export function AdminUsersManager() {
           <div className="flex flex-wrap gap-2">
             {STATUS_FILTER_OPTIONS.map((option) => (
               <button
-                className={`rounded-2xl border px-4 py-3 text-left transition ${
+                className={`rounded-lg border px-3 py-2 text-left transition ${
                   statusFilter === option.value
-                    ? "border-emerald-300 bg-brand-mist text-brand-emerald shadow-[0_10px_30px_rgba(5,150,105,0.08)]"
-                    : "border-brand-line bg-white text-slate-700 hover:border-emerald-200 hover:text-brand-emerald"
+                    ? "border-emerald-300 bg-primary/10 text-primary shadow-[0_10px_30px_rgba(5,150,105,0.08)]"
+                    : "border-border bg-background text-foreground hover:border-emerald-200 hover:text-primary"
                 }`}
                 key={option.value}
                 onClick={() => setStatusFilter(option.value)}
                 type="button"
               >
                 <p className="text-sm font-semibold">{option.label}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">{option.description}</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">{option.description}</p>
               </button>
             ))}
           </div>
 
           {(searchQuery || roleFilter !== "all" || statusFilter !== "all") ? (
             <button
-              className="inline-flex items-center justify-center rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-emerald-200 hover:text-brand-emerald"
+              className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground transition hover:border-emerald-200 hover:text-primary"
               onClick={() => {
                 setSearchQuery("");
                 setRoleFilter("all");
@@ -871,12 +871,12 @@ export function AdminUsersManager() {
         </div>
 
         {message ? <p className="mt-4 text-sm text-emerald-700">{message}</p> : null}
-        {error ? <p className="mt-4 text-sm text-red-700">{error}</p> : null}
+        {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
 
-        <div className="mt-6 overflow-x-auto rounded-[28px] border border-brand-line">
+        <div className="mt-6 overflow-x-auto rounded-xl border border-border">
           <table className="min-w-[1160px] w-full text-left text-sm">
-            <thead className="bg-stone-50 text-slate-500">
-              <tr className="border-b border-brand-line/70">
+            <thead className="bg-muted/40 text-muted-foreground">
+              <tr className="border-b border-border/70">
                 <SortableHeader field="username" label="用户" onSort={handleSort} renderIcon={renderSortIcon} />
                 <SortableHeader field="role" label="角色" onSort={handleSort} renderIcon={renderSortIcon} />
                 <SortableHeader field="status" label="状态与风险" onSort={handleSort} renderIcon={renderSortIcon} />
@@ -886,10 +886,10 @@ export function AdminUsersManager() {
                 <th className="pb-3 text-right">操作</th>
               </tr>
             </thead>
-            <tbody className="bg-white">
+            <tbody className="bg-background">
               {loading ? (
                 <tr>
-                  <td className="px-4 py-8 text-slate-500" colSpan={7}>
+                  <td className="px-4 py-8 text-muted-foreground" colSpan={7}>
                     正在加载用户列表...
                   </td>
                 </tr>
@@ -897,7 +897,7 @@ export function AdminUsersManager() {
 
               {emptyState ? (
                 <tr>
-                  <td className="px-4 py-8 text-slate-500" colSpan={7}>
+                  <td className="px-4 py-8 text-muted-foreground" colSpan={7}>
                     当前筛选条件下没有用户。
                   </td>
                 </tr>
@@ -906,52 +906,52 @@ export function AdminUsersManager() {
               {!loading
                 ? users.map((user) => (
                     <tr className={getUserRowClassName(user)} key={user.id}>
-                      <td className="px-4 py-4 pr-4">
+                      <td className="p-4 pr-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-mist text-sm font-semibold text-brand-emerald">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">
                             {user.username.slice(0, 2).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <p className="truncate font-medium text-slate-900">{user.username}</p>
-                            <p className="truncate text-xs text-slate-500">{user.email || "未设置邮箱"}</p>
-                            <p className="mt-1 text-xs text-slate-400">ID {user.id}</p>
+                            <p className="truncate font-medium text-foreground">{user.username}</p>
+                            <p className="truncate text-xs text-muted-foreground">{user.email || "未设置邮箱"}</p>
+                            <p className="mt-1 text-xs text-muted-foreground/80">ID {user.id}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4 pr-4">
+                      <td className="p-4 pr-4">
                         <span
                           className={`rounded-full px-3 py-1 text-xs font-semibold ${
                             user.role === "admin"
-                              ? "bg-amber-50 text-amber-700"
-                              : "bg-slate-100 text-slate-700"
+                              ? "bg-amber-500/10 text-amber-600"
+                              : "bg-slate-100 text-foreground"
                           }`}
                         >
                           {user.role === "admin" ? "管理员" : "普通用户"}
                         </span>
                       </td>
-                      <td className="px-4 py-4 pr-4">
+                      <td className="p-4 pr-4">
                         <div className="space-y-2">
                           <div className="flex flex-wrap gap-2">
                             <span className={getStatusBadgeClass(user)}>
                               {getStatusBadgeLabel(user)}
                             </span>
                             {user.failedLoginCount > 0 ? (
-                              <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                              <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
                                 失败 {user.failedLoginCount} 次
                               </span>
                             ) : null}
                           </div>
-                          <p className="text-xs leading-5 text-slate-500">{getUserRiskSummary(user)}</p>
+                          <p className="text-xs leading-5 text-muted-foreground">{getUserRiskSummary(user)}</p>
                         </div>
                       </td>
-                      <td className="px-4 py-4 pr-4">
-                        <div className="space-y-1 text-sm text-slate-700">
+                      <td className="p-4 pr-4">
+                        <div className="space-y-1 text-sm text-foreground">
                           <p>
                             {user.activeSessionCount > 0
                               ? `${user.activeSessionCount} 个活跃会话`
                               : "暂无活跃会话"}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-muted-foreground">
                             {!user.isActive
                               ? "账号已停用，现有会话会被系统回收。"
                               : user.activeSessionCount > 0
@@ -960,9 +960,9 @@ export function AdminUsersManager() {
                           </p>
                         </div>
                       </td>
-                      <td className="px-4 py-4 pr-4 text-slate-700">{formatDateTime(user.lastLoginAt)}</td>
-                      <td className="px-4 py-4 pr-4 text-slate-700">{formatDateTime(user.createdAt)}</td>
-                      <td className="px-4 py-4">
+                      <td className="p-4 pr-4 text-foreground">{formatDateTime(user.lastLoginAt)}</td>
+                      <td className="p-4 pr-4 text-foreground">{formatDateTime(user.createdAt)}</td>
+                      <td className="p-4">
                         <div className="flex flex-wrap justify-end gap-2">
                           <ActionButton
                             disabled={actionLoading !== null}
@@ -1025,14 +1025,14 @@ export function AdminUsersManager() {
           </table>
         </div>
 
-        <div className="mt-6 flex flex-col gap-3 border-t border-brand-line/60 pt-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-6 flex flex-col gap-3 border-t border-border/60 pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <p>搜索、角色和状态视角会实时生效，列表默认按创建时间倒序排列。</p>
             <p>停用会立即回收现有会话；解除锁定会同步清空失败登录计数；安全告警会按多 IP、多会话和失败登录自动汇总。</p>
           </div>
           <div className="flex gap-2">
             <button
-              className="rounded-2xl border border-brand-line bg-white px-4 py-2 font-medium disabled:opacity-40"
+              className="rounded-lg border border-border bg-background px-4 py-2 font-medium disabled:opacity-40"
               disabled={pagination.page <= 1 || loading}
               onClick={() => void loadUsers({ page: pagination.page - 1 })}
               type="button"
@@ -1040,7 +1040,7 @@ export function AdminUsersManager() {
               上一页
             </button>
             <button
-              className="rounded-2xl border border-brand-line bg-white px-4 py-2 font-medium disabled:opacity-40"
+              className="rounded-lg border border-border bg-background px-4 py-2 font-medium disabled:opacity-40"
               disabled={pagination.page >= pagination.totalPages || loading}
               onClick={() => void loadUsers({ page: pagination.page + 1 })}
               type="button"
@@ -1053,24 +1053,24 @@ export function AdminUsersManager() {
 
       <ModalFrame
         description="创建新的后台用户，并在完成后复制登录信息。"
-        eyebrow="用户管理"
+        text-xs font-semibold uppercase tracking-wider text-primary="用户管理"
         onClose={() => setCreateOpen(false)}
         open={createOpen}
         title="新建用户"
       >
         <form className="space-y-5" onSubmit={handleCreateUser}>
           <div className="grid gap-4 md:grid-cols-[1fr,auto]">
-            <label className="block text-sm text-slate-700">
+            <label className="block text-sm text-foreground">
               用户名
               <input
-                className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                 onChange={(event) => setCreateForm((current) => ({ ...current, username: event.target.value }))}
                 placeholder="请输入用户名"
                 value={createForm.username}
               />
             </label>
             <button
-              className="mt-7 rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+              className="mt-7 rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground"
               onClick={generateUsername}
               type="button"
             >
@@ -1078,10 +1078,10 @@ export function AdminUsersManager() {
             </button>
           </div>
 
-          <label className="block text-sm text-slate-700">
+          <label className="block text-sm text-foreground">
             邮箱
             <input
-              className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+              className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
               onChange={(event) => setCreateForm((current) => ({ ...current, email: event.target.value }))}
               placeholder="请输入邮箱"
               value={createForm.email}
@@ -1089,10 +1089,10 @@ export function AdminUsersManager() {
           </label>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="block text-sm text-slate-700">
+            <label className="block text-sm text-foreground">
               角色
               <select
-                className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                 onChange={(event) =>
                   setCreateForm((current) => ({
                     ...current,
@@ -1106,10 +1106,10 @@ export function AdminUsersManager() {
               </select>
             </label>
 
-            <label className="block text-sm text-slate-700">
+            <label className="block text-sm text-foreground">
               初始密码
               <input
-                className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                 onChange={(event) => setCreateForm((current) => ({ ...current, password: event.target.value }))}
                 placeholder="留空则自动生成"
                 type="password"
@@ -1120,14 +1120,14 @@ export function AdminUsersManager() {
 
           <div className="flex justify-end gap-3">
             <button
-              className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700"
+              className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
               onClick={() => setCreateOpen(false)}
               type="button"
             >
               取消
             </button>
             <button
-              className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
               disabled={submitting}
               type="submit"
             >
@@ -1139,25 +1139,25 @@ export function AdminUsersManager() {
 
       <ModalFrame
         description="更新用户邮箱和角色。"
-        eyebrow="用户管理"
+        text-xs font-semibold uppercase tracking-wider text-primary="用户管理"
         onClose={() => setEditOpen(false)}
         open={editOpen}
         title={selectedUser ? `编辑 ${selectedUser.username}` : "编辑用户"}
       >
         <form className="space-y-5" onSubmit={handleEditUser}>
-          <label className="block text-sm text-slate-700">
+          <label className="block text-sm text-foreground">
             邮箱
             <input
-              className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+              className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
               onChange={(event) => setEditForm((current) => ({ ...current, email: event.target.value }))}
               value={editForm.email}
             />
           </label>
 
-          <label className="block text-sm text-slate-700">
+          <label className="block text-sm text-foreground">
             角色
             <select
-              className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+              className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
               onChange={(event) =>
                 setEditForm((current) => ({
                   ...current,
@@ -1173,18 +1173,18 @@ export function AdminUsersManager() {
 
           <div className="flex justify-end gap-3">
             <button
-              className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700"
+              className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
               onClick={() => setEditOpen(false)}
               type="button"
             >
               取消
             </button>
             <button
-              className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
               disabled={submitting}
               type="submit"
             >
-              {submitting ? "保存中..." : "保存修改"}
+              {submitting ? "保存中…" : "保存修改"}
             </button>
           </div>
         </form>
@@ -1192,23 +1192,23 @@ export function AdminUsersManager() {
 
       <ModalFrame
         description="请立即复制并安全发送给对应用户。"
-        eyebrow="用户管理"
+        text-xs font-semibold uppercase tracking-wider text-primary="用户管理"
         onClose={() => setResetPasswordOpen(false)}
         open={resetPasswordOpen}
         title="密码信息"
       >
         {resetPasswordData ? (
           <div className="space-y-4">
-            <div className="rounded-[28px] border border-brand-line bg-stone-50 p-5">
-              <p className="text-sm text-slate-500">用户名</p>
-              <p className="mt-1 font-medium text-slate-900">{resetPasswordData.username}</p>
-              <p className="mt-4 text-sm text-slate-500">密码</p>
-              <p className="mt-1 font-mono text-base text-slate-900">{resetPasswordData.password}</p>
+            <div className="rounded-xl border border-border bg-muted/40 p-5">
+              <p className="text-sm text-muted-foreground">用户名</p>
+              <p className="mt-1 font-medium text-foreground">{resetPasswordData.username}</p>
+              <p className="mt-4 text-sm text-muted-foreground">密码</p>
+              <p className="mt-1 font-mono text-base text-foreground">{resetPasswordData.password}</p>
             </div>
 
             <div className="flex justify-end gap-3">
               <button
-                className="inline-flex items-center gap-2 rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
                 onClick={() => void copyPassword()}
                 type="button"
               >
@@ -1222,18 +1222,18 @@ export function AdminUsersManager() {
 
       <ModalFrame
         description={selectedUser ? `查看 ${selectedUser.username} 最近的登录会话记录。` : undefined}
-        eyebrow="用户管理"
+        text-xs font-semibold uppercase tracking-wider text-primary="用户管理"
         onClose={() => setHistoryOpen(false)}
         open={historyOpen}
         title="登录记录"
       >
         {historyLoading ? (
-          <p className="text-sm text-slate-500">正在加载登录记录...</p>
+          <p className="text-sm text-muted-foreground">正在加载登录记录...</p>
         ) : (
           <div className="space-y-3">
             {loginHistory.length ? (
               loginHistory.map((record) => (
-                <div className="rounded-[24px] border border-brand-line bg-stone-50 p-4" key={record.id}>
+                <div className="rounded-xl border border-border bg-muted/40 p-4" key={record.id}>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-2">
                       <span
@@ -1241,29 +1241,29 @@ export function AdminUsersManager() {
                           record.status === "active"
                             ? "bg-emerald-50 text-emerald-700"
                             : record.status === "expired"
-                              ? "bg-stone-200 text-slate-700"
+                              ? "bg-stone-200 text-foreground"
                               : record.status === "locked"
-                                ? "bg-red-50 text-red-700"
+                                ? "bg-destructive/10 text-destructive"
                                 : record.status === "failed"
-                                  ? "bg-amber-50 text-amber-700"
-                              : "bg-amber-50 text-amber-700"
+                                  ? "bg-amber-500/10 text-amber-600"
+                              : "bg-amber-500/10 text-amber-600"
                         }`}
                       >
                         {getLoginHistoryStatusLabel(record)}
                       </span>
                       {record.sessionId ? (
-                        <span className="text-xs text-slate-500">{record.sessionId.slice(0, 12)}...</span>
+                        <span className="text-xs text-muted-foreground">{record.sessionId.slice(0, 12)}...</span>
                       ) : (
-                        <span className="text-xs text-slate-500">{record.source === "audit" ? "审计事件" : "登录事件"}</span>
+                        <span className="text-xs text-muted-foreground">{record.source === "audit" ? "审计事件" : "登录事件"}</span>
                       )}
                     </div>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-muted-foreground">
                       {record.lastActivityAt
                         ? `最后活动：${formatDateTime(record.lastActivityAt)}`
                         : `记录时间：${formatDateTime(record.createdAt)}`}
                     </span>
                   </div>
-                  <div className="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+                  <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
                     <p>登录时间：{formatDateTime(record.createdAt)}</p>
                     <p>{record.expiresAt ? `过期时间：${formatDateTime(record.expiresAt)}` : `事件类型：${getLoginHistoryEventLabel(record.eventType)}`}</p>
                     <p>IP：{record.ipAddress || "--"}</p>
@@ -1275,7 +1275,7 @@ export function AdminUsersManager() {
                 </div>
               ))
             ) : (
-              <p className="text-sm text-slate-500">暂无登录记录。</p>
+              <p className="text-sm text-muted-foreground">暂无登录记录。</p>
             )}
           </div>
         )}
@@ -1283,23 +1283,23 @@ export function AdminUsersManager() {
 
       <ModalFrame
         description={alertsUser ? `查看 ${alertsUser.username} 当前的登录与会话风险。` : undefined}
-        eyebrow="用户管理"
+        text-xs font-semibold uppercase tracking-wider text-primary="用户管理"
         onClose={() => setAlertsOpen(false)}
         open={alertsOpen}
         title="安全告警"
       >
         {alertsLoading ? (
-          <p className="text-sm text-slate-500">正在分析安全告警...</p>
+          <p className="text-sm text-muted-foreground">正在分析安全告警...</p>
         ) : securityAlerts.length ? (
           <div className="space-y-3">
             {securityAlerts.map((alert) => (
               <div
-                className={`rounded-[24px] border p-4 ${
+                className={`rounded-xl border p-4 ${
                   alert.severity === "critical"
-                    ? "border-red-200 bg-red-50"
+                    ? "border-destructive/20 bg-destructive/10"
                     : alert.severity === "warning"
-                      ? "border-amber-200 bg-amber-50"
-                      : "border-brand-line bg-stone-50"
+                      ? "border-amber-200 bg-amber-500/10"
+                      : "border-border bg-muted/40"
                 }`}
                 key={alert.id}
               >
@@ -1309,12 +1309,12 @@ export function AdminUsersManager() {
                       <span className={getAlertSeverityBadgeClass(alert.severity)}>
                         {getAlertSeverityLabel(alert.severity)}
                       </span>
-                      <span className="text-xs text-slate-500">{formatDateTime(alert.createdAt)}</span>
+                      <span className="text-xs text-muted-foreground">{formatDateTime(alert.createdAt)}</span>
                     </div>
-                    <p className="mt-3 text-sm font-semibold text-slate-900">{alert.title}</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{alert.description}</p>
+                    <p className="mt-3 text-sm font-semibold text-foreground">{alert.title}</p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{alert.description}</p>
                   </div>
-                  <div className="rounded-2xl bg-white/80 px-3 py-2 text-xs font-medium text-slate-500">
+                  <div className="rounded-lg bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground">
                     {getAlertCategoryLabel(alert.category)}
                   </div>
                 </div>
@@ -1322,9 +1322,9 @@ export function AdminUsersManager() {
                 {alert.evidence.length ? (
                   <div className="mt-4 grid gap-2 sm:grid-cols-2">
                     {alert.evidence.map((item) => (
-                      <div className="rounded-2xl bg-white/80 px-3 py-3" key={`${alert.id}-${item.label}`}>
-                        <p className="text-xs text-slate-500">{item.label}</p>
-                        <p className="mt-1 text-sm font-medium text-slate-900">{item.value}</p>
+                      <div className="rounded-lg bg-background/80 px-3 py-3" key={`${alert.id}-${item.label}`}>
+                        <p className="text-xs text-muted-foreground">{item.label}</p>
+                        <p className="mt-1 text-sm font-medium text-foreground">{item.value}</p>
                       </div>
                     ))}
                   </div>
@@ -1333,12 +1333,12 @@ export function AdminUsersManager() {
             ))}
           </div>
         ) : (
-          <div className="rounded-[28px] border border-brand-line bg-stone-50 px-5 py-8 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+          <div className="rounded-xl border border-border bg-muted/40 px-5 py-8 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <ShieldAlert className="h-6 w-6" />
             </div>
-            <p className="mt-4 text-base font-semibold text-slate-900">暂无安全告警</p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
+            <p className="mt-4 text-base font-semibold text-foreground">暂无安全告警</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
               最近没有检测到高失败登录、多地点活跃会话或异常分散的登录来源。
             </p>
           </div>
@@ -1396,14 +1396,14 @@ function getUserLockMinutes(lockedUntil: string | null) {
 
 function getStatusBadgeClass(user: AdminUser) {
   if (!user.isActive) {
-    return "rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700";
+    return "rounded-full bg-destructive/10 px-3 py-1 text-xs font-semibold text-destructive";
   }
 
   if (isUserLocked(user)) {
-    return "rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700";
+    return "rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600";
   }
 
-  return "rounded-full bg-brand-mist px-3 py-1 text-xs font-semibold text-brand-emerald";
+  return "rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary";
 }
 
 function getStatusBadgeLabel(user: AdminUser) {
@@ -1437,18 +1437,18 @@ function getUserRiskSummary(user: AdminUser) {
 
 function getUserRowClassName(user: AdminUser) {
   if (!user.isActive) {
-    return "border-b border-brand-line/40 bg-red-50/35 align-top last:border-b-0";
+    return "border-b border-border/40 bg-destructive/10/35 align-top last:border-b-0";
   }
 
   if (isUserLocked(user) || user.failedLoginCount > 0) {
-    return "border-b border-brand-line/40 bg-amber-50/35 align-top last:border-b-0";
+    return "border-b border-border/40 bg-amber-500/10/35 align-top last:border-b-0";
   }
 
   if (user.activeSessionCount > 0) {
-    return "border-b border-brand-line/40 bg-emerald-50/30 align-top last:border-b-0";
+    return "border-b border-border/40 bg-emerald-50/30 align-top last:border-b-0";
   }
 
-  return "border-b border-brand-line/40 align-top last:border-b-0";
+  return "border-b border-border/40 align-top last:border-b-0";
 }
 
 function getLoginHistoryStatusLabel(record: LoginRecord) {
@@ -1485,14 +1485,14 @@ function getLoginHistoryEventLabel(eventType: LoginRecord["eventType"]) {
 
 function getAlertSeverityBadgeClass(severity: SecurityAlert["severity"]) {
   if (severity === "critical") {
-    return "rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700";
+    return "rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-destructive";
   }
 
   if (severity === "warning") {
-    return "rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700";
+    return "rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-600";
   }
 
-  return "rounded-full bg-brand-mist px-3 py-1 text-xs font-semibold text-brand-emerald";
+  return "rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary";
 }
 
 function getAlertSeverityLabel(severity: SecurityAlert["severity"]) {
@@ -1532,14 +1532,14 @@ function QuickActionCard(props: {
   const Icon = props.icon;
 
   return (
-    <div className="rounded-[24px] border border-brand-line bg-white/90 px-4 py-4">
+    <div className="rounded-xl border border-border bg-background/90 p-4">
       <div className="flex items-center justify-between gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+        <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <Icon className="h-5 w-5" />
         </span>
       </div>
-      <p className="mt-4 text-sm font-semibold text-slate-900">{props.title}</p>
-      <p className="mt-2 text-sm leading-6 text-slate-500">{props.description}</p>
+      <p className="mt-4 text-sm font-semibold text-foreground">{props.title}</p>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{props.description}</p>
     </div>
   );
 }
@@ -1554,34 +1554,34 @@ function AdminOverviewCard(props: {
 }) {
   const toneClass =
     props.tone === "emerald"
-      ? "bg-brand-mist text-brand-emerald"
+      ? "bg-primary/10 text-primary"
       : props.tone === "amber"
-        ? "bg-amber-50 text-amber-700"
-        : "bg-slate-100 text-slate-700";
+        ? "bg-amber-500/10 text-amber-600"
+        : "bg-slate-100 text-foreground";
   const valueClass =
     props.tone === "emerald"
-      ? "text-brand-emerald"
+      ? "text-primary"
       : props.tone === "amber"
-        ? "text-amber-700"
-        : "text-slate-900";
+        ? "text-amber-600"
+        : "text-foreground";
 
   const content = (
     <>
       <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${toneClass}`}>
         {props.label}
       </span>
-      <p className={`mt-4 font-mono text-3xl font-semibold ${valueClass}`}>{props.value}</p>
-      <p className="mt-2 text-sm leading-6 text-slate-500">{props.note}</p>
+      <p className={`mt-4 font-mono text-xl font-semibold tracking-tight tracking-tight ${valueClass}`}>{props.value}</p>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{props.note}</p>
     </>
   );
 
   if (props.onClick) {
     return (
       <button
-        className={`rounded-[24px] border px-4 py-4 text-left transition ${
+        className={`rounded-xl border p-4 text-left transition ${
           props.selected
-            ? "border-emerald-300 bg-[linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] shadow-[0_12px_30px_rgba(5,150,105,0.08)]"
-            : "border-brand-line bg-stone-50 hover:border-emerald-200 hover:bg-white"
+            ? "border-emerald-300 bg-card shadow-[0_12px_30px_rgba(5,150,105,0.08)]"
+            : "border-border bg-muted/40 hover:border-emerald-200 hover:bg-background"
         }`}
         onClick={props.onClick}
         type="button"
@@ -1592,7 +1592,7 @@ function AdminOverviewCard(props: {
   }
 
   return (
-    <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4">
+    <div className="rounded-xl border border-border bg-muted/40 p-4">
       {content}
     </div>
   );
@@ -1607,51 +1607,51 @@ function ActionQueueCard(props: {
 }) {
   const toneClass =
     props.item.tone === "critical"
-      ? "border-red-200 bg-red-50/80"
+      ? "border-destructive/20 bg-destructive/10/80"
       : props.item.tone === "warning"
-        ? "border-amber-200 bg-amber-50/80"
-        : "border-brand-line bg-stone-50";
+        ? "border-amber-200 bg-amber-500/10/80"
+        : "border-border bg-muted/40";
   const badgeClass =
     props.item.tone === "critical"
-      ? "bg-red-100 text-red-700"
+      ? "bg-red-100 text-destructive"
       : props.item.tone === "warning"
-        ? "bg-amber-100 text-amber-700"
-        : "bg-brand-mist text-brand-emerald";
+        ? "bg-amber-100 text-amber-600"
+        : "bg-primary/10 text-primary";
 
   return (
-    <div className={`rounded-[28px] border px-5 py-5 ${toneClass}`}>
+    <div className={`rounded-xl border px-5 py-5 ${toneClass}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${badgeClass}`}>
             {getActionQueueToneLabel(props.item.tone)}
           </span>
-          <p className="mt-3 text-base font-semibold text-slate-900">{props.item.title}</p>
+          <p className="mt-3 text-base font-semibold text-foreground">{props.item.title}</p>
         </div>
-        <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-600">
+        <span className="rounded-full bg-background/90 px-3 py-1 text-xs font-semibold text-muted-foreground">
           {props.item.user.role === "admin" ? "管理员" : "普通用户"}
         </span>
       </div>
 
-      <div className="mt-4 rounded-[24px] bg-white/80 px-4 py-4">
-        <p className="text-sm font-semibold text-slate-900">{props.item.user.username}</p>
-        <p className="mt-1 text-xs text-slate-500">{props.item.user.email || "未设置邮箱"}</p>
+      <div className="mt-4 rounded-xl bg-background/80 p-4">
+        <p className="text-sm font-semibold text-foreground">{props.item.user.username}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{props.item.user.email || "未设置邮箱"}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <span className={getStatusBadgeClass(props.item.user)}>{getStatusBadgeLabel(props.item.user)}</span>
           {props.item.user.activeSessionCount > 0 ? (
-            <span className="rounded-full bg-brand-mist px-3 py-1 text-xs font-semibold text-brand-emerald">
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
               {props.item.user.activeSessionCount} 个活跃会话
             </span>
           ) : null}
           {props.item.user.failedLoginCount > 0 ? (
-            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+            <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
               失败 {props.item.user.failedLoginCount} 次
             </span>
           ) : null}
         </div>
       </div>
 
-      <p className="mt-4 text-sm leading-6 text-slate-600">{props.item.description}</p>
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-4 text-sm leading-6 text-muted-foreground">{props.item.description}</p>
+      <p className="mt-2 text-xs text-muted-foreground">
         上次活动：{formatDateTimeLabel(props.item.user.lastLoginAt)} · 创建时间：{formatDateTimeLabel(props.item.user.createdAt)}
       </p>
 
@@ -1684,16 +1684,16 @@ function ActionButton(props: {
   const Icon = props.icon;
   const toneClass =
     props.tone === "danger"
-      ? "border-red-200 bg-red-50 text-red-700 disabled:border-red-100 disabled:bg-red-50/60"
+      ? "border-destructive/20 bg-destructive/10 text-destructive disabled:border-red-100 disabled:bg-destructive/10/60"
       : props.tone === "emerald"
         ? "border-emerald-200 bg-emerald-50 text-emerald-700 disabled:border-emerald-100 disabled:bg-emerald-50/60"
         : props.tone === "amber"
-          ? "border-amber-200 bg-amber-50 text-amber-700 disabled:border-amber-100 disabled:bg-amber-50/60"
-          : "border-brand-line bg-white text-slate-700";
+          ? "border-amber-200 bg-amber-500/10 text-amber-600 disabled:border-amber-100 disabled:bg-amber-500/10/60"
+          : "border-border bg-background text-foreground";
 
   return (
     <button
-      className={`inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${toneClass}`}
+      className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${toneClass}`}
       disabled={props.disabled}
       onClick={props.onClick}
       type="button"

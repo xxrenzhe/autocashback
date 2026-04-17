@@ -76,31 +76,31 @@ function OverviewCard({
 }) {
   const toneStyles = {
     emerald: {
-      badge: "bg-brand-mist text-brand-emerald",
-      icon: "bg-brand-mist text-brand-emerald"
+      badge: "bg-primary/10 text-primary",
+      icon: "bg-primary/10 text-primary"
     },
     amber: {
-      badge: "bg-amber-50 text-amber-700",
-      icon: "bg-amber-50 text-amber-700"
+      badge: "bg-amber-500/10 text-amber-600",
+      icon: "bg-amber-500/10 text-amber-600"
     },
     slate: {
-      badge: "bg-slate-100 text-slate-700",
-      icon: "bg-slate-100 text-slate-700"
+      badge: "bg-slate-100 text-foreground",
+      icon: "bg-slate-100 text-foreground"
     }
   } as const;
 
   return (
-    <div className="surface-panel p-5">
+    <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
       <div className="flex items-start justify-between gap-4">
         <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${toneStyles[tone].badge}`}>
           {label}
         </span>
-        <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${toneStyles[tone].icon}`}>
+        <span className={`flex h-10 w-10 items-center justify-center rounded-lg ${toneStyles[tone].icon}`}>
           <Icon className="h-4 w-4" />
         </span>
       </div>
-      <p className="mt-5 font-mono text-4xl font-semibold text-slate-900">{value}</p>
-      <p className="mt-3 text-sm leading-6 text-slate-600">{note}</p>
+      <p className="mt-5 font-mono text-4xl font-semibold text-foreground">{value}</p>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
     </div>
   );
 }
@@ -400,80 +400,80 @@ export function SettingsManager() {
 
   return (
     <div className="space-y-6">
-      <section className="surface-panel overflow-hidden p-0">
+      <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
         <div className="grid gap-0 xl:grid-cols-[1.1fr,0.9fr]">
           <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
-            <p className="eyebrow">Settings</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">系统配置控制台</h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Settings</p>
+            <h2 className="mt-3 text-xl font-semibold tracking-tight tracking-tight tracking-tight text-foreground">系统配置控制台</h2>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
               先确认代理、Google Ads、平台备注和脚本是否就绪，再进入对应分组修改具体配置。
             </p>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <a
-                className="group rounded-[24px] border border-brand-line bg-white/90 px-4 py-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-editorial motion-reduce:transform-none"
+                className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
                 href="#proxy-settings"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <Globe2 className="h-5 w-5" />
                   </span>
-                  <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:text-brand-emerald" />
+                  <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
                 </div>
-                <p className="mt-4 text-sm font-semibold text-slate-900">代理与国家覆盖</p>
-                <p className="mt-2 text-sm leading-6 text-slate-500">确认目标国家代理是否齐备，避免换链和诊断任务失败。</p>
+                <p className="mt-4 text-sm font-semibold text-foreground">代理与国家覆盖</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">确认目标国家代理是否齐备，避免换链和诊断任务失败。</p>
               </a>
 
               <a
-                className="group rounded-[24px] border border-brand-line bg-white/90 px-4 py-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-editorial motion-reduce:transform-none"
+                className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
                 href="#google-ads-settings"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <ShieldCheck className="h-5 w-5" />
                   </span>
-                  <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:text-brand-emerald" />
+                  <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
                 </div>
-                <p className="mt-4 text-sm font-semibold text-slate-900">Google Ads 授权</p>
-                <p className="mt-2 text-sm leading-6 text-slate-500">基础参数齐全后再做 OAuth 授权和账号同步。</p>
+                <p className="mt-4 text-sm font-semibold text-foreground">Google Ads 授权</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">基础参数齐全后再做 OAuth 授权和账号同步。</p>
               </a>
 
               <a
-                className="group rounded-[24px] border border-brand-line bg-white/90 px-4 py-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-editorial motion-reduce:transform-none"
+                className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
                 href="#platform-settings"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <NotebookPen className="h-5 w-5" />
                   </span>
-                  <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:text-brand-emerald" />
+                  <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
                 </div>
-                <p className="mt-4 text-sm font-semibold text-slate-900">平台接入备注</p>
-                <p className="mt-2 text-sm leading-6 text-slate-500">沉淀返利平台处理规范，减少账号和 Offer 操作分歧。</p>
+                <p className="mt-4 text-sm font-semibold text-foreground">平台接入备注</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">沉淀返利平台处理规范，减少账号和 Offer 操作分歧。</p>
               </a>
 
               <a
-                className="group rounded-[24px] border border-brand-line bg-white/90 px-4 py-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-editorial motion-reduce:transform-none"
+                className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
                 href="#script-settings"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <KeyRound className="h-5 w-5" />
                   </span>
-                  <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:text-brand-emerald" />
+                  <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
                 </div>
-                <p className="mt-4 text-sm font-semibold text-slate-900">脚本与 Token</p>
-                <p className="mt-2 text-sm leading-6 text-slate-500">统一维护 MCC 脚本模板和当前有效 Script Token。</p>
+                <p className="mt-4 text-sm font-semibold text-foreground">脚本与 Token</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">统一维护 MCC 脚本模板和当前有效 Script Token。</p>
               </a>
             </div>
           </div>
 
-          <div className="border-t border-brand-line/70 bg-white/84 px-6 py-7 xl:border-l xl:border-t-0">
-            <p className="eyebrow">配置摘要</p>
+          <div className="border-t border-border/70 bg-background/80 px-6 py-7 xl:border-l xl:border-t-0">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">配置摘要</p>
             <div className="mt-5 grid gap-3">
-              <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4">
-                <p className="text-sm font-semibold text-slate-900">当前最需要关注</p>
-                <p className="mt-2 text-sm text-slate-600">
+              <div className="rounded-xl border border-border bg-muted/40 p-4">
+                <p className="text-sm font-semibold text-foreground">当前最需要关注</p>
+                <p className="mt-2 text-sm text-muted-foreground">
                   {overview.googleAdsNeedsOAuth
                     ? "Google Ads 基础参数已齐，但还未完成 OAuth 授权。"
                     : !overview.hasGlobalProxy
@@ -484,16 +484,16 @@ export function SettingsManager() {
                 </p>
               </div>
 
-              <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4">
-                <p className="text-sm font-semibold text-slate-900">保存建议</p>
-                <p className="mt-2 text-sm text-slate-600">
+              <div className="rounded-xl border border-border bg-muted/40 p-4">
+                <p className="text-sm font-semibold text-foreground">保存建议</p>
+                <p className="mt-2 text-sm text-muted-foreground">
                   先调整代理和 Google Ads，再统一点击底部“保存设置”，避免备注或脚本说明与实际配置脱节。
                 </p>
               </div>
 
-              <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4">
-                <p className="text-sm font-semibold text-slate-900">安全提醒</p>
-                <p className="mt-2 text-sm text-slate-600">
+              <div className="rounded-xl border border-border bg-muted/40 p-4">
+                <p className="text-sm font-semibold text-foreground">安全提醒</p>
+                <p className="mt-2 text-sm text-muted-foreground">
                   修改 Google Ads 基础参数后，旧授权状态会失效，需要重新获取 Refresh Token 并同步账号。
                 </p>
               </div>
@@ -541,9 +541,9 @@ export function SettingsManager() {
 
       {message ? (
         <section
-          className={`rounded-[24px] border px-5 py-4 text-sm ${
+          className={`rounded-xl border px-5 py-4 text-sm ${
             message.includes("失败")
-              ? "border-red-200 bg-red-50 text-red-800"
+              ? "border-destructive/20 bg-destructive/10 text-red-800"
               : "border-emerald-200 bg-emerald-50 text-emerald-800"
           }`}
         >
@@ -553,14 +553,14 @@ export function SettingsManager() {
 
       <AccountSecurityPanel />
 
-      <section className="surface-panel p-6" id="proxy-settings">
+      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" id="proxy-settings">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="eyebrow">代理配置</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">按国家维护解析代理</h3>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">代理配置</p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按国家维护解析代理</h3>
           </div>
           <button
-            className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+            className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
             onClick={addProxyEntry}
             type="button"
           >
@@ -568,12 +568,12 @@ export function SettingsManager() {
           </button>
         </div>
 
-        <p className="mt-3 text-sm leading-6 text-slate-600">
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
           按 AutoCashBack 的代理配置方式维护。每条代理绑定一个国家代码，调度器会优先选择与 Offer 国家匹配的代理，未命中时回退到
           `GLOBAL`。
         </p>
 
-        <div className="mt-5 grid gap-3 rounded-[28px] border border-brand-line bg-stone-50 p-5 text-sm text-slate-600 lg:grid-cols-3">
+        <div className="mt-5 grid gap-3 rounded-xl border border-border bg-muted/40 p-5 text-sm text-muted-foreground lg:grid-cols-3">
           <p>活跃代理：{overview.activeProxyCount}</p>
           <p>覆盖国家/区域：{overview.configuredProxyCountries}</p>
           <p>GLOBAL 兜底：{overview.hasGlobalProxy ? "已配置" : "未配置"}</p>
@@ -582,12 +582,12 @@ export function SettingsManager() {
         <div className="mt-5 space-y-4">
           {proxyEntries.length ? (
             proxyEntries.map((entry, index) => (
-              <div className="rounded-[28px] border border-brand-line bg-stone-50 p-5" key={`${entry.label}-${index}`}>
+              <div className="rounded-xl border border-border bg-muted/40 p-5" key={`${entry.label}-${index}`}>
                 <div className="grid gap-4 lg:grid-cols-[140px,1fr,140px,120px]">
-                  <label className="block text-sm font-medium text-slate-700">
+                  <label className="block text-sm font-medium text-foreground">
                     国家
                     <input
-                      className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 uppercase"
+                      className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 uppercase"
                       maxLength={12}
                       value={entry.country}
                       onChange={(event) =>
@@ -595,28 +595,28 @@ export function SettingsManager() {
                       }
                     />
                   </label>
-                  <label className="block text-sm font-medium text-slate-700">
+                  <label className="block text-sm font-medium text-foreground">
                     代理 URL
                     <input
-                      className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3"
+                      className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2"
                       placeholder="http://user:pass@host:port"
                       value={entry.url}
                       onChange={(event) => updateProxyEntry(index, { url: event.target.value })}
                     />
                   </label>
-                  <label className="block text-sm font-medium text-slate-700">
+                  <label className="block text-sm font-medium text-foreground">
                     标签
                     <input
-                      className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3"
+                      className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2"
                       placeholder="US-main"
                       value={entry.label}
                       onChange={(event) => updateProxyEntry(index, { label: event.target.value })}
                     />
                   </label>
-                  <label className="block text-sm font-medium text-slate-700">
+                  <label className="block text-sm font-medium text-foreground">
                     状态
                     <select
-                      className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3"
+                      className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2"
                       value={entry.active ? "active" : "paused"}
                       onChange={(event) =>
                         updateProxyEntry(index, { active: event.target.value === "active" })
@@ -634,24 +634,24 @@ export function SettingsManager() {
                       <span
                         className={`text-xs ${
                           proxyValidation[index]?.status === "success"
-                            ? "text-brand-emerald"
+                            ? "text-primary"
                             : proxyValidation[index]?.status === "error"
-                              ? "text-red-600"
-                              : "text-slate-500"
+                              ? "text-destructive"
+                              : "text-muted-foreground"
                         }`}
                       >
                         {proxyValidation[index]?.message}
                       </span>
                     ) : null}
                     <button
-                      className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+                      className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
                       onClick={() => validateProxyEntry(index, entry.url)}
                       type="button"
                     >
                       验证代理
                     </button>
                     <button
-                      className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-600"
+                      className="rounded-full border border-destructive/20 bg-destructive/10 px-4 py-2 text-xs font-semibold text-destructive"
                       onClick={() => removeProxyEntry(index)}
                       type="button"
                     >
@@ -662,21 +662,21 @@ export function SettingsManager() {
               </div>
             ))
           ) : (
-            <div className="rounded-[28px] border border-dashed border-brand-line bg-stone-50 px-5 py-6 text-sm text-slate-500">
+            <div className="rounded-xl border border-dashed border-border bg-muted/40 px-5 py-6 text-sm text-muted-foreground">
               还没有代理配置。建议至少录入一个 `GLOBAL` 代理，确保终链解析任务可执行。
             </div>
           )}
         </div>
       </section>
 
-      <section className="surface-panel p-6" id="google-ads-settings">
+      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" id="google-ads-settings">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="eyebrow">Google Ads API</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">OAuth 凭证配置</h3>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Google Ads API</p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">OAuth 凭证配置</h3>
           </div>
           <button
-            className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+            className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
             onClick={() => {
               window.location.href = "/google-ads";
             }}
@@ -686,22 +686,22 @@ export function SettingsManager() {
           </button>
         </div>
 
-        <p className="mt-3 text-sm leading-6 text-slate-600">
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
           在这里保存 Google Ads OAuth 基础参数。首次保存后请发起授权；如果你修改了基础参数，系统会清除旧授权状态，需重新获取
           Refresh Token 并同步账号。
         </p>
 
-        <div className="mt-5 grid gap-3 rounded-[28px] border border-brand-line bg-stone-50 p-5 text-sm text-slate-600 lg:grid-cols-3">
+        <div className="mt-5 grid gap-3 rounded-xl border border-border bg-muted/40 p-5 text-sm text-muted-foreground lg:grid-cols-3">
           <p>基础项完成度：{overview.googleAdsBaseConfigCount} / 4</p>
           <p>OAuth 状态：{googleAdsConfig.hasRefreshToken ? "已授权" : "未授权"}</p>
           <p>最近验证：{googleAdsConfig.lastVerifiedAt || "尚未验证"}</p>
         </div>
 
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <label className="block text-sm font-medium text-slate-700">
+          <label className="block text-sm font-medium text-foreground">
             Client ID
             <input
-              className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+              className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
               placeholder={
                 googleAdsConfig.hasClientId ? "已配置，留空表示保持不变" : "Google OAuth Client ID"
               }
@@ -715,10 +715,10 @@ export function SettingsManager() {
             />
           </label>
 
-          <label className="block text-sm font-medium text-slate-700">
+          <label className="block text-sm font-medium text-foreground">
             Client Secret
             <input
-              className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+              className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
               placeholder={
                 googleAdsConfig.hasClientSecret ? "已配置，留空表示保持不变" : "Google OAuth Client Secret"
               }
@@ -732,10 +732,10 @@ export function SettingsManager() {
             />
           </label>
 
-          <label className="block text-sm font-medium text-slate-700">
+          <label className="block text-sm font-medium text-foreground">
             Developer Token
             <input
-              className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+              className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
               placeholder={
                 googleAdsConfig.hasDeveloperToken ? "已配置，留空表示保持不变" : "Google Ads Developer Token"
               }
@@ -749,10 +749,10 @@ export function SettingsManager() {
             />
           </label>
 
-          <label className="block text-sm font-medium text-slate-700">
+          <label className="block text-sm font-medium text-foreground">
             Login Customer ID
             <input
-              className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 font-mono"
+              className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono"
               placeholder="1234567890"
               value={googleAdsConfig.loginCustomerId}
               onChange={(event) =>
@@ -765,7 +765,7 @@ export function SettingsManager() {
           </label>
         </div>
 
-        <div className="mt-5 grid gap-3 rounded-[28px] border border-brand-line bg-stone-50 p-5 text-sm text-slate-600 lg:grid-cols-3">
+        <div className="mt-5 grid gap-3 rounded-xl border border-border bg-muted/40 p-5 text-sm text-muted-foreground lg:grid-cols-3">
           <p>Client ID：{googleAdsConfig.hasClientId ? "已保存" : "未配置"}</p>
           <p>Client Secret：{googleAdsConfig.hasClientSecret ? "已保存" : "未配置"}</p>
           <p>Developer Token：{googleAdsConfig.hasDeveloperToken ? "已保存" : "未配置"}</p>
@@ -776,14 +776,14 @@ export function SettingsManager() {
 
         <div className="mt-5 flex flex-wrap gap-3">
           <button
-            className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
             onClick={saveGoogleAdsConfig}
             type="button"
           >
             保存 Google Ads 配置
           </button>
           <button
-            className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700"
+            className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
             onClick={() => {
               window.location.href = "/api/auth/google-ads/authorize";
             }}
@@ -792,14 +792,14 @@ export function SettingsManager() {
             发起 OAuth 授权
           </button>
           <button
-            className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700"
+            className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
             onClick={verifyGoogleAdsConfig}
             type="button"
           >
             验证并同步
           </button>
           <button
-            className="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-600"
+            className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive"
             onClick={clearGoogleAdsConfig}
             type="button"
           >
@@ -808,42 +808,42 @@ export function SettingsManager() {
         </div>
       </section>
 
-      <section className="surface-panel p-6" id="platform-settings">
-        <p className="eyebrow">返利网配置</p>
-        <h3 className="mt-2 text-2xl font-semibold text-slate-900">平台接入策略</h3>
-        <p className="mt-3 text-sm leading-6 text-slate-600">
+      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" id="platform-settings">
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">返利网配置</p>
+        <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">平台接入策略</h3>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
           在这里维护各返利平台的运营说明、登录入口和处理规范，方便团队统一查看和协作。
         </p>
 
-        <div className="mt-5 rounded-[28px] border border-brand-line bg-stone-50 p-5 text-sm text-slate-600">
+        <div className="mt-5 rounded-xl border border-border bg-muted/40 p-5 text-sm text-muted-foreground">
           当前已填写 {overview.noteCount} / 3 份平台说明。建议至少补齐 TopCashback、Rakuten 和 Custom 的登录入口、风控点和操作规范。
         </div>
 
         <div className="mt-5 grid gap-4 xl:grid-cols-3">
-          <label className="rounded-[28px] border border-brand-line bg-stone-50 p-5 text-sm font-medium text-slate-700">
+          <label className="rounded-xl border border-border bg-muted/40 p-5 text-sm font-medium text-foreground">
             TopCashback
             <textarea
-              className="mt-3 min-h-36 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-normal"
+              className="mt-3 min-h-36 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal"
               value={platformNotes.topcashback}
               onChange={(event) =>
                 setPlatformNotes({ ...platformNotes, topcashback: event.target.value })
               }
             />
           </label>
-          <label className="rounded-[28px] border border-brand-line bg-stone-50 p-5 text-sm font-medium text-slate-700">
+          <label className="rounded-xl border border-border bg-muted/40 p-5 text-sm font-medium text-foreground">
             Rakuten
             <textarea
-              className="mt-3 min-h-36 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-normal"
+              className="mt-3 min-h-36 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal"
               value={platformNotes.rakuten}
               onChange={(event) =>
                 setPlatformNotes({ ...platformNotes, rakuten: event.target.value })
               }
             />
           </label>
-          <label className="rounded-[28px] border border-brand-line bg-stone-50 p-5 text-sm font-medium text-slate-700">
+          <label className="rounded-xl border border-border bg-muted/40 p-5 text-sm font-medium text-foreground">
             Custom
             <textarea
-              className="mt-3 min-h-36 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-normal"
+              className="mt-3 min-h-36 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal"
               value={platformNotes.custom}
               onChange={(event) =>
                 setPlatformNotes({ ...platformNotes, custom: event.target.value })
@@ -853,33 +853,33 @@ export function SettingsManager() {
         </div>
       </section>
 
-      <section className="surface-panel p-6" id="script-settings">
+      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" id="script-settings">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="eyebrow">换链接配置</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">默认 MCC 脚本</h3>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">换链接配置</p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">默认 MCC 脚本</h3>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
               系统已经把站点地址和 Script Token 注入到脚本里。Script Token 默认长期有效，同一时间只有当前这一枚 token 生效。
               你只需要复制后粘贴到 Google Ads Scripts / MCC，并确保对应 Campaign 已绑定好 Offer 的 `campaignLabel`。
             </p>
           </div>
-          <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-3">
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Script Token</p>
-            <p className="mt-2 font-mono text-sm text-slate-800">{script.token || "尚未生成"}</p>
+          <div className="rounded-xl border border-border bg-muted/40 px-3 py-2">
+            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Script Token</p>
+            <p className="mt-2 font-mono text-sm text-foreground">{script.token || "尚未生成"}</p>
           </div>
         </div>
 
-        <div className="mt-5 rounded-[28px] border border-brand-line bg-stone-50 p-5 text-sm text-slate-600">
+        <div className="mt-5 rounded-xl border border-border bg-muted/40 p-5 text-sm text-muted-foreground">
           {overview.scriptReady ? (
             <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+              <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <ShieldCheck className="h-4 w-4" />
               </span>
               <p>当前脚本模板和 Token 都已就绪，可以直接复制到 Google Ads Scripts / MCC 使用。</p>
             </div>
           ) : (
             <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+              <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
                 <AlertTriangle className="h-4 w-4" />
               </span>
               <p>脚本模板或 Token 尚未生成，建议先确认基础配置和当前登录状态。</p>
@@ -889,7 +889,7 @@ export function SettingsManager() {
 
         <div className="mt-5 flex flex-wrap gap-3">
           <button
-            className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+            className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
             disabled={rotatingToken}
             onClick={rotateToken}
             type="button"
@@ -897,7 +897,7 @@ export function SettingsManager() {
             {rotatingToken ? "更换中..." : "更换 Token"}
           </button>
           <button
-            className="rounded-full bg-brand-emerald px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+            className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
             disabled={loading || !script.template || rotatingToken}
             onClick={() => navigator.clipboard.writeText(script.template)}
             type="button"
@@ -906,13 +906,13 @@ export function SettingsManager() {
           </button>
         </div>
 
-        <div className="mt-4 space-y-2 text-sm leading-6 text-slate-600">
+        <div className="mt-4 space-y-2 text-sm leading-6 text-muted-foreground">
           <p>复制后无需再修改脚本内容。若你更换 Token，旧 Token 会立即失效，你需要重新复制一次最新脚本。</p>
-          <p>快照接口地址：<span className="font-mono text-xs text-slate-700">{scriptAppUrl}/api/script/link-swap/snapshot</span></p>
+          <p>快照接口地址：<span className="font-mono text-xs text-foreground">{scriptAppUrl}/api/script/link-swap/snapshot</span></p>
         </div>
 
         <textarea
-          className="mt-5 min-h-72 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 font-mono text-xs"
+          className="mt-5 min-h-72 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono text-xs"
           readOnly
           value={script.template}
         />
@@ -920,14 +920,14 @@ export function SettingsManager() {
 
       <div className="flex items-center gap-4">
         <button
-          className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
           disabled={loading}
           onClick={saveSettings}
           type="button"
         >
           保存设置
         </button>
-        {message ? <span className="text-sm text-slate-600">{message}</span> : null}
+        {message ? <span className="text-sm text-muted-foreground">{message}</span> : null}
       </div>
     </div>
   );

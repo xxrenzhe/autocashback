@@ -66,26 +66,26 @@ function OverviewCard({
 }) {
   const toneStyles = {
     emerald: {
-      badge: "bg-brand-mist text-brand-emerald",
-      value: "text-brand-emerald"
+      badge: "bg-primary/10 text-primary",
+      value: "text-primary"
     },
     amber: {
-      badge: "bg-amber-50 text-amber-700",
-      value: "text-amber-700"
+      badge: "bg-amber-500/10 text-amber-600",
+      value: "text-amber-600"
     },
     slate: {
-      badge: "bg-slate-100 text-slate-700",
-      value: "text-slate-900"
+      badge: "bg-slate-100 text-foreground",
+      value: "text-foreground"
     }
   } as const;
 
   return (
-    <div className="surface-panel p-5">
+    <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
       <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", toneStyles[tone].badge)}>
         {label}
       </span>
       <p className={cn("mt-5 font-mono text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
-      <p className="mt-3 text-sm leading-6 text-slate-600">{note}</p>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
     </div>
   );
 }
@@ -103,17 +103,17 @@ function ShortcutCard({
 }) {
   return (
     <Link
-      className="group rounded-[24px] border border-brand-line bg-white/90 px-4 py-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-editorial motion-reduce:transform-none"
+      className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
       href={href}
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+        <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <Icon className="h-5 w-5" />
         </span>
-        <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:text-brand-emerald" />
+        <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
       </div>
-      <p className="mt-4 text-sm font-semibold text-slate-900">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
+      <p className="mt-4 text-sm font-semibold text-foreground">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
     </Link>
   );
 }
@@ -122,27 +122,27 @@ function statusMeta(task: ClickFarmTask) {
   if (task.status === "running") {
     return {
       label: "运行中",
-      className: "bg-brand-mist text-brand-emerald"
+      className: "bg-primary/10 text-primary"
     };
   }
 
   if (task.status === "pending") {
     return {
       label: "等待开始",
-      className: "bg-slate-100 text-slate-700"
+      className: "bg-slate-100 text-foreground"
     };
   }
 
   if (task.status === "paused" || task.status === "stopped") {
     return {
       label: "已暂停",
-      className: "bg-amber-50 text-amber-700"
+      className: "bg-amber-500/10 text-amber-600"
     };
   }
 
   return {
     label: "已完成",
-    className: "bg-slate-100 text-slate-700"
+    className: "bg-slate-100 text-foreground"
   };
 }
 
@@ -314,25 +314,25 @@ export function ClickFarmManager() {
 
   return (
     <div className="space-y-6">
-      <section className="surface-panel overflow-hidden p-0">
-        <div className="border-b border-brand-line/70 px-6 py-6">
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+      <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
+        <div className="border-b border-border/70 p-5">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
             <div className="max-w-3xl">
-              <p className="eyebrow">Click Farm</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Click Farm</p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
-                <h2 className="text-3xl font-semibold text-slate-900">补点击任务控制台</h2>
-                <span className="rounded-full bg-brand-mist px-3 py-1 text-xs font-semibold text-brand-emerald">
+                <h2 className="text-xl font-semibold tracking-tight tracking-tight text-foreground">补点击任务控制台</h2>
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                   {allConsole.overview.totalTasks} tasks
                 </span>
               </div>
-              <p className="mt-4 text-sm leading-7 text-slate-600">
+              <p className="mt-4 text-sm leading-7 text-muted-foreground">
                 统一查看补点击任务的节奏、成功率和暂停原因。先处理异常任务，再补齐新的 Offer 任务。
               </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
               <button
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                 disabled={!selectedOffer}
                 onClick={() => selectedOffer && openDialogForOffer(selectedOffer)}
                 type="button"
@@ -341,19 +341,19 @@ export function ClickFarmManager() {
                 新建 / 编辑任务
               </button>
               <button
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
                 disabled={refreshing}
                 onClick={() => void loadAll({ background: true, preserveNotice: true })}
                 type="button"
               >
                 <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
-                {refreshing ? "刷新中..." : "刷新列表"}
+                {refreshing ? "刷新中…" : "刷新列表"}
               </button>
             </div>
           </div>
 
           {error ? (
-            <div className="mt-5 rounded-[24px] border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
+            <div className="mt-5 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
               {error}
             </div>
           ) : null}
@@ -361,10 +361,10 @@ export function ClickFarmManager() {
           {message ? (
             <div
               className={cn(
-                "mt-5 rounded-[24px] px-4 py-4 text-sm",
+                "mt-5 rounded-xl p-4 text-sm",
                 messageTone === "success"
-                  ? "border border-emerald-200 bg-brand-mist text-brand-emerald"
-                  : "border border-slate-200 bg-stone-50 text-slate-700"
+                  ? "border border-emerald-200 bg-primary/10 text-primary"
+                  : "border border-slate-200 bg-muted/40 text-foreground"
               )}
             >
               {message}
@@ -372,7 +372,7 @@ export function ClickFarmManager() {
           ) : null}
         </div>
 
-        <div className="grid gap-4 px-6 py-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
           <ShortcutCard
             description="从 Offer 维度进入最适合创建补点击任务，也方便同步检查佣金与换链状态。"
             href="/offers"
@@ -421,21 +421,21 @@ export function ClickFarmManager() {
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr),420px]">
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr),420px]">
         <div className="space-y-6">
-          <section className="surface-panel p-6">
+          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p className="eyebrow">筛选与查看</p>
-                <h3 className="mt-2 text-2xl font-semibold text-slate-900">先看节奏，再决定是否调整任务</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">筛选与查看</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">先看节奏，再决定是否调整任务</h3>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
                   支持按状态、国家、成功率与任务规模快速定位需要处理的补点击任务。
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {allConsole.overview.warningTasks > 0 ? (
                   <button
-                    className="rounded-full bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700"
+                    className="rounded-full bg-amber-500/10 px-4 py-2 text-xs font-semibold text-amber-600"
                     onClick={() => setStatusFilter("paused")}
                     type="button"
                   >
@@ -444,7 +444,7 @@ export function ClickFarmManager() {
                 ) : null}
                 {(searchQuery || statusFilter !== "all" || countryFilter !== "all" || sort !== "recent") && (
                   <button
-                    className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+                    className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
                     onClick={() => {
                       setSearchQuery("");
                       setStatusFilter("all");
@@ -460,12 +460,12 @@ export function ClickFarmManager() {
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <label className="block text-sm font-medium text-slate-700 md:col-span-2 xl:col-span-1">
+              <label className="block text-sm font-medium text-foreground md:col-span-2 xl:col-span-1">
                 搜索任务
-                <div className="mt-2 flex items-center gap-3 rounded-2xl border border-brand-line bg-stone-50 px-4 py-3">
-                  <Search className="h-4 w-4 text-slate-400" />
+                <div className="mt-2 flex items-center gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
+                  <Search className="h-4 w-4 text-muted-foreground/80" />
                   <input
-                    className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                    className="w-full bg-transparent text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground/80"
                     onChange={(event) => setSearchQuery(event.target.value)}
                     placeholder="品牌、国家、任务 ID、Offer ID"
                     value={searchQuery}
@@ -473,10 +473,10 @@ export function ClickFarmManager() {
                 </div>
               </label>
 
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 状态
                 <select
-                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                   onChange={(event) =>
                     setStatusFilter(event.target.value as ClickFarmTask["status"] | "all")
                   }
@@ -491,10 +491,10 @@ export function ClickFarmManager() {
                 </select>
               </label>
 
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 国家
                 <select
-                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                   onChange={(event) => setCountryFilter(event.target.value)}
                   value={countryFilter}
                 >
@@ -507,10 +507,10 @@ export function ClickFarmManager() {
                 </select>
               </label>
 
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 排序
                 <select
-                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                   onChange={(event) => setSort(event.target.value as ClickFarmConsoleSort)}
                   value={sort}
                 >
@@ -524,16 +524,16 @@ export function ClickFarmManager() {
             </div>
           </section>
 
-          <section className="surface-panel overflow-hidden p-0">
-            <div className="border-b border-brand-line/70 px-6 py-5">
-              <p className="eyebrow">任务列表</p>
-              <h3 className="mt-2 text-2xl font-semibold text-slate-900">按节奏、质量和状态管理任务</h3>
+          <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
+            <div className="border-b border-border/70 p-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">任务列表</p>
+              <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按节奏、质量和状态管理任务</h3>
             </div>
 
             {loading ? (
-              <div className="space-y-4 px-6 py-6">
+              <div className="space-y-4 p-5">
                 {Array.from({ length: 4 }).map((_, index) => (
-                  <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-5" key={index}>
+                  <div className="rounded-xl border border-border bg-muted/40 px-4 py-5" key={index}>
                     <div className="h-4 w-32 animate-pulse rounded-full bg-stone-200" />
                     <div className="mt-4 h-4 w-full animate-pulse rounded-full bg-stone-200" />
                     <div className="mt-3 h-4 w-5/6 animate-pulse rounded-full bg-stone-200" />
@@ -541,9 +541,9 @@ export function ClickFarmManager() {
                 ))}
               </div>
             ) : consoleData.rows.length ? (
-              <div className="overflow-x-auto px-6 py-6">
+              <div className="overflow-x-auto p-5">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="text-slate-500">
+                  <thead className="text-muted-foreground font-medium text-xs border-b border-border">
                     <tr>
                       <th className="pb-3 pr-4">Offer</th>
                       <th className="pb-3 pr-4">状态</th>
@@ -561,19 +561,19 @@ export function ClickFarmManager() {
                       const loadingDelete = taskActionLoading === `delete-${row.task.id}`;
 
                       return (
-                        <tr className="border-t border-brand-line/60 align-top" key={row.task.id}>
+                        <tr className="border-b border-border hover:bg-muted/30 transition-colors" key={row.task.id}>
                           <td className="py-4 pr-4">
                             <div className="min-w-[220px]">
                               <div className="flex flex-wrap items-center gap-2">
-                                <p className="font-semibold text-slate-900">{row.brandName}</p>
+                                <p className="font-semibold text-foreground">{row.brandName}</p>
                                 {row.country ? (
-                                  <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                                  <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                                     {row.country}
                                   </span>
                                 ) : null}
                               </div>
-                              <p className="mt-2 text-xs text-slate-500">任务 #{row.task.id}</p>
-                              <p className="mt-2 text-xs text-slate-500">
+                              <p className="mt-2 text-xs text-muted-foreground">任务 #{row.task.id}</p>
+                              <p className="mt-2 text-xs text-muted-foreground">
                                 {row.offer?.campaignLabel || "未设置 Campaign Label"}
                               </p>
                             </div>
@@ -585,20 +585,20 @@ export function ClickFarmManager() {
                                 {currentStatus.label}
                               </span>
                               {row.task.pauseReason ? (
-                                <p className="text-xs text-amber-700">{row.task.pauseMessage || "任务已暂停"}</p>
+                                <p className="text-xs text-amber-600">{row.task.pauseMessage || "任务已暂停"}</p>
                               ) : row.nextRunMissing ? (
-                                <p className="text-xs text-amber-700">缺少下次调度时间</p>
+                                <p className="text-xs text-amber-600">缺少下次调度时间</p>
                               ) : null}
                             </div>
                           </td>
 
                           <td className="py-4 pr-4">
                             <div className="min-w-[180px]">
-                              <p className="text-slate-700">每日点击 {row.task.dailyClickCount}</p>
-                              <p className="mt-2 text-xs text-slate-500">
+                              <p className="text-foreground">每日点击 {row.task.dailyClickCount}</p>
+                              <p className="mt-2 text-xs text-muted-foreground">
                                 {row.task.startTime} - {row.task.endTime} · {row.task.timezone}
                               </p>
-                              <p className="mt-2 text-xs text-slate-500">
+                              <p className="mt-2 text-xs text-muted-foreground">
                                 周期 {row.task.durationDays === -1 ? "不限期" : `${row.task.durationDays} 天`}
                               </p>
                             </div>
@@ -611,19 +611,19 @@ export function ClickFarmManager() {
                                   <div
                                     className={cn(
                                       "h-full rounded-full",
-                                      row.needsAttention ? "bg-amber-500" : "bg-brand-emerald"
+                                      row.needsAttention ? "bg-amber-500/100" : "bg-primary"
                                     )}
                                     style={{ width: `${row.progressPercent}%` }}
                                   />
                                 </div>
-                                <span className="text-xs font-semibold text-slate-600">
+                                <span className="text-xs font-semibold text-muted-foreground">
                                   {row.progressPercent.toFixed(0)}%
                                 </span>
                               </div>
-                              <p className="mt-2 text-xs text-slate-500">
+                              <p className="mt-2 text-xs text-muted-foreground">
                                 成功率 {formatPercent(row.successRate)}
                               </p>
-                              <p className="mt-2 text-xs text-slate-500">
+                              <p className="mt-2 text-xs text-muted-foreground">
                                 总点击 {row.task.totalClicks} · 成功 {row.task.successClicks} · 失败 {row.task.failedClicks}
                               </p>
                             </div>
@@ -631,11 +631,11 @@ export function ClickFarmManager() {
 
                           <td className="py-4 pr-4">
                             <div className="min-w-[180px]">
-                              <p className="text-slate-700">{formatDateTime(row.task.nextRunAt)}</p>
-                              <p className="mt-2 text-xs text-slate-500">
+                              <p className="text-foreground">{formatDateTime(row.task.nextRunAt)}</p>
+                              <p className="mt-2 text-xs text-muted-foreground">
                                 开始日期 {row.task.scheduledStartDate}
                               </p>
-                              <p className="mt-2 text-xs text-slate-500">
+                              <p className="mt-2 text-xs text-muted-foreground">
                                 创建于 {formatDateTime(row.task.createdAt)}
                               </p>
                             </div>
@@ -645,7 +645,7 @@ export function ClickFarmManager() {
                             <div className="flex min-w-[220px] flex-wrap justify-end gap-2">
                               {row.offer ? (
                                 <button
-                                  className="rounded-full border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+                                  className="rounded-full border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground"
                                   onClick={() => openDialogForOffer(row.offer!)}
                                   type="button"
                                 >
@@ -655,7 +655,7 @@ export function ClickFarmManager() {
 
                               {(row.task.status === "pending" || row.task.status === "running") && (
                                 <button
-                                  className="inline-flex items-center gap-1 rounded-full border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-60"
+                                  className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
                                   disabled={loadingStop}
                                   onClick={() => void handleTaskAction("stop", row.task)}
                                   type="button"
@@ -667,7 +667,7 @@ export function ClickFarmManager() {
 
                               {(row.task.status === "paused" || row.task.status === "stopped") && (
                                 <button
-                                  className="inline-flex items-center gap-1 rounded-full border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-60"
+                                  className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
                                   disabled={loadingRestart}
                                   onClick={() => void handleTaskAction("restart", row.task)}
                                   type="button"
@@ -678,7 +678,7 @@ export function ClickFarmManager() {
                               )}
 
                               <button
-                                className="rounded-full border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 disabled:opacity-60"
+                                className="rounded-full border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive disabled:opacity-60"
                                 disabled={loadingDelete}
                                 onClick={() => void handleTaskAction("delete", row.task)}
                                 type="button"
@@ -695,24 +695,24 @@ export function ClickFarmManager() {
               </div>
             ) : (
               <div className="px-6 py-10 text-center">
-                <p className="text-base font-semibold text-slate-900">
+                <p className="text-base font-semibold text-foreground">
                   {searchQuery || statusFilter !== "all" || countryFilter !== "all"
                     ? "当前筛选条件下没有任务"
                     : "还没有补点击任务"}
                 </p>
-                <p className="mt-3 text-sm leading-6 text-slate-500">
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
                   先从 Offer 里选择一个条目，再创建对应的补点击任务。
                 </p>
                 <div className="mt-5 flex flex-wrap justify-center gap-3">
                   <Link
-                    className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700"
+                    className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
                     href="/offers"
                   >
                     去 Offer 管理
                   </Link>
                   {selectedOffer ? (
                     <button
-                      className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white"
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
                       onClick={() => openDialogForOffer(selectedOffer)}
                       type="button"
                     >
@@ -726,18 +726,18 @@ export function ClickFarmManager() {
         </div>
 
         <div className="space-y-6">
-          <section className="surface-panel p-6">
-            <p className="eyebrow">创建入口</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">从 Offer 发起任务</h3>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
+          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">创建入口</p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">从 Offer 发起任务</h3>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
               每个 Offer 最多维护一个当前补点击任务。重新保存会更新现有任务，不会重复创建。
             </p>
 
             <div className="mt-6 space-y-4">
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 选择 Offer
                 <select
-                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                   onChange={(event) =>
                     setSelectedOfferId(event.target.value ? Number(event.target.value) : null)
                   }
@@ -753,21 +753,21 @@ export function ClickFarmManager() {
               </label>
 
               {selectedOffer ? (
-                <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4">
-                  <p className="text-sm font-semibold text-slate-900">{selectedOffer.brandName}</p>
-                  <p className="mt-2 text-xs text-slate-500">
+                <div className="rounded-xl border border-border bg-muted/40 p-4">
+                  <p className="text-sm font-semibold text-foreground">{selectedOffer.brandName}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
                     {selectedOffer.targetCountry} · {selectedOffer.campaignLabel || "未设置 Campaign Label"}
                   </p>
-                  <p className="mt-3 break-all text-xs leading-5 text-slate-500">{selectedOffer.promoLink}</p>
+                  <p className="mt-3 break-all text-xs leading-5 text-muted-foreground">{selectedOffer.promoLink}</p>
                 </div>
               ) : (
-                <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4 text-sm leading-6 text-slate-600">
+                <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
                   先选定一个 Offer，再打开任务弹窗配置点击量、时段、时区和 Referer。
                 </div>
               )}
 
               <button
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                 disabled={!selectedOffer}
                 onClick={() => selectedOffer && openDialogForOffer(selectedOffer)}
                 type="button"
@@ -778,25 +778,25 @@ export function ClickFarmManager() {
             </div>
           </section>
 
-          <section className="surface-panel p-6">
-            <p className="eyebrow">重点提醒</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">先处理这些任务</h3>
+          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">重点提醒</p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">先处理这些任务</h3>
 
             <div className="mt-5 space-y-4">
               {pausedRows.map((row) => (
                 <button
-                  className="w-full rounded-[24px] border border-brand-line bg-white px-4 py-4 text-left transition hover:bg-stone-50"
+                  className="w-full rounded-xl border border-border bg-background p-4 text-left transition hover:bg-muted/40"
                   key={`paused-${row.task.id}`}
                   onClick={() => row.offer && openDialogForOffer(row.offer)}
                   type="button"
                 >
                   <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
                       <AlertTriangle className="h-4 w-4" />
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900">{row.brandName}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                      <p className="text-sm font-semibold text-foreground">{row.brandName}</p>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
                         {row.task.pauseMessage || "任务已暂停，建议检查代理或手动恢复。"}
                       </p>
                     </div>
@@ -806,18 +806,18 @@ export function ClickFarmManager() {
 
               {weakRows.map((row) => (
                 <button
-                  className="w-full rounded-[24px] border border-brand-line bg-white px-4 py-4 text-left transition hover:bg-stone-50"
+                  className="w-full rounded-xl border border-border bg-background p-4 text-left transition hover:bg-muted/40"
                   key={`weak-${row.task.id}`}
                   onClick={() => row.offer && openDialogForOffer(row.offer)}
                   type="button"
                 >
                   <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
                       <AlertTriangle className="h-4 w-4" />
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900">{row.brandName}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                      <p className="text-sm font-semibold text-foreground">{row.brandName}</p>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
                         当前成功率只有 {formatPercent(row.successRate)}，建议复核时段、Referer 和代理稳定性。
                       </p>
                     </div>
@@ -826,7 +826,7 @@ export function ClickFarmManager() {
               ))}
 
               {!pausedRows.length && !weakRows.length ? (
-                <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4 text-sm leading-6 text-slate-600">
+                <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
                   当前没有明显异常任务，适合继续扩充新的 Offer 任务。
                 </div>
               ) : null}

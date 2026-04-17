@@ -115,30 +115,30 @@ function OverviewCard({
 }) {
   const toneStyles = {
     emerald: {
-      badge: "bg-brand-mist text-brand-emerald",
-      value: "text-brand-emerald"
+      badge: "bg-primary/10 text-primary",
+      value: "text-primary"
     },
     amber: {
-      badge: "bg-amber-50 text-amber-700",
-      value: "text-amber-700"
+      badge: "bg-amber-500/10 text-amber-600",
+      value: "text-amber-600"
     },
     slate: {
-      badge: "bg-slate-100 text-slate-700",
-      value: "text-slate-900"
+      badge: "bg-slate-100 text-foreground",
+      value: "text-foreground"
     },
     red: {
-      badge: "bg-red-50 text-red-700",
-      value: "text-red-700"
+      badge: "bg-destructive/10 text-destructive",
+      value: "text-destructive"
     }
   } as const;
 
   return (
-    <div className="surface-panel p-5">
+    <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
       <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", toneStyles[tone].badge)}>
         {label}
       </span>
       <p className={cn("mt-5 font-mono text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
-      <p className="mt-3 text-sm leading-6 text-slate-600">{note}</p>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
     </div>
   );
 }
@@ -156,17 +156,17 @@ function ShortcutCard({
 }) {
   return (
     <Link
-      className="group rounded-[24px] border border-brand-line bg-white/90 px-4 py-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-editorial motion-reduce:transform-none"
+      className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
       href={href}
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+        <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <Icon className="h-5 w-5" />
         </span>
-        <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:text-brand-emerald" />
+        <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
       </div>
-      <p className="mt-4 text-sm font-semibold text-slate-900">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
+      <p className="mt-4 text-sm font-semibold text-foreground">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
     </Link>
   );
 }
@@ -174,35 +174,35 @@ function ShortcutCard({
 function schedulerTone(value: "healthy" | "warning" | "error") {
   if (value === "healthy") {
     return {
-      badge: "bg-brand-mist text-brand-emerald",
+      badge: "bg-primary/10 text-primary",
       panel: "border-emerald-200 bg-emerald-50/70"
     };
   }
 
   if (value === "warning") {
     return {
-      badge: "bg-amber-50 text-amber-700",
-      panel: "border-amber-200 bg-amber-50"
+      badge: "bg-amber-500/10 text-amber-600",
+      panel: "border-amber-200 bg-amber-500/10"
     };
   }
 
   return {
-    badge: "bg-red-50 text-red-700",
-    panel: "border-red-200 bg-red-50"
+    badge: "bg-destructive/10 text-destructive",
+    panel: "border-destructive/20 bg-destructive/10"
   };
 }
 
 function taskStatusMeta(status: QueueTaskStatus) {
   if (status === "running") {
-    return { label: "运行中", className: "bg-brand-mist text-brand-emerald" };
+    return { label: "运行中", className: "bg-primary/10 text-primary" };
   }
   if (status === "pending") {
-    return { label: "待执行", className: "bg-slate-100 text-slate-700" };
+    return { label: "待执行", className: "bg-slate-100 text-foreground" };
   }
   if (status === "completed") {
-    return { label: "已完成", className: "bg-slate-100 text-slate-700" };
+    return { label: "已完成", className: "bg-slate-100 text-foreground" };
   }
-  return { label: "失败", className: "bg-red-50 text-red-700" };
+  return { label: "失败", className: "bg-destructive/10 text-destructive" };
 }
 
 export function QueueMonitor() {
@@ -460,34 +460,34 @@ export function QueueMonitor() {
 
   return (
     <div className="space-y-6">
-      <section className="surface-panel overflow-hidden p-0">
-        <div className="border-b border-brand-line/70 px-6 py-6">
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+      <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
+        <div className="border-b border-border/70 p-5">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
             <div className="max-w-3xl">
-              <p className="eyebrow">Queue</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Queue</p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
-                <h2 className="text-3xl font-semibold text-slate-900">统一队列控制台</h2>
-                <span className="rounded-full bg-brand-mist px-3 py-1 text-xs font-semibold text-brand-emerald">
+                <h2 className="text-xl font-semibold tracking-tight tracking-tight text-foreground">统一队列控制台</h2>
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                   {stats.total} tasks
                 </span>
               </div>
-              <p className="mt-4 text-sm leading-7 text-slate-600">
+              <p className="mt-4 text-sm leading-7 text-muted-foreground">
                 把补点击、换链和调度器状态放在一个面板里看。先判断健康度，再补投待调度任务或调整并发配置。
               </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
               <button
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
                 disabled={refreshing}
                 onClick={() => void loadQueueData({ background: true, preserveMessage: true })}
                 type="button"
               >
                 <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
-                {refreshing ? "刷新中..." : "刷新队列"}
+                {refreshing ? "刷新中…" : "刷新队列"}
               </button>
               <button
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                 disabled={manualScheduling !== null}
                 onClick={() => void triggerManualScheduling("all")}
                 type="button"
@@ -501,10 +501,10 @@ export function QueueMonitor() {
           {message ? (
             <div
               className={cn(
-                "mt-5 rounded-[24px] px-4 py-4 text-sm",
+                "mt-5 rounded-xl p-4 text-sm",
                 messageTone === "success"
-                  ? "border border-emerald-200 bg-brand-mist text-brand-emerald"
-                  : "border border-slate-200 bg-stone-50 text-slate-700"
+                  ? "border border-emerald-200 bg-primary/10 text-primary"
+                  : "border border-slate-200 bg-muted/40 text-foreground"
               )}
             >
               {message}
@@ -512,7 +512,7 @@ export function QueueMonitor() {
           ) : null}
         </div>
 
-        <div className="grid gap-4 px-6 py-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
           <ShortcutCard
             description="补点击任务积压时，直接回到业务页确认任务本身是否设置合理。"
             href="/click-farm"
@@ -561,20 +561,20 @@ export function QueueMonitor() {
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr),420px]">
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr),420px]">
         <div className="space-y-6">
-          <section className="surface-panel p-6">
+          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p className="eyebrow">筛选与查看</p>
-                <h3 className="mt-2 text-2xl font-semibold text-slate-900">先筛出积压或失败任务</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">筛选与查看</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">先筛出积压或失败任务</h3>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
                   支持按类型、状态、搜索关键字和排序快速缩小范围，方便先排查最影响系统吞吐的任务。
                 </p>
               </div>
               {(searchQuery || statusFilter !== "all" || typeFilter !== "all" || sort !== "recent") && (
                 <button
-                  className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+                  className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
                   onClick={() => {
                     setSearchQuery("");
                     setStatusFilter("all");
@@ -589,12 +589,12 @@ export function QueueMonitor() {
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <label className="block text-sm font-medium text-slate-700 md:col-span-2 xl:col-span-1">
+              <label className="block text-sm font-medium text-foreground md:col-span-2 xl:col-span-1">
                 搜索任务
-                <div className="mt-2 flex items-center gap-3 rounded-2xl border border-brand-line bg-stone-50 px-4 py-3">
-                  <Search className="h-4 w-4 text-slate-400" />
+                <div className="mt-2 flex items-center gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
+                  <Search className="h-4 w-4 text-muted-foreground/80" />
                   <input
-                    className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                    className="w-full bg-transparent text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground/80"
                     onChange={(event) => setSearchQuery(event.target.value)}
                     placeholder="任务 ID、类型、用户、payload"
                     value={searchQuery}
@@ -602,10 +602,10 @@ export function QueueMonitor() {
                 </div>
               </label>
 
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 类型
                 <select
-                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                   onChange={(event) => setTypeFilter(event.target.value as QueueTaskType | "all")}
                   value={typeFilter}
                 >
@@ -617,10 +617,10 @@ export function QueueMonitor() {
                 </select>
               </label>
 
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 状态
                 <select
-                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                   onChange={(event) => setStatusFilter(event.target.value as QueueTaskStatus | "all")}
                   value={statusFilter}
                 >
@@ -632,10 +632,10 @@ export function QueueMonitor() {
                 </select>
               </label>
 
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 排序
                 <select
-                  className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3"
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                   onChange={(event) => setSort(event.target.value as QueueConsoleSort)}
                   value={sort}
                 >
@@ -649,16 +649,16 @@ export function QueueMonitor() {
             </div>
           </section>
 
-          <section className="surface-panel overflow-hidden p-0">
-            <div className="border-b border-brand-line/70 px-6 py-5">
-              <p className="eyebrow">任务列表</p>
-              <h3 className="mt-2 text-2xl font-semibold text-slate-900">按时间、优先级和错误状态查看队列</h3>
+          <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
+            <div className="border-b border-border/70 p-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">任务列表</p>
+              <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按时间、优先级和错误状态查看队列</h3>
             </div>
 
             {loading ? (
-              <div className="space-y-4 px-6 py-6">
+              <div className="space-y-4 p-5">
                 {Array.from({ length: 4 }).map((_, index) => (
-                  <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-5" key={index}>
+                  <div className="rounded-xl border border-border bg-muted/40 px-4 py-5" key={index}>
                     <div className="h-4 w-32 animate-pulse rounded-full bg-stone-200" />
                     <div className="mt-4 h-4 w-full animate-pulse rounded-full bg-stone-200" />
                     <div className="mt-3 h-4 w-5/6 animate-pulse rounded-full bg-stone-200" />
@@ -666,32 +666,32 @@ export function QueueMonitor() {
                 ))}
               </div>
             ) : consoleData.rows.length ? (
-              <div className="space-y-4 px-6 py-6">
+              <div className="space-y-4 p-5">
                 {consoleData.rows.map((row) => {
                   const statusMeta = taskStatusMeta(row.task.status);
                   return (
-                    <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4" key={row.task.id}>
+                    <div className="rounded-xl border border-border bg-muted/40 p-4" key={row.task.id}>
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-mono text-sm font-semibold text-slate-900">{row.task.id}</p>
-                            <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                            <p className="font-mono text-sm font-semibold text-foreground">{row.task.id}</p>
+                            <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                               {row.task.type}
                             </span>
                             <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-semibold", statusMeta.className)}>
                               {statusMeta.label}
                             </span>
-                            <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                            <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                               {row.task.priority}
                             </span>
                             {row.isPendingBacklog ? (
-                              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+                              <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-600">
                                 已到执行时间
                               </span>
                             ) : null}
                           </div>
-                          <p className="mt-3 break-all text-xs leading-6 text-slate-600">{row.payloadPreview}</p>
-                          <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-2 xl:grid-cols-4">
+                          <p className="mt-3 break-all text-xs leading-6 text-muted-foreground">{row.payloadPreview}</p>
+                          <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 xl:grid-cols-4">
                             <p>用户：#{row.task.userId}</p>
                             <p>可执行：{formatDateTime(row.task.availableAt)}</p>
                             <p>开始：{formatDateTime(row.task.startedAt)}</p>
@@ -699,7 +699,7 @@ export function QueueMonitor() {
                           </div>
                         </div>
 
-                        <div className="min-w-[180px] text-xs text-slate-500 lg:text-right">
+                        <div className="min-w-[180px] text-xs text-muted-foreground lg:text-right">
                           <p>创建于：{formatDateTime(row.task.createdAt)}</p>
                           <p className="mt-2">更新于：{formatDateTime(row.task.updatedAt)}</p>
                           <p className="mt-2">重试：{row.task.retryCount} / {row.task.maxRetries}</p>
@@ -708,7 +708,7 @@ export function QueueMonitor() {
                       </div>
 
                       {row.task.errorMessage ? (
-                        <div className="mt-4 rounded-[20px] border border-red-200 bg-red-50 px-4 py-3 text-xs leading-6 text-red-700">
+                        <div className="mt-4 rounded-[20px] border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs leading-6 text-destructive">
                           {row.task.errorMessage}
                         </div>
                       ) : null}
@@ -718,8 +718,8 @@ export function QueueMonitor() {
               </div>
             ) : (
               <div className="px-6 py-10 text-center">
-                <p className="text-base font-semibold text-slate-900">当前筛选条件下没有队列任务</p>
-                <p className="mt-3 text-sm leading-6 text-slate-500">
+                <p className="text-base font-semibold text-foreground">当前筛选条件下没有队列任务</p>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
                   可以放宽筛选条件，或去业务页检查是否还有待入队的任务。
                 </p>
               </div>
@@ -728,28 +728,28 @@ export function QueueMonitor() {
         </div>
 
         <div className="space-y-6">
-          <section className="surface-panel p-6">
+          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="eyebrow">队列配置</p>
-                <h3 className="mt-2 text-2xl font-semibold text-slate-900">统一调度参数</h3>
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">队列配置</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">统一调度参数</h3>
               </div>
               <button
-                className="rounded-2xl bg-brand-emerald px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
                 disabled={configLoading || configSaving || !config}
                 onClick={saveQueueConfig}
                 type="button"
               >
-                {configSaving ? "保存中..." : "保存"}
+                {configSaving ? "保存中…" : "保存"}
               </button>
             </div>
 
-            <p className="mt-3 text-sm leading-6 text-slate-600">
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
               调整全局并发、轮询间隔和每种任务类型的并发上限，保存后会自动同步到调度服务。
             </p>
 
             {configLoading && !config ? (
-              <p className="mt-4 rounded-2xl bg-stone-50 px-4 py-5 text-sm text-slate-500">正在加载队列配置...</p>
+              <p className="mt-4 rounded-lg bg-muted/40 px-4 py-5 text-sm text-muted-foreground">正在加载队列配置...</p>
             ) : null}
 
             {config ? (
@@ -783,35 +783,35 @@ export function QueueMonitor() {
                   ))}
                 </div>
 
-                <div className="mt-5 rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4 text-sm leading-6 text-slate-600">
+                <div className="mt-5 rounded-xl border border-border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
                   <p>配置来源：{config.configSource === "database" ? "数据库" : "默认值"}</p>
                   <p className="mt-2">{config.note || "配置保存后会自动同步到调度服务。"}</p>
                 </div>
               </>
             ) : null}
 
-            {configError ? <p className="mt-4 text-sm text-red-700">{configError}</p> : null}
+            {configError ? <p className="mt-4 text-sm text-destructive">{configError}</p> : null}
           </section>
 
-          <section className="surface-panel p-6">
+          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="eyebrow">调度器状态</p>
-                <h3 className="mt-2 text-2xl font-semibold text-slate-900">后台编排健康度</h3>
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">调度器状态</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">后台编排健康度</h3>
               </div>
               <button
-                className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
                 disabled={schedulerLoading}
                 onClick={() => void loadSchedulerStatus()}
                 type="button"
               >
-                {schedulerLoading ? "刷新中..." : "刷新"}
+                {schedulerLoading ? "刷新中…" : "刷新"}
               </button>
             </div>
 
             {schedulerStatus ? (
               <div className="mt-5 space-y-4">
-                <p className="rounded-[24px] bg-sky-50 px-4 py-4 text-sm leading-6 text-sky-800">
+                <p className="rounded-xl bg-sky-50 p-4 text-sm leading-6 text-sky-800">
                   {schedulerStatus.note}
                 </p>
 
@@ -829,15 +829,15 @@ export function QueueMonitor() {
                 ].map((item) => {
                   const tone = schedulerTone(item.value.status);
                   return (
-                    <div className={cn("rounded-[24px] border px-4 py-4", tone.panel)} key={item.key}>
+                    <div className={cn("rounded-xl border p-4", tone.panel)} key={item.key}>
                       <div className="flex items-start justify-between gap-3">
-                        <p className="text-sm font-semibold text-slate-900">{item.label}</p>
+                        <p className="text-sm font-semibold text-foreground">{item.label}</p>
                         <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", tone.badge)}>
                           {item.value.status}
                         </span>
                       </div>
-                      <p className="mt-3 text-sm leading-6 text-slate-700">{item.value.message}</p>
-                      <div className="mt-4 grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
+                      <p className="mt-3 text-sm leading-6 text-foreground">{item.value.message}</p>
+                      <div className="mt-4 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
                         <p>启用任务：{item.value.metrics.enabledTasks}</p>
                         <p>待调度：{item.value.metrics.overdueTasks}</p>
                         <p>最近入队：{item.value.metrics.recentQueuedTasks}</p>
@@ -849,14 +849,14 @@ export function QueueMonitor() {
                   );
                 })}
 
-                <div className="grid gap-2 text-xs text-slate-500 sm:grid-cols-2">
+                <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
                   <p>最近心跳：{formatDateTime(schedulerStatus.heartbeatAt)}</p>
                   <p>最近编排：{formatDateTime(schedulerStatus.lastTickAt)}</p>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-3">
                   <button
-                    className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
                     disabled={manualScheduling !== null}
                     onClick={() => void triggerManualScheduling("click-farm")}
                     type="button"
@@ -864,7 +864,7 @@ export function QueueMonitor() {
                     {manualScheduling === "click-farm" ? "补投中..." : "补投补点击"}
                   </button>
                   <button
-                    className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
                     disabled={manualScheduling !== null}
                     onClick={() => void triggerManualScheduling("url-swap")}
                     type="button"
@@ -872,7 +872,7 @@ export function QueueMonitor() {
                     {manualScheduling === "url-swap" ? "补投中..." : "补投换链接"}
                   </button>
                   <button
-                    className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
                     disabled={manualScheduling !== null}
                     onClick={() => void triggerManualScheduling("all")}
                     type="button"
@@ -882,37 +882,37 @@ export function QueueMonitor() {
                 </div>
               </div>
             ) : (
-              <p className="mt-4 rounded-2xl bg-stone-50 px-4 py-5 text-sm text-slate-500">
+              <p className="mt-4 rounded-lg bg-muted/40 px-4 py-5 text-sm text-muted-foreground">
                 {schedulerLoading ? "正在加载调度器状态..." : "暂未获取到调度器状态。"}
               </p>
             )}
 
-            {schedulerError ? <p className="mt-4 text-sm text-red-700">{schedulerError}</p> : null}
+            {schedulerError ? <p className="mt-4 text-sm text-destructive">{schedulerError}</p> : null}
           </section>
 
-          <section className="surface-panel p-6">
-            <p className="eyebrow">重点提醒</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">先处理这些队列风险</h3>
+          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">重点提醒</p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">先处理这些队列风险</h3>
 
             <div className="mt-5 space-y-4">
               {consoleData.risks.slice(0, 4).map((risk) => (
-                <div className="rounded-[24px] border border-brand-line bg-white px-4 py-4" key={risk.id}>
+                <div className="rounded-xl border border-border bg-background p-4" key={risk.id}>
                   <div className="flex items-start gap-3">
                     <span
                       className={cn(
-                        "mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl",
+                        "mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg",
                         risk.tone === "red"
-                          ? "bg-red-50 text-red-700"
+                          ? "bg-destructive/10 text-destructive"
                           : risk.tone === "amber"
-                            ? "bg-amber-50 text-amber-700"
-                            : "bg-slate-100 text-slate-700"
+                            ? "bg-amber-500/10 text-amber-600"
+                            : "bg-slate-100 text-foreground"
                       )}
                     >
                       {risk.tone === "slate" ? <Wrench className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900">{risk.title}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{risk.description}</p>
+                      <p className="text-sm font-semibold text-foreground">{risk.title}</p>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{risk.description}</p>
                     </div>
                   </div>
                 </div>
@@ -933,10 +933,10 @@ function ConfigInput(props: {
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="grid gap-2 text-sm text-slate-600">
+    <label className="grid gap-2 text-sm text-muted-foreground">
       <span>{props.label}</span>
       <input
-        className="rounded-2xl border border-brand-line bg-white px-4 py-3 text-sm text-slate-900"
+        className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
         min={1}
         onChange={(event) => props.onChange(Number(event.target.value || 0))}
         type="number"

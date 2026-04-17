@@ -344,21 +344,21 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
     >
       {offer ? (
         <form className="space-y-5" onSubmit={handleSave}>
-          <div className="rounded-[28px] border border-brand-line bg-stone-50 p-5">
-            <p className="text-sm font-semibold text-slate-900">{offer.brandName}</p>
-            <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">
+          <div className="rounded-xl border border-border bg-muted/40 p-5">
+            <p className="text-sm font-semibold text-foreground">{offer.brandName}</p>
+            <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
               {offer.targetCountry} · {offer.campaignLabel || "未设置 Campaign Label"}
             </p>
-            <p className="mt-3 break-all font-mono text-xs text-slate-600">
+            <p className="mt-3 break-all font-mono text-xs text-muted-foreground">
               最近 Suffix: {offer.latestResolvedSuffix || "尚未解析"}
             </p>
           </div>
 
           {proxyWarning ? (
-            <div className="rounded-[28px] border border-red-200 bg-red-50 p-5 text-sm leading-6 text-red-700">
+            <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-5 text-sm leading-6 text-destructive">
               <p>{proxyWarning}</p>
               <button
-                className="mt-3 rounded-full border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-700"
+                className="mt-3 rounded-full border border-destructive/20 bg-background px-4 py-2 text-xs font-semibold text-destructive"
                 onClick={() => {
                   window.location.href = "/settings";
                 }}
@@ -370,14 +370,14 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
           ) : null}
 
           {loading ? (
-            <p className="rounded-2xl bg-stone-50 px-4 py-5 text-sm text-slate-500">正在加载任务...</p>
+            <p className="rounded-lg bg-muted/40 px-4 py-5 text-sm text-muted-foreground">正在加载任务...</p>
           ) : (
             <>
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   执行模式
                   <select
-                    className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2"
                     value={form.mode}
                     onChange={(event) =>
                       setForm((current) => ({
@@ -391,10 +391,10 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
                   </select>
                 </label>
 
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   执行间隔（分钟）
                   <select
-                    className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 font-mono"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono"
                     value={form.intervalMinutes}
                     onChange={(event) =>
                       setForm((current) => ({
@@ -413,10 +413,10 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   持续天数
                   <select
-                    className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2"
                     value={form.durationDays}
                     onChange={(event) =>
                       setForm((current) => ({
@@ -433,10 +433,10 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
                   </select>
                 </label>
 
-                <label className="flex items-end gap-3 rounded-[28px] border border-brand-line bg-stone-50 px-4 py-4 text-sm font-medium text-slate-700">
+                <label className="flex items-end gap-3 rounded-xl border border-border bg-muted/40 p-4 text-sm font-medium text-foreground">
                   <input
                     checked={form.enabled}
-                    className="h-4 w-4 rounded border-brand-line"
+                    className="h-4 w-4 rounded border-border"
                     type="checkbox"
                     onChange={(event) =>
                       setForm((current) => ({
@@ -451,10 +451,10 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
 
               {form.mode === "google_ads_api" ? (
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block text-sm font-medium text-slate-700">
+                  <label className="block text-sm font-medium text-foreground">
                     Customer ID
                     <input
-                      className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 font-mono"
+                      className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono"
                       placeholder="1234567890"
                       value={form.googleCustomerId}
                       onChange={(event) =>
@@ -466,10 +466,10 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
                     />
                   </label>
 
-                  <label className="block text-sm font-medium text-slate-700">
+                  <label className="block text-sm font-medium text-foreground">
                     Campaign ID
                     <input
-                      className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 font-mono"
+                      className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono"
                       placeholder="987654321"
                       value={form.googleCampaignId}
                       onChange={(event) =>
@@ -482,14 +482,14 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
                   </label>
                 </div>
               ) : (
-                <div className="rounded-[28px] border border-brand-line bg-stone-50 p-5 text-sm leading-6 text-slate-600">
+                <div className="rounded-xl border border-border bg-muted/40 p-5 text-sm leading-6 text-muted-foreground">
                   脚本模式仍通过 `/api/script/link-swap/snapshot` 向 MCC 脚本提供只读快照。只要 Offer 配置了
                   `campaignLabel`，脚本就会匹配并更新对应 Campaign。
                 </div>
               )}
 
               {task ? (
-                <div className="grid gap-3 rounded-[28px] border border-brand-line bg-stone-50 p-5 text-sm text-slate-600 sm:grid-cols-2">
+                <div className="grid gap-3 rounded-xl border border-border bg-muted/40 p-5 text-sm text-muted-foreground sm:grid-cols-2">
                   <p>当前状态：{task.status}</p>
                   <p>连续失败：{task.consecutiveFailures}</p>
                   <p>上次执行：{task.lastRunAt || "暂无"}</p>
@@ -498,34 +498,34 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
               ) : null}
 
               {task ? (
-                <div className="rounded-[28px] border border-brand-line bg-stone-50 p-5">
+                <div className="rounded-xl border border-border bg-muted/40 p-5">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-slate-900">最近执行记录</p>
-                    <span className="text-xs uppercase tracking-wide text-slate-500">
+                    <p className="text-sm font-semibold text-foreground">最近执行记录</p>
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
                       {history.length} runs
                     </span>
                   </div>
                   <div className="mt-4 space-y-3">
                     {history.length ? (
                       history.map((run) => (
-                        <div className="rounded-2xl border border-brand-line bg-white px-4 py-4" key={run.id}>
+                        <div className="rounded-lg border border-border bg-background p-4" key={run.id}>
                           <div className="flex items-center justify-between gap-3">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-foreground">
                               {run.status}
                             </p>
-                            <p className="text-xs text-slate-500">{run.createdAt}</p>
+                            <p className="text-xs text-muted-foreground">{run.createdAt}</p>
                           </div>
-                          <p className="mt-2 break-all font-mono text-xs text-slate-700">
+                          <p className="mt-2 break-all font-mono text-xs text-foreground">
                             {run.resolvedSuffix || run.errorMessage || "无 suffix"}
                           </p>
-                          <p className="mt-2 text-xs text-slate-500">
+                          <p className="mt-2 text-xs text-muted-foreground">
                             应用结果：{run.applyStatus}
                             {run.applyErrorMessage ? ` · ${run.applyErrorMessage}` : ""}
                           </p>
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-slate-500">还没有换链接执行记录。</p>
+                      <p className="text-sm text-muted-foreground">还没有换链接执行记录。</p>
                     )}
                   </div>
                 </div>
@@ -533,12 +533,12 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
             </>
           )}
 
-          {message ? <p className="text-sm text-slate-600">{message}</p> : null}
+          {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
 
           <div className="flex flex-wrap justify-end gap-3">
             {canSwapNowTask ? (
               <button
-                className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
                 disabled={loading || saving || enabling || disabling || swappingNow}
                 onClick={handleSwapNowTask}
                 type="button"
@@ -548,7 +548,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
             ) : null}
             {canDisableTask ? (
               <button
-                className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
                 disabled={loading || saving || enabling || disabling || swappingNow}
                 onClick={handleDisableTask}
                 type="button"
@@ -558,7 +558,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
             ) : null}
             {canEnableTask ? (
               <button
-                className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
                 disabled={loading || saving || enabling || disabling || swappingNow}
                 onClick={handleEnableTask}
                 type="button"
@@ -567,18 +567,18 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
               </button>
             ) : null}
             <button
-              className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700"
+              className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
               onClick={onClose}
               type="button"
             >
               关闭
             </button>
             <button
-              className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
               disabled={loading || saving || enabling || disabling || swappingNow}
               type="submit"
             >
-              {saving ? "保存中..." : "保存任务"}
+              {saving ? "保存中…" : "保存任务"}
             </button>
           </div>
         </form>

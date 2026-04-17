@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, KeyRound, ShieldCheck } from "lucide-react";
 
 import { fetchJson } from "@/lib/api-error-handler";
+import { cn } from "@autocashback/ui";
 
 export function LoginForm(props: {
   className?: string;
@@ -38,84 +39,92 @@ export function LoginForm(props: {
   };
 
   return (
-    <form className={`surface-panel overflow-hidden p-0 ${props.className ?? ""}`.trim()} onSubmit={handleSubmit}>
-      <div className="border-b border-brand-line/80 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.9)_0%,rgba(255,255,255,0.98)_100%)] px-8 py-8">
+    <form className={cn("bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden", props.className)} onSubmit={handleSubmit}>
+      <div className="border-b border-border bg-muted/30 px-8 py-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="eyebrow">账号登录</p>
-            <h2 className="mt-4 font-display text-4xl font-semibold text-slate-900">欢迎回来</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-600">请输入管理员开通的账号信息，登录 AutoCashBack 控制台。</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">安全登录</p>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight text-foreground">欢迎回来</h2>
+            <p className="mt-2 text-sm text-muted-foreground">请输入管理员开通的账号信息，登录系统后台。</p>
           </div>
-          <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-emerald shadow-sm shadow-emerald-900/5">
-            安全入口
+          <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">
+            内部系统
           </span>
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-[22px] border border-brand-line/80 bg-white/90 px-4 py-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-              <ShieldCheck className="h-4 w-4 text-brand-emerald" />
-              管理员统一开通
+          <div className="rounded-lg border bg-background/50 p-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <ShieldCheck className="h-4 w-4 text-primary" aria-hidden="true" />
+              统一授权
             </div>
-            <p className="mt-2 text-sm leading-6 text-slate-600">试用账号和正式账号都从后台统一创建，避免入口混乱。</p>
+            <p className="mt-1 text-xs text-muted-foreground">账号权限由管理员从后台统一分配。</p>
           </div>
-          <div className="rounded-[22px] border border-brand-line/80 bg-white/90 px-4 py-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-              <KeyRound className="h-4 w-4 text-amber-700" />
-              重置后旧会话失效
+          <div className="rounded-lg border bg-background/50 p-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <KeyRound className="h-4 w-4 text-amber-500" aria-hidden="true" />
+              安全控制
             </div>
-            <p className="mt-2 text-sm leading-6 text-slate-600">如果管理员重置了密码，请直接使用新密码重新登录。</p>
+            <p className="mt-1 text-xs text-muted-foreground">重置密码后，所有旧设备的会话将自动失效。</p>
           </div>
         </div>
       </div>
 
       <div className="px-8 pb-8 pt-6">
-        <div className="space-y-5">
-          <label className="block text-sm font-medium text-slate-700">
+        <div className="space-y-4">
+          <label className="block text-sm font-medium text-foreground" htmlFor="username">
             用户名或邮箱
-            <input
-              className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-brand-emerald focus:bg-white"
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="name@company.com"
-              value={username}
-            />
           </label>
-          <label className="block text-sm font-medium text-slate-700">
+          <input
+            id="username"
+            name="username"
+            autoComplete="username"
+            className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+            onChange={(event) => setUsername(event.target.value)}
+            placeholder="name@company.com"
+            value={username}
+            required
+          />
+          
+          <label className="block mt-4 text-sm font-medium text-foreground" htmlFor="password">
             密码
-            <input
-              className="mt-2 w-full rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-brand-emerald focus:bg-white"
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="••••••••"
-              type="password"
-              value={password}
-            />
           </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="••••••••"
+            value={password}
+            required
+          />
         </div>
 
         {error ? (
-          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          <div className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm font-medium text-destructive" role="alert" aria-live="polite">
             {error}
           </div>
         ) : null}
 
         <button
-          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-emerald px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={pending}
           type="submit"
         >
-          {pending ? "正在登录..." : "账号登录"}
-          {!pending ? <ArrowRight className="h-4 w-4" /> : null}
+          {pending ? "正在验证…" : "安全登录"}
+          {!pending ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : null}
         </button>
 
-        <div className="mt-6 rounded-[24px] border border-brand-line bg-stone-50 px-5 py-5">
-          <p className="text-sm text-slate-600">还没有账号？试用和正式账号都需要先由管理员统一开通。</p>
+        <div className="mt-6 flex flex-col items-center justify-center rounded-lg border bg-muted/30 p-4 text-center">
+          <p className="text-sm text-muted-foreground">还没有账号？</p>
           <button
-            className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-brand-emerald transition hover:text-emerald-500"
+            className="mt-1 text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
             onClick={props.onContactClick}
             type="button"
           >
-            联系开通账号
-            <ArrowRight className="h-4 w-4" />
+            联系管理员开通
           </button>
         </div>
       </div>

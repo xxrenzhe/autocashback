@@ -211,23 +211,23 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
     >
       {offer ? (
         <form className="space-y-5" onSubmit={submitForm}>
-          <div className="rounded-[28px] border border-brand-line bg-stone-50 p-5">
-            <p className="text-sm font-semibold text-slate-900">{offer.brandName}</p>
-            <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">
+          <div className="rounded-xl border border-border bg-muted/40 p-5">
+            <p className="text-sm font-semibold text-foreground">{offer.brandName}</p>
+            <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
               {offer.targetCountry} · {offer.campaignLabel || "未设置 Campaign Label"}
             </p>
-            <p className="mt-3 break-all font-mono text-xs text-slate-600">{offer.promoLink}</p>
+            <p className="mt-3 break-all font-mono text-xs text-muted-foreground">{offer.promoLink}</p>
           </div>
 
           {loading ? (
-            <p className="rounded-2xl bg-stone-50 px-4 py-5 text-sm text-slate-500">正在加载任务...</p>
+            <p className="rounded-lg bg-muted/40 px-4 py-5 text-sm text-muted-foreground">正在加载任务...</p>
           ) : (
             <>
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   每日点击数
                   <input
-                    className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 font-mono"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono"
                     min={1}
                     step={1}
                     type="number"
@@ -241,10 +241,10 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
                   />
                 </label>
 
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   时区
                   <input
-                    className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2"
                     value={form.timezone}
                     onChange={(event) =>
                       setForm((current) => ({
@@ -257,10 +257,10 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   开始时间
                   <input
-                    className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 font-mono"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono"
                     type="time"
                     value={form.startTime}
                     onChange={(event) =>
@@ -272,10 +272,10 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
                   />
                 </label>
 
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   结束时间
                   <input
-                    className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 font-mono"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono"
                     type="time"
                     value={form.endTime === "24:00" ? "23:59" : form.endTime}
                     onChange={(event) =>
@@ -287,10 +287,10 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
                   />
                 </label>
 
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   持续天数
                   <select
-                    className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2"
                     value={form.durationDays}
                     onChange={(event) =>
                       setForm((current) => ({
@@ -307,10 +307,10 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
                   </select>
                 </label>
 
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   开始日期
                   <input
-                    className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3 font-mono"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono"
                     type="date"
                     value={form.scheduledStartDate}
                     onChange={(event) =>
@@ -324,10 +324,10 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-[180px,1fr]">
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   Referer 模式
                   <select
-                    className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2"
                     value={form.refererType}
                     onChange={(event) =>
                       setForm((current) => ({
@@ -343,10 +343,10 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
                   </select>
                 </label>
 
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   Referer 值
                   <input
-                    className="mt-2 w-full rounded-2xl border border-brand-line bg-white px-4 py-3"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2"
                     disabled={form.refererType === "none" || form.refererType === "random"}
                     placeholder={
                       form.refererType === "specific"
@@ -364,12 +364,12 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
                 </label>
               </div>
 
-              <div className="rounded-[28px] border border-brand-line bg-stone-50 p-5 text-sm leading-6 text-slate-600">
+              <div className="rounded-xl border border-border bg-muted/40 p-5 text-sm leading-6 text-muted-foreground">
                 系统会根据时段自动生成 24 小时分布。默认按活跃时段平均拆分，调度器每次执行单个点击请求，并根据剩余目标量自动计算下次运行时间。
               </div>
 
               {task ? (
-                <div className="grid gap-3 rounded-[28px] border border-brand-line bg-stone-50 p-5 text-sm text-slate-600 sm:grid-cols-2">
+                <div className="grid gap-3 rounded-xl border border-border bg-muted/40 p-5 text-sm text-muted-foreground sm:grid-cols-2">
                   <p>当前状态：{task.status}</p>
                   <p>任务进度：{task.progress}%</p>
                   <p>总点击：{task.totalClicks}</p>
@@ -381,14 +381,14 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
             </>
           )}
 
-          {message ? <p className="text-sm text-slate-600">{message}</p> : null}
+          {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
 
           <div className="flex flex-wrap justify-between gap-3">
             <div className="flex flex-wrap gap-3">
               {task ? (
                 <>
                   <button
-                    className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                    className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
                     disabled={saving || task.status === "stopped"}
                     onClick={() => runTaskAction("stop")}
                     type="button"
@@ -396,7 +396,7 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
                     暂停任务
                   </button>
                   <button
-                    className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                    className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
                     disabled={saving || (task.status !== "paused" && task.status !== "stopped")}
                     onClick={() => runTaskAction("restart")}
                     type="button"
@@ -404,7 +404,7 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
                     恢复任务
                   </button>
                   <button
-                    className="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-600 disabled:opacity-60"
+                    className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive disabled:opacity-60"
                     disabled={saving}
                     onClick={() => runTaskAction("delete")}
                     type="button"
@@ -417,18 +417,18 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
 
             <div className="flex flex-wrap gap-3">
               <button
-                className="rounded-2xl border border-brand-line bg-white px-5 py-3 text-sm font-semibold text-slate-700"
+                className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
                 onClick={onClose}
                 type="button"
               >
                 关闭
               </button>
               <button
-                className="rounded-2xl bg-brand-emerald px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                 disabled={loading || saving}
                 type="submit"
               >
-                {saving ? "保存中..." : task ? "更新任务" : "创建任务"}
+                {saving ? "保存中…" : task ? "更新任务" : "创建任务"}
               </button>
             </div>
           </div>

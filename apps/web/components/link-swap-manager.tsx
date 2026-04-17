@@ -145,17 +145,17 @@ function SortableHeader({
 }) {
   return (
     <button
-      className="inline-flex items-center gap-1 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500"
+      className="inline-flex items-center gap-1 text-left text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground"
       onClick={onClick}
       type="button"
     >
       <span>{label}</span>
       {!active ? (
-        <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />
+        <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/80" />
       ) : direction === "asc" ? (
-        <ArrowUp className="h-3.5 w-3.5 text-slate-700" />
+        <ArrowUp className="h-3.5 w-3.5 text-foreground" />
       ) : (
-        <ArrowDown className="h-3.5 w-3.5 text-slate-700" />
+        <ArrowDown className="h-3.5 w-3.5 text-foreground" />
       )}
     </button>
   );
@@ -176,31 +176,31 @@ function SummaryCard({
 }) {
   const toneStyles = {
     emerald: {
-      badge: "bg-brand-mist text-brand-emerald",
-      icon: "bg-brand-mist text-brand-emerald"
+      badge: "bg-primary/10 text-primary",
+      icon: "bg-primary/10 text-primary"
     },
     amber: {
-      badge: "bg-amber-50 text-amber-700",
-      icon: "bg-amber-50 text-amber-700"
+      badge: "bg-amber-500/10 text-amber-600",
+      icon: "bg-amber-500/10 text-amber-600"
     },
     slate: {
-      badge: "bg-slate-100 text-slate-700",
-      icon: "bg-slate-100 text-slate-700"
+      badge: "bg-slate-100 text-foreground",
+      icon: "bg-slate-100 text-foreground"
     }
   } as const;
 
   return (
-    <div className="surface-panel p-5">
+    <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
       <div className="flex items-start justify-between gap-4">
         <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", toneStyles[tone].badge)}>
           {label}
         </span>
-        <span className={cn("flex h-10 w-10 items-center justify-center rounded-2xl", toneStyles[tone].icon)}>
+        <span className={cn("flex h-10 w-10 items-center justify-center rounded-lg", toneStyles[tone].icon)}>
           <Icon className="h-4 w-4" />
         </span>
       </div>
-      <p className="mt-5 font-mono text-4xl font-semibold text-slate-900">{value}</p>
-      <p className="mt-3 text-sm leading-6 text-slate-600">{note}</p>
+      <p className="mt-5 font-mono text-4xl font-semibold text-foreground">{value}</p>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
     </div>
   );
 }
@@ -208,15 +208,15 @@ function SummaryCard({
 function statusPill(status: LinkSwapConsoleStatus) {
   switch (status) {
     case "running":
-      return "bg-brand-mist text-brand-emerald";
+      return "bg-primary/10 text-primary";
     case "paused":
-      return "bg-slate-100 text-slate-700";
+      return "bg-slate-100 text-foreground";
     case "warning":
-      return "bg-amber-50 text-amber-700";
+      return "bg-amber-500/10 text-amber-600";
     case "error":
-      return "bg-red-50 text-red-700";
+      return "bg-destructive/10 text-destructive";
     default:
-      return "bg-slate-100 text-slate-700";
+      return "bg-slate-100 text-foreground";
   }
 }
 
@@ -443,16 +443,16 @@ export function LinkSwapManager() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <section className="surface-panel p-6">
-          <div className="h-8 w-48 animate-pulse rounded-full bg-brand-mist" />
-          <div className="mt-4 h-4 w-80 animate-pulse rounded-full bg-stone-100" />
+        <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
+          <div className="h-8 w-48 animate-pulse rounded-full bg-primary/10" />
+          <div className="mt-4 h-4 w-80 animate-pulse rounded-full bg-muted" />
         </section>
         <section className="grid gap-4 xl:grid-cols-5">
           {Array.from({ length: 5 }).map((_, index) => (
-            <div className="surface-panel p-5" key={index}>
-              <div className="h-6 w-20 animate-pulse rounded-full bg-stone-100" />
-              <div className="mt-5 h-10 w-24 animate-pulse rounded-full bg-stone-100" />
-              <div className="mt-3 h-4 w-full animate-pulse rounded-full bg-stone-100" />
+            <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" key={index}>
+              <div className="h-6 w-20 animate-pulse rounded-full bg-muted" />
+              <div className="mt-5 h-10 w-24 animate-pulse rounded-full bg-muted" />
+              <div className="mt-3 h-4 w-full animate-pulse rounded-full bg-muted" />
             </div>
           ))}
         </section>
@@ -462,19 +462,19 @@ export function LinkSwapManager() {
 
   return (
     <div className="space-y-6">
-      <section className="surface-panel overflow-hidden p-0">
+      <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
         <div className="grid gap-0 xl:grid-cols-[1.15fr,0.85fr]">
           <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="eyebrow">Link Swap</p>
-                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">换链任务控制台</h2>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Link Swap</p>
+                <h2 className="mt-3 text-xl font-semibold tracking-tight tracking-tight tracking-tight text-foreground">换链任务控制台</h2>
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
                   统一查看任务状态、执行节奏、最近结果和脚本对接信息，先处理异常和预警，再调整具体任务。
                 </p>
               </div>
               <button
-                className="inline-flex items-center gap-2 rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-stone-50 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-60"
                 disabled={refreshing}
                 onClick={() => void loadAll({ refresh: true })}
                 type="button"
@@ -486,49 +486,49 @@ export function LinkSwapManager() {
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <Link
-                className="group rounded-[24px] border border-brand-line bg-white/90 px-4 py-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-editorial motion-reduce:transform-none"
+                className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
                 href="/offers"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <Target className="h-5 w-5" />
                   </span>
-                  <ExternalLink className="h-4 w-4 text-slate-400 transition group-hover:text-brand-emerald" />
+                  <ExternalLink className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
                 </div>
-                <p className="mt-4 text-sm font-semibold text-slate-900">查看 Offer</p>
-                <p className="mt-2 text-sm leading-6 text-slate-500">先补齐品牌、国家和 campaignLabel，再回到这里管理任务。</p>
+                <p className="mt-4 text-sm font-semibold text-foreground">查看 Offer</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">先补齐品牌、国家和 campaignLabel，再回到这里管理任务。</p>
               </Link>
 
               <Link
-                className="group rounded-[24px] border border-brand-line bg-white/90 px-4 py-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-editorial motion-reduce:transform-none"
+                className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
                 href="/google-ads"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <Link2 className="h-5 w-5" />
                   </span>
-                  <ExternalLink className="h-4 w-4 text-slate-400 transition group-hover:text-brand-emerald" />
+                  <ExternalLink className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
                 </div>
-                <p className="mt-4 text-sm font-semibold text-slate-900">Google Ads 配置</p>
-                <p className="mt-2 text-sm leading-6 text-slate-500">API 模式依赖 Customer ID、Campaign ID 和授权状态。</p>
+                <p className="mt-4 text-sm font-semibold text-foreground">Google Ads 配置</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">API 模式依赖 Customer ID、Campaign ID 和授权状态。</p>
               </Link>
 
               <Link
-                className="group rounded-[24px] border border-brand-line bg-white/90 px-4 py-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-editorial motion-reduce:transform-none"
+                className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
                 href="/settings"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <Settings2 className="h-5 w-5" />
                   </span>
-                  <ExternalLink className="h-4 w-4 text-slate-400 transition group-hover:text-brand-emerald" />
+                  <ExternalLink className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
                 </div>
-                <p className="mt-4 text-sm font-semibold text-slate-900">代理与系统设置</p>
-                <p className="mt-2 text-sm leading-6 text-slate-500">异常任务优先检查目标国家代理和脚本运行环境。</p>
+                <p className="mt-4 text-sm font-semibold text-foreground">代理与系统设置</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">异常任务优先检查目标国家代理和脚本运行环境。</p>
               </Link>
 
               <button
-                className="group rounded-[24px] border border-brand-line bg-white/90 px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-editorial motion-reduce:transform-none"
+                className="group rounded-xl border border-border bg-background/90 p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
                 onClick={() => {
                   setHistoryTask(null);
                   setHistoryRecords(runs.slice(0, 20));
@@ -538,33 +538,33 @@ export function LinkSwapManager() {
                 type="button"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <History className="h-5 w-5" />
                   </span>
-                  <ExternalLink className="h-4 w-4 text-slate-400 transition group-hover:text-brand-emerald" />
+                  <ExternalLink className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
                 </div>
-                <p className="mt-4 text-sm font-semibold text-slate-900">查看执行历史</p>
-                <p className="mt-2 text-sm leading-6 text-slate-500">从任务行打开历史弹窗，快速定位失败原因和最近 suffix。</p>
+                <p className="mt-4 text-sm font-semibold text-foreground">查看执行历史</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">从任务行打开历史弹窗，快速定位失败原因和最近 suffix。</p>
               </button>
             </div>
           </div>
 
-          <div className="border-t border-brand-line/70 bg-white/84 px-6 py-7 xl:border-l xl:border-t-0">
-            <p className="eyebrow">脚本对接</p>
-            <h3 className="mt-3 text-2xl font-semibold text-slate-900">MCC 执行说明</h3>
-            <ol className="mt-5 space-y-3 text-sm leading-7 text-slate-600">
+          <div className="border-t border-border/70 bg-background/80 px-6 py-7 xl:border-l xl:border-t-0">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">脚本对接</p>
+            <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">MCC 执行说明</h3>
+            <ol className="mt-5 space-y-3 text-sm leading-7 text-muted-foreground">
               <li>1. 先在对应 Offer 中确认 campaignLabel、目标国家和最终推广链接配置正确。</li>
               <li>2. Script 模式直接复制下面的模板，粘贴到 Google Ads Scripts 或 MCC 环境。</li>
               <li>3. Google Ads API 模式由平台直接更新目标 Campaign，需要先完成授权和 ID 配置。</li>
               <li>4. 每次更换 Token 后，旧脚本立即失效，请重新复制最新模板。</li>
             </ol>
 
-            <div className="mt-5 rounded-[28px] border border-brand-line bg-stone-50 p-5">
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Script Token</p>
-              <p className="mt-2 break-all font-mono text-sm text-slate-800">{script.token || "尚未生成"}</p>
+            <div className="mt-5 rounded-xl border border-border bg-muted/40 p-5">
+              <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Script Token</p>
+              <p className="mt-2 break-all font-mono text-sm text-foreground">{script.token || "尚未生成"}</p>
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
-                  className="rounded-full border border-brand-line bg-white px-4 py-2 text-xs font-semibold text-slate-700 disabled:opacity-60"
+                  className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
                   disabled={rotatingToken}
                   onClick={() => void rotateToken()}
                   type="button"
@@ -572,7 +572,7 @@ export function LinkSwapManager() {
                   {rotatingToken ? "更换中..." : "更换 Token"}
                 </button>
                 <button
-                  className="inline-flex items-center gap-2 rounded-full bg-brand-emerald px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
                   disabled={!script.template || rotatingToken}
                   onClick={() => void copyScriptTemplate()}
                   type="button"
@@ -627,28 +627,28 @@ export function LinkSwapManager() {
       {feedback ? (
         <section
           className={cn(
-            "rounded-[24px] border px-5 py-4 text-sm",
+            "rounded-xl border px-5 py-4 text-sm",
             feedback.tone === "success"
               ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border-red-200 bg-red-50 text-red-800"
+              : "border-destructive/20 bg-destructive/10 text-red-800"
           )}
         >
           {feedback.text}
         </section>
       ) : null}
 
-      <section className="grid gap-6 xl:grid-cols-[1.2fr,0.8fr]">
-        <div className="surface-panel p-6">
+      <section className="grid gap-5 xl:grid-cols-[1.2fr,0.8fr]">
+        <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <p className="eyebrow">任务列表</p>
-              <h3 className="mt-2 text-2xl font-semibold text-slate-900">按状态筛选和处理任务</h3>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">任务列表</p>
+              <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按状态筛选和处理任务</h3>
             </div>
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr),auto,auto] xl:min-w-[560px]">
               <label className="relative block">
                 <span className="sr-only">搜索任务</span>
                 <input
-                  className="w-full rounded-2xl border border-brand-line bg-stone-50 py-3 pl-4 pr-4 text-sm text-slate-800"
+                  className="w-full rounded-lg border border-border bg-muted/40 py-3 pl-4 pr-4 text-sm text-foreground"
                   onChange={(event) =>
                     startTransition(() => {
                       setSearchQuery(event.target.value);
@@ -660,7 +660,7 @@ export function LinkSwapManager() {
               </label>
 
               <select
-                className="rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 text-sm text-slate-800"
+                className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground"
                 onChange={(event) =>
                   startTransition(() => {
                     setStatusFilter(event.target.value as "all" | LinkSwapConsoleStatus);
@@ -676,7 +676,7 @@ export function LinkSwapManager() {
               </select>
 
               <select
-                className="rounded-2xl border border-brand-line bg-stone-50 px-4 py-3 text-sm text-slate-800"
+                className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground"
                 onChange={(event) =>
                   startTransition(() => {
                     setModeFilter(event.target.value as "all" | LinkSwapTaskRecord["mode"]);
@@ -696,7 +696,7 @@ export function LinkSwapManager() {
           <div className="mt-6 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-brand-line/70">
+                <tr className="border-b border-border/70">
                   <th className="pb-3">
                     <SortableHeader
                       active={sortField === "offer"}
@@ -761,16 +761,16 @@ export function LinkSwapManager() {
                   paginatedRows.map((row: LinkSwapConsoleRow) => {
                     const isRunning = row.statusGroup === "running";
                     return (
-                      <tr className="border-b border-brand-line/40 align-top" key={row.task.id}>
+                      <tr className="border-b border-border/40 align-top" key={row.task.id}>
                         <td className="py-4 pr-4">
                           <div className="min-w-[220px]">
-                            <p className="font-semibold text-slate-900">
+                            <p className="font-semibold text-foreground">
                               {row.offer?.brandName || `Offer #${row.task.offerId}`}
                             </p>
-                            <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">
+                            <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
                               {row.offer?.campaignLabel || "未设置标签"} · {row.offer?.targetCountry || "--"}
                             </p>
-                            <p className="mt-2 break-all text-xs text-slate-500">
+                            <p className="mt-2 break-all text-xs text-muted-foreground">
                               {formatRunSummary(row.latestRun)}
                             </p>
                           </div>
@@ -780,24 +780,24 @@ export function LinkSwapManager() {
                             {statusLabel(row.statusGroup)}
                           </span>
                         </td>
-                        <td className="py-4 pr-4 text-slate-700">
+                        <td className="py-4 pr-4 text-foreground">
                           {row.task.mode === "script" ? "Script" : "Google Ads API"}
                         </td>
-                        <td className="py-4 pr-4 text-slate-700">{row.task.intervalMinutes} 分钟</td>
-                        <td className="py-4 pr-4 text-slate-700">
+                        <td className="py-4 pr-4 text-foreground">{row.task.intervalMinutes} 分钟</td>
+                        <td className="py-4 pr-4 text-foreground">
                           <div>
                             <p>{formatDateTime(row.task.lastRunAt || row.latestRun?.createdAt || null)}</p>
-                            <p className="mt-1 text-xs text-slate-500">
+                            <p className="mt-1 text-xs text-muted-foreground">
                               近 50 条: 成功 {row.recentSuccessCount} / 失败 {row.recentFailureCount}
                             </p>
                           </div>
                         </td>
-                        <td className="py-4 pr-4 text-slate-700">{formatDateTime(row.task.nextRunAt)}</td>
-                        <td className="py-4 pr-4 text-slate-700">{row.task.consecutiveFailures}</td>
+                        <td className="py-4 pr-4 text-foreground">{formatDateTime(row.task.nextRunAt)}</td>
+                        <td className="py-4 pr-4 text-foreground">{row.task.consecutiveFailures}</td>
                         <td className="py-4">
                           <div className="flex flex-wrap justify-end gap-2">
                             <button
-                              className="inline-flex items-center gap-2 rounded-2xl border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+                              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground"
                               onClick={() => setActiveOffer(row.offer)}
                               type="button"
                             >
@@ -805,7 +805,7 @@ export function LinkSwapManager() {
                               编辑
                             </button>
                             <button
-                              className="inline-flex items-center gap-2 rounded-2xl border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+                              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground"
                               onClick={() => void openHistory(row)}
                               type="button"
                             >
@@ -815,7 +815,7 @@ export function LinkSwapManager() {
                             {isRunning ? (
                               <>
                                 <button
-                                  className="inline-flex items-center gap-2 rounded-2xl border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50"
+                                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground disabled:opacity-50"
                                   disabled={taskActionLoading === `swap-now-${row.task.id}`}
                                   onClick={() => void handleTaskAction(row.task.id, "swap-now")}
                                   type="button"
@@ -824,7 +824,7 @@ export function LinkSwapManager() {
                                   立即执行
                                 </button>
                                 <button
-                                  className="inline-flex items-center gap-2 rounded-2xl bg-slate-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                                  className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
                                   disabled={taskActionLoading === `disable-${row.task.id}`}
                                   onClick={() => void handleTaskAction(row.task.id, "disable")}
                                   type="button"
@@ -835,7 +835,7 @@ export function LinkSwapManager() {
                               </>
                             ) : (
                               <button
-                                className="inline-flex items-center gap-2 rounded-2xl bg-brand-emerald px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                                className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
                                 disabled={taskActionLoading === `enable-${row.task.id}`}
                                 onClick={() => void handleTaskAction(row.task.id, "enable")}
                                 type="button"
@@ -851,7 +851,7 @@ export function LinkSwapManager() {
                   })
                 ) : (
                   <tr>
-                    <td className="py-8 text-slate-500" colSpan={8}>
+                    <td className="py-8 text-muted-foreground" colSpan={8}>
                       {consoleData.rows.length === 0
                         ? "当前还没有换链任务。创建 Offer 后会自动生成对应任务。"
                         : "当前筛选条件下没有匹配的任务。"}
@@ -862,13 +862,13 @@ export function LinkSwapManager() {
             </table>
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 border-t border-brand-line/60 pt-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-6 flex flex-col gap-3 border-t border-border/60 pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <p>
                 共 {filteredRows.length} 个任务，当前第 {currentPage} / {totalPages} 页
               </p>
               <select
-                className="rounded-full border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+                className="rounded-full border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground"
                 onChange={(event) => setPageSize(Number(event.target.value))}
                 value={pageSize}
               >
@@ -879,7 +879,7 @@ export function LinkSwapManager() {
             </div>
             <div className="flex gap-2">
               <button
-                className="rounded-2xl border border-brand-line bg-white px-4 py-2 font-medium disabled:opacity-40"
+                className="rounded-lg border border-border bg-background px-4 py-2 font-medium disabled:opacity-40"
                 disabled={currentPage <= 1}
                 onClick={() => setPage((value) => Math.max(1, value - 1))}
                 type="button"
@@ -887,7 +887,7 @@ export function LinkSwapManager() {
                 上一页
               </button>
               <button
-                className="rounded-2xl border border-brand-line bg-white px-4 py-2 font-medium disabled:opacity-40"
+                className="rounded-lg border border-border bg-background px-4 py-2 font-medium disabled:opacity-40"
                 disabled={currentPage >= totalPages}
                 onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
                 type="button"
@@ -899,46 +899,46 @@ export function LinkSwapManager() {
         </div>
 
         <div className="space-y-6">
-          <div className="surface-panel p-6">
-            <p className="eyebrow">重点提醒</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">当前优先处理项</h3>
+          <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">重点提醒</p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">当前优先处理项</h3>
             <div className="mt-5 space-y-3">
-              <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4">
+              <div className="rounded-xl border border-border bg-muted/40 p-4">
                 <div className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+                  <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
                     <AlertTriangle className="h-4 w-4" />
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">先处理预警和异常</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                    <p className="text-sm font-semibold text-foreground">先处理预警和异常</p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
                       当前有 {consoleData.stats.warningTasks} 个任务进入预警或异常状态，优先检查代理、Offer 链接和 Google Ads 参数。
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4">
+              <div className="rounded-xl border border-border bg-muted/40 p-4">
                 <div className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-brand-mist text-brand-emerald">
+                  <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <Clock3 className="h-4 w-4" />
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">控制执行节奏</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                    <p className="text-sm font-semibold text-foreground">控制执行节奏</p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
                       如果某个 Offer 近期波动明显，优先调整任务间隔和持续天数，而不是频繁手动触发。
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4">
+              <div className="rounded-xl border border-border bg-muted/40 p-4">
                 <div className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                  <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 text-foreground">
                     <Target className="h-4 w-4" />
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">API 模式单独复核</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                    <p className="text-sm font-semibold text-foreground">API 模式单独复核</p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
                       当前有 {consoleData.stats.apiModeTasks} 个任务使用 Google Ads API 模式，这些任务需要同时校验授权和目标 Campaign ID。
                     </p>
                   </div>
@@ -947,39 +947,39 @@ export function LinkSwapManager() {
             </div>
           </div>
 
-          <div className="surface-panel p-6">
-            <p className="eyebrow">最近执行</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">最近 6 条结果</h3>
+          <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">最近执行</p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">最近 6 条结果</h3>
             <div className="mt-5 space-y-3">
               {runs.length ? (
                 runs.slice(0, 6).map((run) => {
                   const offer = offers.find((item) => item.id === run.offerId) || null;
                   return (
-                    <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4" key={run.id}>
+                    <div className="rounded-xl border border-border bg-muted/40 p-4" key={run.id}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-900">
+                          <p className="text-sm font-semibold text-foreground">
                             {offer?.brandName || `Offer #${run.offerId}`}
                           </p>
-                          <p className="mt-1 text-xs text-slate-500">{formatDateTime(run.createdAt)}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(run.createdAt)}</p>
                         </div>
                         <span
                           className={cn(
                             "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
-                            run.status === "success" ? "bg-brand-mist text-brand-emerald" : "bg-red-50 text-red-700"
+                            run.status === "success" ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
                           )}
                         >
                           {run.status === "success" ? "成功" : "失败"}
                         </span>
                       </div>
-                      <p className="mt-3 break-all text-xs text-slate-600">
+                      <p className="mt-3 break-all text-xs text-muted-foreground">
                         {run.resolvedSuffix || run.errorMessage || "本次执行未返回 suffix"}
                       </p>
                     </div>
                   );
                 })
               ) : (
-                <p className="rounded-[24px] border border-dashed border-brand-line bg-stone-50 px-4 py-5 text-sm text-slate-500">
+                <p className="rounded-xl border border-dashed border-border bg-muted/40 px-4 py-5 text-sm text-muted-foreground">
                   还没有换链执行记录。
                 </p>
               )}
@@ -1001,7 +1001,7 @@ export function LinkSwapManager() {
             ? `查看 ${historyTask.offer?.brandName || `Offer #${historyTask.task.offerId}`} 的最近执行结果。`
             : "查看最近执行结果。"
         }
-        eyebrow="执行历史"
+        text-xs font-semibold uppercase tracking-wider text-primary="执行历史"
         onClose={() => {
           setHistoryOpen(false);
           setHistoryTask(null);
@@ -1011,15 +1011,15 @@ export function LinkSwapManager() {
         title={historyTask ? `${historyTask.offer?.brandName || `Offer #${historyTask.task.offerId}`} 执行记录` : "执行记录"}
       >
         {historyLoading ? (
-          <p className="text-sm text-slate-500">正在加载执行记录...</p>
+          <p className="text-sm text-muted-foreground">正在加载执行记录...</p>
         ) : historyRecords.length ? (
           <div className="space-y-3">
             {historyRecords.map((run) => (
-              <div className="rounded-[24px] border border-brand-line bg-stone-50 px-4 py-4" key={run.id}>
+              <div className="rounded-xl border border-border bg-muted/40 p-4" key={run.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{formatDateTime(run.createdAt)}</p>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="text-sm font-semibold text-foreground">{formatDateTime(run.createdAt)}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
                       应用结果: {run.applyStatus}
                       {run.applyErrorMessage ? ` · ${run.applyErrorMessage}` : ""}
                     </p>
@@ -1027,20 +1027,20 @@ export function LinkSwapManager() {
                   <span
                     className={cn(
                       "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
-                      run.status === "success" ? "bg-brand-mist text-brand-emerald" : "bg-red-50 text-red-700"
+                      run.status === "success" ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
                     )}
                   >
                     {run.status === "success" ? "成功" : "失败"}
                   </span>
                 </div>
-                <p className="mt-3 break-all font-mono text-xs text-slate-700">
+                <p className="mt-3 break-all font-mono text-xs text-foreground">
                   {run.resolvedSuffix || run.errorMessage || "本次执行未返回 suffix"}
                 </p>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-slate-500">当前任务还没有执行历史。</p>
+          <p className="text-sm text-muted-foreground">当前任务还没有执行历史。</p>
         )}
       </ModalFrame>
     </div>
