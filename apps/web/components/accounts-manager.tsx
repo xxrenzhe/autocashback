@@ -81,7 +81,7 @@ function OverviewCard({
       value: "text-primary"
     },
     amber: {
-      badge: "bg-amber-500/100/10 text-amber-600",
+      badge: "bg-amber-500/10 text-amber-600",
       value: "text-amber-600"
     },
     slate: {
@@ -137,7 +137,7 @@ function statusMeta(status: CashbackAccount["status"]) {
       }
     : {
         label: "已暂停",
-        className: "bg-amber-500/100/10 text-amber-600"
+        className: "bg-amber-500/10 text-amber-600"
       };
 }
 
@@ -402,7 +402,7 @@ export function AccountsManager() {
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">Accounts</p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
-                <h2 className="text-xl font-semibold tracking-tight tracking-tight text-foreground">返利账号控制台</h2>
+                <h2 className="text-xl font-semibold tracking-tight text-foreground">返利账号控制台</h2>
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                   {allConsole.overview.totalAccounts} accounts
                 </span>
@@ -845,7 +845,7 @@ export function AccountsManager() {
                   type="button"
                 >
                   <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/100/10 text-amber-600">
+                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
                       <CreditCard className="h-4 w-4" />
                     </span>
                     <div className="min-w-0">

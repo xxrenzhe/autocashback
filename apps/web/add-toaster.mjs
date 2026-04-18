@@ -4,15 +4,15 @@ let content = fs.readFileSync(file, 'utf8');
 
 if (!content.includes('import { Toaster } from "sonner";')) {
   content = content.replace(
-    'import { CommandPalette } from "./command-palette";',
-    'import { CommandPalette } from "./command-palette";\nimport { Toaster } from "sonner";'
+    'import { cn } from "@autocashback/ui";',
+    'import { cn } from "@autocashback/ui";\nimport { Toaster } from "sonner";'
   );
-  
+
   content = content.replace(
-    '<CommandPalette />',
-    '<CommandPalette />\n      <Toaster position="bottom-right" richColors />'
+    '<div className="min-h-screen bg-muted/30">',
+    '<div className="min-h-screen bg-muted/30">\n      <Toaster position="bottom-right" richColors />'
   );
-  
+
   fs.writeFileSync(file, content);
   console.log('Added Toaster to AppShell');
 }

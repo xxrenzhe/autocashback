@@ -80,8 +80,8 @@ function OverviewCard({
       icon: "bg-primary/10 text-primary"
     },
     amber: {
-      badge: "bg-amber-500/100/10 text-amber-600",
-      icon: "bg-amber-500/100/10 text-amber-600"
+      badge: "bg-amber-500/10 text-amber-600",
+      icon: "bg-amber-500/10 text-amber-600"
     },
     slate: {
       badge: "bg-slate-100 text-foreground",
@@ -404,7 +404,7 @@ export function SettingsManager() {
         <div className="grid gap-0 xl:grid-cols-[1.1fr,0.9fr]">
           <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">Settings</p>
-            <h2 className="mt-3 text-xl font-semibold tracking-tight tracking-tight tracking-tight text-foreground">系统配置控制台</h2>
+            <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">系统配置控制台</h2>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
               先确认代理、Google Ads、平台备注和脚本是否就绪，再进入对应分组修改具体配置。
             </p>
@@ -879,7 +879,7 @@ export function SettingsManager() {
             </div>
           ) : (
             <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/100/10 text-amber-600">
+              <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
                 <AlertTriangle className="h-4 w-4" />
               </span>
               <p>脚本模板或 Token 尚未生成，建议先确认基础配置和当前登录状态。</p>

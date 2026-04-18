@@ -656,7 +656,7 @@ export function AdminUsersManager() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Admin</p>
-                <h2 className="mt-3 text-xl font-semibold tracking-tight tracking-tight tracking-tight text-foreground">用户管理</h2>
+                <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">用户管理</h2>
                 <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
                   管理后台账号、角色边界、登录会话和密码重置，优先保证运营账号可用、管理员权限收敛。
                 </p>
@@ -919,7 +919,7 @@ export function AdminUsersManager() {
                         <span
                           className={`rounded-full px-3 py-1 text-xs font-semibold ${
                             user.role === "admin"
-                              ? "bg-amber-500/100/100/10 text-amber-600"
+                              ? "bg-amber-500/10 text-amber-600"
                               : "bg-slate-100 text-foreground"
                           }`}
                         >
@@ -933,7 +933,7 @@ export function AdminUsersManager() {
                               {getStatusBadgeLabel(user)}
                             </span>
                             {user.failedLoginCount > 0 ? (
-                              <span className="rounded-full bg-amber-500/100/100/10 px-3 py-1 text-xs font-semibold text-amber-600">
+                              <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
                                 失败 {user.failedLoginCount} 次
                               </span>
                             ) : null}
@@ -1242,8 +1242,8 @@ export function AdminUsersManager() {
                               : record.status === "locked"
                                 ? "bg-destructive/10 text-destructive"
                                 : record.status === "failed"
-                                  ? "bg-amber-500/100/100/10 text-amber-600"
-                              : "bg-amber-500/100/100/10 text-amber-600"
+                                  ? "bg-amber-500/10 text-amber-600"
+                              : "bg-amber-500/10 text-amber-600"
                         }`}
                       >
                         {getLoginHistoryStatusLabel(record)}
@@ -1295,7 +1295,7 @@ export function AdminUsersManager() {
                   alert.severity === "critical"
                     ? "border-destructive/20 bg-destructive/10"
                     : alert.severity === "warning"
-                      ? "border-amber-200 bg-amber-500/100/100/10"
+                      ? "border-amber-200 bg-amber-500/10"
                       : "border-border bg-muted/40"
                 }`}
                 key={alert.id}
@@ -1397,7 +1397,7 @@ function getStatusBadgeClass(user: AdminUser) {
   }
 
   if (isUserLocked(user)) {
-    return "rounded-full bg-amber-500/100/100/10 px-3 py-1 text-xs font-semibold text-amber-600";
+    return "rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600";
   }
 
   return "rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary";
@@ -1438,7 +1438,7 @@ function getUserRowClassName(user: AdminUser) {
   }
 
   if (isUserLocked(user) || user.failedLoginCount > 0) {
-    return "border-b border-border/40 bg-amber-500/100/100/10/35 align-top last:border-b-0";
+    return "border-b border-border/40 bg-amber-500/35 align-top last:border-b-0";
   }
 
   if (user.activeSessionCount > 0) {
@@ -1553,7 +1553,7 @@ function AdminOverviewCard(props: {
     props.tone === "emerald"
       ? "bg-primary/10 text-primary"
       : props.tone === "amber"
-        ? "bg-amber-500/100/100/10 text-amber-600"
+        ? "bg-amber-500/10 text-amber-600"
         : "bg-slate-100 text-foreground";
   const valueClass =
     props.tone === "emerald"
@@ -1567,7 +1567,7 @@ function AdminOverviewCard(props: {
       <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${toneClass}`}>
         {props.label}
       </span>
-      <p className={`mt-4 font-mono tabular-nums text-xl font-semibold tracking-tight tracking-tight ${valueClass}`}>{props.value}</p>
+      <p className={`mt-4 font-mono tabular-nums text-xl font-semibold tracking-tight ${valueClass}`}>{props.value}</p>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">{props.note}</p>
     </>
   );
@@ -1606,7 +1606,7 @@ function ActionQueueCard(props: {
     props.item.tone === "critical"
       ? "border-destructive/20 bg-destructive/10/80"
       : props.item.tone === "warning"
-        ? "border-amber-200 bg-amber-500/100/100/10/80"
+        ? "border-amber-200 bg-amber-500/80"
         : "border-border bg-muted/40";
   const badgeClass =
     props.item.tone === "critical"
@@ -1640,7 +1640,7 @@ function ActionQueueCard(props: {
             </span>
           ) : null}
           {props.item.user.failedLoginCount > 0 ? (
-            <span className="rounded-full bg-amber-500/100/100/10 px-3 py-1 text-xs font-semibold text-amber-600">
+            <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
               失败 {props.item.user.failedLoginCount} 次
             </span>
           ) : null}
@@ -1685,7 +1685,7 @@ function ActionButton(props: {
       : props.tone === "emerald"
         ? "border-emerald-200 bg-emerald-50 text-emerald-700 disabled:border-emerald-100 disabled:bg-emerald-50/60"
         : props.tone === "amber"
-          ? "border-amber-200 bg-amber-500/100/100/10 text-amber-600 disabled:border-amber-100 disabled:bg-amber-500/100/100/10/60"
+          ? "border-amber-200 bg-amber-500/10 text-amber-600 disabled:border-amber-100 disabled:bg-amber-500/60"
           : "border-border bg-background text-foreground";
 
   return (

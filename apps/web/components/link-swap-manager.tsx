@@ -179,8 +179,8 @@ function SummaryCard({
       icon: "bg-primary/10 text-primary"
     },
     amber: {
-      badge: "bg-amber-500/100/100/10 text-amber-600",
-      icon: "bg-amber-500/100/100/10 text-amber-600"
+      badge: "bg-amber-500/10 text-amber-600",
+      icon: "bg-amber-500/10 text-amber-600"
     },
     slate: {
       badge: "bg-slate-100 text-foreground",
@@ -211,7 +211,7 @@ function statusPill(status: LinkSwapConsoleStatus) {
     case "paused":
       return "bg-slate-100 text-foreground";
     case "warning":
-      return "bg-amber-500/100/100/10 text-amber-600";
+      return "bg-amber-500/10 text-amber-600";
     case "error":
       return "bg-destructive/10 text-destructive";
     default:
@@ -465,7 +465,7 @@ export function LinkSwapManager() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Link Swap</p>
-                <h2 className="mt-3 text-xl font-semibold tracking-tight tracking-tight tracking-tight text-foreground">换链任务控制台</h2>
+                <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">换链任务控制台</h2>
                 <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
                   统一查看任务状态、执行节奏、最近结果和脚本对接信息，先处理异常和预警，再调整具体任务。
                 </p>
@@ -902,7 +902,7 @@ export function LinkSwapManager() {
             <div className="mt-5 space-y-3">
               <div className="rounded-xl border border-border bg-muted/40 p-4">
                 <div className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/100/100/10 text-amber-600">
+                  <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
                     <AlertTriangle className="h-4 w-4" />
                   </span>
                   <div>

@@ -15,7 +15,6 @@
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
-    "cmdk": "^1.1.1",
     "https-proxy-agent": "^7.0.6",
     "jose": "^5.9.6",
     "lucide-react": "^0.468.0",

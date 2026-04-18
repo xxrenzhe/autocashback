@@ -312,7 +312,7 @@ export function GoogleAdsManager() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Google Ads</p>
-                <h2 className="mt-3 text-xl font-semibold tracking-tight tracking-tight tracking-tight text-foreground">账号连接控制台</h2>
+                <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">账号连接控制台</h2>
                 <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
                   先确认基础配置、OAuth 状态和可访问账号数量，再决定是去设置页补参数，还是直接同步和诊断。
                 </p>
@@ -682,7 +682,7 @@ function InfoCard(props: { label: string; value: number }) {
   return (
     <div className="rounded-xl border border-border bg-muted/40 p-5">
       <p className="text-sm text-muted-foreground">{props.label}</p>
-      <p className="mt-3 font-mono tabular-nums text-xl font-semibold tracking-tight tracking-tight text-foreground">{props.value}</p>
+      <p className="mt-3 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{props.value}</p>
     </div>
   );
 }

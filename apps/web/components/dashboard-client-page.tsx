@@ -280,7 +280,7 @@ export function DashboardClientPage({ username }: { username: string }) {
         <div className="grid gap-0 xl:grid-cols-[1.2fr,0.9fr]">
           <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">Dashboard</p>
-            <h2 className="mt-3 text-xl font-semibold tracking-tight tracking-tight tracking-tight text-foreground">{username}，先看今天的总览</h2>
+            <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">{username}，先看今天的总览</h2>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
               先确认 Offer、换链和账号的核心状态，再进入对应模块处理动作和风险。
             </p>

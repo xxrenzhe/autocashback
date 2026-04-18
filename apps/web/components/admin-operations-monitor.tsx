@@ -50,8 +50,8 @@ function toneStyles(tone: "emerald" | "amber" | "red" | "slate") {
 
   if (tone === "amber") {
     return {
-      badge: "bg-amber-500/100/10 text-amber-600",
-      icon: "bg-amber-500/100/10 text-amber-600",
+      badge: "bg-amber-500/10 text-amber-600",
+      icon: "bg-amber-500/10 text-amber-600",
       value: "text-amber-600"
     };
   }
@@ -151,7 +151,7 @@ function MetricGroup({
               <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", styles.badge)}>
                 {metric.label}
               </span>
-              <p className={cn("mt-4 font-mono tabular-nums text-xl font-semibold tracking-tight tracking-tight", styles.value)}>{metric.value}</p>
+              <p className={cn("mt-4 font-mono tabular-nums text-xl font-semibold tracking-tight", styles.value)}>{metric.value}</p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{metric.note}</p>
             </div>
           );
@@ -171,7 +171,7 @@ function taskStatusMeta(status: string) {
   }
 
   if (status === "paused" || status === "stopped") {
-    return { label: "已暂停", className: "bg-amber-500/100/10 text-amber-600" };
+    return { label: "已暂停", className: "bg-amber-500/10 text-amber-600" };
   }
 
   if (status === "completed") {
@@ -276,7 +276,7 @@ export function AdminOperationsMonitor() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Admin Ops</p>
-                <h3 className="mt-3 text-xl font-semibold tracking-tight tracking-tight tracking-tight text-foreground">业务运营控制台</h3>
+                <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">业务运营控制台</h3>
                 <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
                   先看整体负载和风险，再跳转到换链接、补点击、代理或 Offer 页面做针对性处理。
                 </p>
@@ -405,7 +405,7 @@ export function AdminOperationsMonitor() {
                             risk.tone === "red"
                               ? "bg-destructive/10 text-destructive"
                               : risk.tone === "amber"
-                                ? "bg-amber-500/100/10 text-amber-600"
+                                ? "bg-amber-500/10 text-amber-600"
                                 : "bg-slate-100 text-foreground"
                           )}
                         >
@@ -458,7 +458,7 @@ export function AdminOperationsMonitor() {
                         <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", styles.badge)}>
                           {metric.label}
                         </span>
-                        <p className={cn("mt-4 font-mono tabular-nums text-xl font-semibold tracking-tight tracking-tight", styles.value)}>{metric.value}</p>
+                        <p className={cn("mt-4 font-mono tabular-nums text-xl font-semibold tracking-tight", styles.value)}>{metric.value}</p>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">{metric.note}</p>
                       </div>
                     );
@@ -474,7 +474,7 @@ export function AdminOperationsMonitor() {
                           country.tone === "emerald"
                             ? "border-emerald-200 bg-primary/10 text-primary"
                             : country.tone === "amber"
-                              ? "border-amber-200 bg-amber-500/100/10 text-amber-600"
+                              ? "border-amber-200 bg-amber-500/10 text-amber-600"
                               : "border-border bg-background text-muted-foreground"
                         )}
                         key={country.country}
@@ -521,7 +521,7 @@ export function AdminOperationsMonitor() {
                                   task.tone === "red"
                                     ? "bg-destructive/10 text-destructive"
                                     : task.tone === "amber"
-                                      ? "bg-amber-500/100/10 text-amber-600"
+                                      ? "bg-amber-500/10 text-amber-600"
                                       : "bg-slate-100 text-foreground"
                                 )}
                               >
@@ -578,7 +578,7 @@ export function AdminOperationsMonitor() {
                                   user.tone === "red"
                                     ? "bg-destructive/10 text-destructive"
                                     : user.tone === "amber"
-                                      ? "bg-amber-500/100/10 text-amber-600"
+                                      ? "bg-amber-500/10 text-amber-600"
                                       : "bg-slate-100 text-foreground"
                                 )}
                               >
@@ -625,7 +625,7 @@ export function AdminOperationsMonitor() {
                               item.tone === "red"
                                 ? "bg-destructive/10 text-destructive"
                                 : item.tone === "amber"
-                                  ? "bg-amber-500/100/10 text-amber-600"
+                                  ? "bg-amber-500/10 text-amber-600"
                                   : "bg-slate-100 text-foreground"
                             )}
                           >
