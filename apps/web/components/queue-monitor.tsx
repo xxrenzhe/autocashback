@@ -90,6 +90,8 @@ const sortOptions: Array<{ value: QueueConsoleSort; label: string }> = [
   { value: "failed-first", label: "失败优先" }
 ];
 
+const TASKS_PAGE_SIZE = 12;
+
 function schedulerTone(value: "healthy" | "warning" | "error") {
   if (value === "healthy") {
     return {
@@ -146,6 +148,7 @@ export function QueueMonitor() {
   const [typeFilter, setTypeFilter] = useState<QueueTaskType | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sort, setSort] = useState<QueueConsoleSort>("recent");
+  const [visibleTaskCount, setVisibleTaskCount] = useState(TASKS_PAGE_SIZE);
   const [message, setMessage] = useState("");
   const [schedulerError, setSchedulerError] = useState("");
   const [configError, setConfigError] = useState("");
@@ -174,8 +177,17 @@ export function QueueMonitor() {
       }),
     [deferredSearchQuery, schedulerStatus, sort, stats, tasks]
   );
+  const visibleRows = useMemo(
+    () => consoleData.rows.slice(0, visibleTaskCount),
+    [consoleData.rows, visibleTaskCount]
+  );
+  const hasMoreRows = visibleTaskCount < consoleData.rows.length;
 
-  const loadQueueData = useCallback(async (options?: { background?: boolean; preserveMessage?: boolean }) => {
+  const loadQueueData = useCallback(async (options?: {
+    background?: boolean;
+    preserveMessage?: boolean;
+    notifyOnError?: boolean;
+  }) => {
     if (options?.background) {
       setRefreshing(true);
     } else {
@@ -213,7 +225,13 @@ export function QueueMonitor() {
       setStats(statsResult.data.stats || emptyStats);
       setTasks(tasksResult.data.tasks || []);
     } catch (error: unknown) {
-      setMessage(error instanceof Error ? error.message : "加载队列数据失败");
+      const errorMessage = error instanceof Error ? error.message : "加载队列数据失败";
+      if (options?.notifyOnError) {
+        setMessage("");
+        toast.error(errorMessage);
+      } else {
+        setMessage(errorMessage);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -292,7 +310,9 @@ export function QueueMonitor() {
       setMessage(result.data.message || "队列配置已保存。");
       toast.success(result.data.message || "队列配置已保存。");
     } catch (error: unknown) {
-      setConfigError(error instanceof Error ? error.message : "保存队列配置失败");
+      const errorMessage = error instanceof Error ? error.message : "保存队列配置失败";
+      setConfigError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setConfigSaving(false);
     }
@@ -331,7 +351,9 @@ export function QueueMonitor() {
         loadSchedulerStatus({ silent: true })
       ]);
     } catch (error: unknown) {
-      setMessage(error instanceof Error ? error.message : "手动调度失败");
+      const errorMessage = error instanceof Error ? error.message : "手动调度失败";
+      setMessage("");
+      toast.error(errorMessage);
     } finally {
       setManualScheduling(null);
     }
@@ -389,7 +411,9 @@ export function QueueMonitor() {
       setConfigError("");
       toast.success("已恢复到上次保存的配置。");
     } catch {
-      setConfigError("恢复配置失败，请刷新页面后重试");
+      const errorMessage = "恢复配置失败，请刷新页面后重试";
+      setConfigError(errorMessage);
+      toast.error(errorMessage);
     }
   }
 
@@ -432,6 +456,10 @@ export function QueueMonitor() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [configDirty]);
 
+  useEffect(() => {
+    setVisibleTaskCount(TASKS_PAGE_SIZE);
+  }, [searchQuery, sort, statusFilter, typeFilter]);
+
   return (
     <div className="space-y-6">
       <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
@@ -442,7 +470,13 @@ export function QueueMonitor() {
                 <button
                   className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
                   disabled={refreshing}
-                  onClick={() => void loadQueueData({ background: true, preserveMessage: true })}
+                  onClick={() =>
+                    void loadQueueData({
+                      background: true,
+                      preserveMessage: true,
+                      notifyOnError: true
+                    })
+                  }
                   type="button"
                 >
                   <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
@@ -626,8 +660,15 @@ export function QueueMonitor() {
 
           <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
             <div className="border-b border-border/70 p-5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">任务列表</p>
-              <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按时间、优先级和错误状态查看队列</h3>
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-primary">任务列表</p>
+                  <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按时间、优先级和错误状态查看队列</h3>
+                </div>
+                <div className="rounded-full border border-border bg-muted/40 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                  已显示 {visibleRows.length} / {consoleData.rows.length} 条
+                </div>
+              </div>
             </div>
 
             {loading ? (
@@ -642,7 +683,7 @@ export function QueueMonitor() {
               </div>
             ) : consoleData.rows.length ? (
               <div className="space-y-4 p-5">
-                {consoleData.rows.map((row) => {
+                {visibleRows.map((row) => {
                   const statusMeta = queueTaskStatusBadge(row.task.status);
                   return (
                     <div className="rounded-xl border border-border bg-muted/40 p-4" key={row.task.id}>
@@ -688,6 +729,21 @@ export function QueueMonitor() {
                     </div>
                   );
                 })}
+
+                {hasMoreRows ? (
+                  <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-background/70 px-4 py-5 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      当前结果共 {consoleData.rows.length} 条，继续加载查看更多任务卡片。
+                    </p>
+                    <button
+                      className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
+                      onClick={() => setVisibleTaskCount((current) => current + TASKS_PAGE_SIZE)}
+                      type="button"
+                    >
+                      加载更多
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className="px-6 py-10 text-center">
