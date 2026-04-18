@@ -17,6 +17,7 @@ import {
   ShieldAlert,
   Trash2
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { fetchJson } from "@/lib/api-error-handler";
 import { ModalFrame } from "@/components/modal-frame";
@@ -212,6 +213,8 @@ export function AdminUsersManager() {
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
   const [createForm, setCreateForm] = useState(initialCreateForm);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [alertsUser, setAlertsUser] = useState<AdminUser | null>(null);
@@ -1047,7 +1050,7 @@ export function AdminUsersManager() {
 
       <ModalFrame
         description="创建新的后台用户，并在完成后复制登录信息。"
-        text-xs font-semibold uppercase tracking-wider text-primary="用户管理"
+        eyebrow="用户管理"
         onClose={() => setCreateOpen(false)}
         open={createOpen}
         title="新建用户"
@@ -1133,7 +1136,7 @@ export function AdminUsersManager() {
 
       <ModalFrame
         description="更新用户邮箱和角色。"
-        text-xs font-semibold uppercase tracking-wider text-primary="用户管理"
+        eyebrow="用户管理"
         onClose={() => setEditOpen(false)}
         open={editOpen}
         title={selectedUser ? `编辑 ${selectedUser.username}` : "编辑用户"}
@@ -1186,7 +1189,7 @@ export function AdminUsersManager() {
 
       <ModalFrame
         description="请立即复制并安全发送给对应用户。"
-        text-xs font-semibold uppercase tracking-wider text-primary="用户管理"
+        eyebrow="用户管理"
         onClose={() => setResetPasswordOpen(false)}
         open={resetPasswordOpen}
         title="密码信息"
@@ -1216,7 +1219,7 @@ export function AdminUsersManager() {
 
       <ModalFrame
         description={selectedUser ? `查看 ${selectedUser.username} 最近的登录会话记录。` : undefined}
-        text-xs font-semibold uppercase tracking-wider text-primary="用户管理"
+        eyebrow="用户管理"
         onClose={() => setHistoryOpen(false)}
         open={historyOpen}
         title="登录记录"
@@ -1277,7 +1280,7 @@ export function AdminUsersManager() {
 
       <ModalFrame
         description={alertsUser ? `查看 ${alertsUser.username} 当前的登录与会话风险。` : undefined}
-        text-xs font-semibold uppercase tracking-wider text-primary="用户管理"
+        eyebrow="用户管理"
         onClose={() => setAlertsOpen(false)}
         open={alertsOpen}
         title="安全告警"

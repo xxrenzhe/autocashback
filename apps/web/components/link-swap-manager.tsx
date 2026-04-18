@@ -41,6 +41,11 @@ type ScriptTemplatePayload = {
   token: string;
 };
 
+type FeedbackState = {
+  tone: "success" | "error";
+  text: string;
+};
+
 type SortField = "offer" | "status" | "mode" | "interval" | "lastRun" | "nextRun" | "failures";
 type SortDirection = "asc" | "desc";
 
@@ -239,7 +244,8 @@ export function LinkSwapManager() {
   const [script, setScript] = useState<ScriptTemplatePayload>({ template: "", token: "" });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-    const [rotatingToken, setRotatingToken] = useState(false);
+  const [rotatingToken, setRotatingToken] = useState(false);
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [activeOffer, setActiveOffer] = useState<OfferRecord | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -992,7 +998,7 @@ export function LinkSwapManager() {
             ? `查看 ${historyTask.offer?.brandName || `Offer #${historyTask.task.offerId}`} 的最近执行结果。`
             : "查看最近执行结果。"
         }
-        text-xs font-semibold uppercase tracking-wider text-primary="执行历史"
+        eyebrow="执行历史"
         onClose={() => {
           setHistoryOpen(false);
           setHistoryTask(null);

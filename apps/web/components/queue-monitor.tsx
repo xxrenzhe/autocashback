@@ -24,6 +24,7 @@ import type {
   QueueTaskType
 } from "@autocashback/domain";
 import { cn } from "@autocashback/ui";
+import { toast } from "sonner";
 import { AdminOperationsMonitor } from "@/components/admin-operations-monitor";
 import { fetchJson } from "@/lib/api-error-handler";
 import {
@@ -208,7 +209,8 @@ export function QueueMonitor() {
   const [typeFilter, setTypeFilter] = useState<QueueTaskType | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sort, setSort] = useState<QueueConsoleSort>("recent");
-      const [schedulerError, setSchedulerError] = useState("");
+  const [message, setMessage] = useState("");
+  const [schedulerError, setSchedulerError] = useState("");
   const [configError, setConfigError] = useState("");
   const [manualScheduling, setManualScheduling] = useState<"all" | "click-farm" | "url-swap" | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -235,7 +237,8 @@ export function QueueMonitor() {
     }
 
     if (!options?.preserveMessage) {
-          }
+      setMessage("");
+    }
 
     try {
       const query = new URLSearchParams();
@@ -264,7 +267,7 @@ export function QueueMonitor() {
       setStats(statsResult.data.stats || emptyStats);
       setTasks(tasksResult.data.tasks || []);
     } catch (error: unknown) {
-            setMessage(error instanceof Error ? error.message : "加载队列数据失败");
+      setMessage(error instanceof Error ? error.message : "加载队列数据失败");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -338,7 +341,8 @@ export function QueueMonitor() {
         configSource: "database",
         note: "配置保存后会在 60 秒内自动同步到后台调度服务"
       });
-            setMessage(result.data.message || "队列配置已保存。");
+      setMessage(result.data.message || "队列配置已保存。");
+      toast.success(result.data.message || "队列配置已保存。");
     } catch (error: unknown) {
       setConfigError(error instanceof Error ? error.message : "保存队列配置失败");
     } finally {
@@ -366,7 +370,11 @@ export function QueueMonitor() {
 
       const clickFarmInserted = result.data.data?.clickFarm?.inserted || 0;
       const urlSwapInserted = result.data.data?.urlSwap?.inserted || 0;
-            setMessage(
+      setMessage(
+        result.data.message ||
+          `手动调度完成：补点击新增 ${clickFarmInserted}，换链接新增 ${urlSwapInserted}`
+      );
+      toast.success(
         result.data.message ||
           `手动调度完成：补点击新增 ${clickFarmInserted}，换链接新增 ${urlSwapInserted}`
       );
@@ -375,7 +383,7 @@ export function QueueMonitor() {
         loadSchedulerStatus({ silent: true })
       ]);
     } catch (error: unknown) {
-            setMessage(error instanceof Error ? error.message : "手动调度失败");
+      setMessage(error instanceof Error ? error.message : "手动调度失败");
     } finally {
       setManualScheduling(null);
     }
@@ -479,8 +487,11 @@ export function QueueMonitor() {
               </button>
             </div>
           </div>
-
-          
+          {message ? (
+            <div className="mt-4 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
+              {message}
+            </div>
+          ) : null}
         </div>
 
         <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">

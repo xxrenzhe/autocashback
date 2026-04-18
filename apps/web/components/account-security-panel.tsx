@@ -23,6 +23,7 @@ export function AccountSecurityPanel() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [changingPassword, setChangingPassword] = useState(false);
   

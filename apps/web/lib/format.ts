@@ -8,7 +8,7 @@ const dateFormatter = new Intl.DateTimeFormat("zh-CN", {
   hour12: false,
 });
 
-export function formatDateTime(value) {
+export function formatDateTime(value: string | number | Date | null | undefined) {
   if (!value) return "暂无记录";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import {
   LINK_SWAP_ALLOWED_INTERVALS_MINUTES,
@@ -64,8 +65,9 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
   const [enabling, setEnabling] = useState(false);
   const [disabling, setDisabling] = useState(false);
   const [swappingNow, setSwappingNow] = useState(false);
-    const [proxyWarning, setProxyWarning] = useState("");
+  const [proxyWarning, setProxyWarning] = useState("");
   const [history, setHistory] = useState<LinkSwapRunRecord[]>([]);
+  const [message, setMessage] = useState("");
 
   const canEnableTask = Boolean(
     task && (!task.enabled || task.status === "idle" || task.status === "error")
@@ -83,7 +85,8 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
 
     async function loadTask() {
       setLoading(true);
-            setProxyWarning("");
+      setMessage("");
+      setProxyWarning("");
       setHistory([]);
 
       try {
@@ -155,7 +158,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
       form.mode === "google_ads_api" &&
       (!form.googleCustomerId.trim() || !form.googleCampaignId.trim())
     ) {
-      toast.success(("Google Ads API 模式必须填写 Customer ID 和 Campaign ID"));
+      toast.error("Google Ads API 模式必须填写 Customer ID 和 Campaign ID");
       return;
     }
 
@@ -177,6 +180,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
     }
 
     setSaving(true);
+    setMessage("");
     
     try {
       const endpoint = task?.id ? `/api/link-swap/tasks/${task.id}` : "/api/link-swap/tasks";
@@ -226,6 +230,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
     }
 
     setEnabling(true);
+    setMessage("");
     
     try {
       const response = await fetch(`/api/link-swap/tasks/${task.id}/enable`, {
@@ -264,6 +269,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
     }
 
     setDisabling(true);
+    setMessage("");
     
     try {
       const response = await fetch(`/api/link-swap/tasks/${task.id}/disable`, {
@@ -302,6 +308,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
     }
 
     setSwappingNow(true);
+    setMessage("");
     
     try {
       const response = await fetch(`/api/link-swap/tasks/${task.id}/swap-now`, {

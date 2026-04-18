@@ -289,7 +289,7 @@ export function ClickFarmManager() {
       return;
     }
 
-        setMessage(
+    toast.success(
       action === "stop"
         ? "任务已暂停。"
         : action === "restart"

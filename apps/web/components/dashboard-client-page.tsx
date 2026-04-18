@@ -223,6 +223,7 @@ export function DashboardClientPage({ username }: { username: string }) {
   const [data, setData] = useState<DashboardConsoleData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
   
   async function loadSummary(refresh = false) {
     if (refresh) {
@@ -230,20 +231,23 @@ export function DashboardClientPage({ username }: { username: string }) {
     } else {
       setLoading(true);
     }
+    setError("");
 
     const result = await fetchJson<DashboardConsoleData>("/api/dashboard/summary", {
       cache: "no-store"
     });
 
     if (!result.success) {
-      toast.error(result.userMessage || "操作失败");
+      const nextError = result.userMessage || "仪表盘数据加载失败";
+      toast.error(nextError);
+      setError(nextError);
       setLoading(false);
       setRefreshing(false);
       return;
     }
 
     setData(result.data);
-        setLoading(false);
+    setLoading(false);
     setRefreshing(false);
   }
 

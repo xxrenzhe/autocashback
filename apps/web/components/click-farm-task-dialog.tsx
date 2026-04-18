@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import type { ClickFarmTask, OfferRecord } from "@autocashback/domain";
 
@@ -70,6 +71,7 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
   const [form, setForm] = useState<FormState>(toFormState(null));
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
   
   useEffect(() => {
     if (!open || !offer) {
@@ -81,6 +83,7 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
 
     async function loadTask() {
       setLoading(true);
+      setMessage("");
       
       try {
         const response = await fetch(`/api/offers/${currentOffer.id}/click-farm-task`);
@@ -119,6 +122,7 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
     if (!offer) return;
 
     setSaving(true);
+    setMessage("");
     
     try {
       const response = await fetch("/api/click-farm/tasks", {
@@ -167,6 +171,7 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
     if (!task) return;
 
     setSaving(true);
+    setMessage("");
     
     try {
       const endpoint =
