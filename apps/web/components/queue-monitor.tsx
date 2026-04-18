@@ -23,7 +23,7 @@ import type {
   QueueTaskStatus,
   QueueTaskType
 } from "@autocashback/domain";
-import { cn } from "@autocashback/ui";
+import { cn, MetricGroup, PageHeader, ShortcutCard, StatCard, StatusBadge } from "@autocashback/ui";
 import { toast } from "sonner";
 import { AdminOperationsMonitor } from "@/components/admin-operations-monitor";
 import { fetchJson } from "@/lib/api-error-handler";
@@ -90,109 +90,45 @@ const sortOptions: Array<{ value: QueueConsoleSort; label: string }> = [
   { value: "failed-first", label: "失败优先" }
 ];
 
-
-
-function OverviewCard({
-  label,
-  note,
-  tone,
-  value
-}: {
-  label: string;
-  note: string;
-  tone: "emerald" | "amber" | "slate" | "red";
-  value: string;
-}) {
-  const toneStyles = {
-    emerald: {
-      badge: "bg-primary/10 text-primary",
-      value: "text-primary"
-    },
-    amber: {
-      badge: "bg-amber-500/10 text-amber-600",
-      value: "text-amber-600"
-    },
-    slate: {
-      badge: "bg-slate-100 text-foreground",
-      value: "text-foreground"
-    },
-    red: {
-      badge: "bg-destructive/10 text-destructive",
-      value: "text-destructive"
-    }
-  } as const;
-
-  return (
-    <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-      <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", toneStyles[tone].badge)}>
-        {label}
-      </span>
-      <p className={cn("mt-5 font-mono tabular-nums text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
-    </div>
-  );
-}
-
-function ShortcutCard({
-  description,
-  href,
-  icon: Icon,
-  title
-}: {
-  description: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-}) {
-  return (
-    <Link
-      className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
-      href={href}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" />
-        </span>
-        <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-      </div>
-      <p className="mt-4 text-sm font-semibold text-foreground">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-    </Link>
-  );
-}
-
 function schedulerTone(value: "healthy" | "warning" | "error") {
   if (value === "healthy") {
     return {
-      badge: "bg-primary/10 text-primary",
       panel: "border-emerald-200 bg-emerald-50/70"
     };
   }
 
   if (value === "warning") {
     return {
-      badge: "bg-amber-500/10 text-amber-600",
       panel: "border-amber-200 bg-amber-500/10"
     };
   }
 
   return {
-    badge: "bg-destructive/10 text-destructive",
     panel: "border-destructive/20 bg-destructive/10"
   };
 }
 
-function taskStatusMeta(status: QueueTaskStatus) {
+function queueTaskStatusBadge(status: QueueTaskStatus) {
   if (status === "running") {
-    return { label: "运行中", className: "bg-primary/10 text-primary" };
+    return { label: "运行中", variant: "running" as const };
   }
   if (status === "pending") {
-    return { label: "待执行", className: "bg-slate-100 text-foreground" };
+    return { label: "待执行", variant: "pending" as const };
   }
   if (status === "completed") {
-    return { label: "已完成", className: "bg-slate-100 text-foreground" };
+    return { label: "已完成", variant: "success" as const };
   }
-  return { label: "失败", className: "bg-destructive/10 text-destructive" };
+  return { label: "失败", variant: "error" as const };
+}
+
+function schedulerStatusBadge(status: "healthy" | "warning" | "error") {
+  if (status === "healthy") {
+    return { label: "healthy", variant: "success" as const };
+  }
+  if (status === "warning") {
+    return { label: "warning", variant: "warning" as const };
+  }
+  return { label: "error", variant: "error" as const };
 }
 
 export function QueueMonitor() {
@@ -205,6 +141,7 @@ export function QueueMonitor() {
   const [configLoading, setConfigLoading] = useState(true);
   const [schedulerLoading, setSchedulerLoading] = useState(true);
   const [configSaving, setConfigSaving] = useState(false);
+  const [savedConfigSnapshot, setSavedConfigSnapshot] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<QueueTaskStatus | "all">("all");
   const [typeFilter, setTypeFilter] = useState<QueueTaskType | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -214,6 +151,15 @@ export function QueueMonitor() {
   const [configError, setConfigError] = useState("");
   const [manualScheduling, setManualScheduling] = useState<"all" | "click-farm" | "url-swap" | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
+  const currentConfigSnapshot = useMemo(
+    () => (config ? JSON.stringify(config.config) : null),
+    [config]
+  );
+  const configDirty = Boolean(
+    currentConfigSnapshot &&
+      savedConfigSnapshot &&
+      currentConfigSnapshot !== savedConfigSnapshot
+  );
 
   const consoleData = useMemo(
     () =>
@@ -308,6 +254,7 @@ export function QueueMonitor() {
         configSource: result.data.configSource || "default",
         note: result.data.note || ""
       });
+      setSavedConfigSnapshot(JSON.stringify(result.data.config));
       setConfigError("");
     } catch (error: unknown) {
       setConfigError(error instanceof Error ? error.message : "加载队列配置失败");
@@ -341,6 +288,7 @@ export function QueueMonitor() {
         configSource: "database",
         note: "配置保存后会在 60 秒内自动同步到后台调度服务"
       });
+      setSavedConfigSnapshot(JSON.stringify(result.data.config));
       setMessage(result.data.message || "队列配置已保存。");
       toast.success(result.data.message || "队列配置已保存。");
     } catch (error: unknown) {
@@ -423,6 +371,28 @@ export function QueueMonitor() {
     );
   }
 
+  function resetQueueConfig() {
+    if (!savedConfigSnapshot) {
+      return;
+    }
+
+    try {
+      const savedConfig = JSON.parse(savedConfigSnapshot) as QueueSystemConfig;
+      setConfig((current) =>
+        current
+          ? {
+              ...current,
+              config: savedConfig
+            }
+          : current
+      );
+      setConfigError("");
+      toast.success("已恢复到上次保存的配置。");
+    } catch {
+      setConfigError("恢复配置失败，请刷新页面后重试");
+    }
+  }
+
   useEffect(() => {
     void loadQueueData();
   }, [loadQueueData]);
@@ -448,45 +418,58 @@ export function QueueMonitor() {
     return () => clearInterval(interval);
   }, [loadSchedulerStatus]);
 
+  useEffect(() => {
+    if (!configDirty) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [configDirty]);
+
   return (
     <div className="space-y-6">
       <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
         <div className="border-b border-border/70 p-5">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Queue</p>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <h2 className="text-xl font-semibold tracking-tight text-foreground">统一队列控制台</h2>
+          <PageHeader
+            actions={
+              <div className="flex flex-wrap gap-3">
+                <button
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
+                  disabled={refreshing}
+                  onClick={() => void loadQueueData({ background: true, preserveMessage: true })}
+                  type="button"
+                >
+                  <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
+                  {refreshing ? "刷新中…" : "刷新队列"}
+                </button>
+                <button
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  disabled={manualScheduling !== null}
+                  onClick={() => void triggerManualScheduling("all")}
+                  type="button"
+                >
+                  <Zap className="h-4 w-4" />
+                  {manualScheduling === "all" ? "补投中..." : "补投全部待调度任务"}
+                </button>
+              </div>
+            }
+            description="把补点击、换链和调度器状态放在一个面板里看。先判断健康度，再补投待调度任务或调整并发配置。"
+            eyebrow="Queue"
+            title={
+              <span className="flex flex-wrap items-center gap-3">
+                <span>统一队列控制台</span>
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                   {stats.total} tasks
                 </span>
-              </div>
-              <p className="mt-4 text-sm leading-7 text-muted-foreground">
-                把补点击、换链和调度器状态放在一个面板里看。先判断健康度，再补投待调度任务或调整并发配置。
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <button
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
-                disabled={refreshing}
-                onClick={() => void loadQueueData({ background: true, preserveMessage: true })}
-                type="button"
-              >
-                <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
-                {refreshing ? "刷新中…" : "刷新队列"}
-              </button>
-              <button
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                disabled={manualScheduling !== null}
-                onClick={() => void triggerManualScheduling("all")}
-                type="button"
-              >
-                <Zap className="h-4 w-4" />
-                {manualScheduling === "all" ? "补投中..." : "补投全部待调度任务"}
-              </button>
-            </div>
-          </div>
+              </span>
+            }
+          />
           {message ? (
             <div className="mt-4 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
               {message}
@@ -495,47 +478,57 @@ export function QueueMonitor() {
         </div>
 
         <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
-          <ShortcutCard
-            description="补点击任务积压时，直接回到业务页确认任务本身是否设置合理。"
-            href="/click-farm"
-            icon={Target}
-            title="补点击任务"
-          />
-          <ShortcutCard
-            description="换链任务和队列互相影响，调度异常时建议同步排查换链页。"
-            href="/link-swap"
-            icon={Workflow}
-            title="换链管理"
-          />
-          <ShortcutCard
-            description="代理和脚本配置异常会直接影响队列健康度，必要时从设置页回查。"
-            href="/settings"
-            icon={Settings2}
-            title="系统设置"
-          />
+          <Link href="/click-farm">
+            <ShortcutCard
+              description="补点击任务积压时，直接回到业务页确认任务本身是否设置合理。"
+              icon={Target}
+              title="补点击任务"
+              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+            />
+          </Link>
+          <Link href="/link-swap">
+            <ShortcutCard
+              description="换链任务和队列互相影响，调度异常时建议同步排查换链页。"
+              icon={Workflow}
+              title="换链管理"
+              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+            />
+          </Link>
+          <Link href="/settings">
+            <ShortcutCard
+              description="代理和脚本配置异常会直接影响队列健康度，必要时从设置页回查。"
+              icon={Settings2}
+              title="系统设置"
+              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+            />
+          </Link>
         </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-4">
-        <OverviewCard
+        <StatCard
+          icon={Zap}
           label="待执行任务"
           note="当前统一队列里尚未开始处理的任务数。"
           tone={consoleData.overview.pendingTasks > 0 ? "amber" : "emerald"}
           value={String(consoleData.overview.pendingTasks)}
         />
-        <OverviewCard
+        <StatCard
+          icon={Workflow}
           label="运行中任务"
           note="当前已被 worker 或调度器接手的任务数。"
           tone="emerald"
           value={String(consoleData.overview.runningTasks)}
         />
-        <OverviewCard
+        <StatCard
+          icon={AlertTriangle}
           label="失败任务"
           note="建议优先查看错误信息和最近更新时间。"
           tone={consoleData.overview.failedTasks > 0 ? "red" : "emerald"}
           value={String(consoleData.overview.failedTasks)}
         />
-        <OverviewCard
+        <StatCard
+          icon={Wrench}
           label="健康调度器"
           note="当前心跳和状态都正常的调度器数量。"
           tone={consoleData.overview.activeSchedulerCount === 2 ? "emerald" : "amber"}
@@ -650,7 +643,7 @@ export function QueueMonitor() {
             ) : consoleData.rows.length ? (
               <div className="space-y-4 p-5">
                 {consoleData.rows.map((row) => {
-                  const statusMeta = taskStatusMeta(row.task.status);
+                  const statusMeta = queueTaskStatusBadge(row.task.status);
                   return (
                     <div className="rounded-xl border border-border bg-muted/40 p-4" key={row.task.id}>
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -660,9 +653,7 @@ export function QueueMonitor() {
                             <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                               {row.task.type}
                             </span>
-                            <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-semibold", statusMeta.className)}>
-                              {statusMeta.label}
-                            </span>
+                            <StatusBadge className="px-2.5 py-1 text-[11px]" label={statusMeta.label} variant={statusMeta.variant} />
                             <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                               {row.task.priority}
                             </span>
@@ -710,25 +701,51 @@ export function QueueMonitor() {
         </div>
 
         <div className="space-y-6">
-          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-            <div className="flex items-start justify-between gap-3">
+          <section
+            className={cn(
+              "bg-card text-card-foreground rounded-xl border shadow-sm p-5",
+              configDirty ? "border-amber-200 bg-amber-500/5" : ""
+            )}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">队列配置</p>
                 <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">统一调度参数</h3>
+                <div className="mt-3">
+                  <StatusBadge
+                    label={configDirty ? "有未保存更改" : "已保存"}
+                    variant={configDirty ? "warning" : "success"}
+                  />
+                </div>
               </div>
-              <button
-                className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                disabled={configLoading || configSaving || !config}
-                onClick={saveQueueConfig}
-                type="button"
-              >
-                {configSaving ? "保存中…" : "保存"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
+                  disabled={!configDirty || configSaving}
+                  onClick={resetQueueConfig}
+                  type="button"
+                >
+                  重置
+                </button>
+                <button
+                  className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  disabled={configLoading || configSaving || !config || !configDirty}
+                  onClick={saveQueueConfig}
+                  type="button"
+                >
+                  {configSaving ? "保存中…" : "保存"}
+                </button>
+              </div>
             </div>
 
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
               调整全局并发、轮询间隔和每种任务类型的并发上限，保存后会自动同步到调度服务。
             </p>
+            {configDirty ? (
+              <p className="mt-3 rounded-lg border border-amber-200 bg-amber-500/10 px-3 py-2 text-sm text-amber-700">
+                当前配置含未保存修改。离开页面前请先保存，或点击重置恢复到上次保存版本。
+              </p>
+            ) : null}
 
             {configLoading && !config ? (
               <p className="mt-4 rounded-lg bg-muted/40 px-4 py-5 text-sm text-muted-foreground">正在加载队列配置...</p>
@@ -810,13 +827,12 @@ export function QueueMonitor() {
                   }
                 ].map((item) => {
                   const tone = schedulerTone(item.value.status);
+                  const statusMeta = schedulerStatusBadge(item.value.status);
                   return (
                     <div className={cn("rounded-xl border p-4", tone.panel)} key={item.key}>
                       <div className="flex items-start justify-between gap-3">
                         <p className="text-sm font-semibold text-foreground">{item.label}</p>
-                        <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", tone.badge)}>
-                          {item.value.status}
-                        </span>
+                        <StatusBadge label={statusMeta.label} variant={statusMeta.variant} />
                       </div>
                       <p className="mt-3 text-sm leading-6 text-foreground">{item.value.message}</p>
                       <div className="mt-4 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
@@ -872,11 +888,11 @@ export function QueueMonitor() {
             {schedulerError ? <p className="mt-4 text-sm text-destructive">{schedulerError}</p> : null}
           </section>
 
-          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">重点提醒</p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">先处理这些队列风险</h3>
-
-            <div className="mt-5 space-y-4">
+          <MetricGroup
+            description="优先处理失败堆积、调度异常和依赖缺失，避免阻塞整体吞吐。"
+            title="先处理这些队列风险"
+          >
+            <div className="space-y-4">
               {consoleData.risks.slice(0, 4).map((risk) => (
                 <div className="rounded-xl border border-border bg-background p-4" key={risk.id}>
                   <div className="flex items-start gap-3">
@@ -900,7 +916,7 @@ export function QueueMonitor() {
                 </div>
               ))}
             </div>
-          </section>
+          </MetricGroup>
         </div>
       </section>
 

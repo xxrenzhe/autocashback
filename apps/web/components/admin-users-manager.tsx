@@ -10,6 +10,7 @@ import {
   Copy,
   History,
   KeyRound,
+  MoreHorizontal,
   PencilLine,
   Plus,
   RefreshCcw,
@@ -17,6 +18,17 @@ import {
   ShieldAlert,
   Trash2
 } from "lucide-react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import {
+  EmptyState,
+  PageHeader,
+  ShortcutCard,
+  StatCard,
+  StatusBadge,
+  TableSkeleton,
+  type StatusBadgeVariant,
+  cn
+} from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { fetchJson } from "@/lib/api-error-handler";
@@ -227,6 +239,7 @@ export function AdminUsersManager() {
     password: string;
   } | null>(null);
   const [loginHistory, setLoginHistory] = useState<LoginRecord[]>([]);
+  const [historyIpQuery, setHistoryIpQuery] = useState("");
   const [securityAlerts, setSecurityAlerts] = useState<SecurityAlert[]>([]);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
@@ -484,6 +497,7 @@ export function AdminUsersManager() {
     setSelectedUser(user);
     setHistoryOpen(true);
     setHistoryLoading(true);
+    setHistoryIpQuery("");
     setLoginHistory([]);
 
     const result = await fetchJson<{ records: LoginRecord[] }>(
@@ -559,6 +573,32 @@ export function AdminUsersManager() {
   }
 
   const emptyState = !loading && users.length === 0;
+  const filteredLoginHistory = useMemo(() => {
+    const normalizedQuery = historyIpQuery.trim().toLowerCase();
+    if (!normalizedQuery) {
+      return loginHistory;
+    }
+
+    return loginHistory.filter((record) => (record.ipAddress || "").toLowerCase().includes(normalizedQuery));
+  }, [historyIpQuery, loginHistory]);
+
+  const groupedSecurityAlerts = useMemo(() => {
+    const recent: SecurityAlert[] = [];
+    const older: SecurityAlert[] = [];
+    const threshold = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+    for (const alert of securityAlerts) {
+      const createdAt = Date.parse(alert.createdAt);
+      if (Number.isFinite(createdAt) && createdAt >= threshold) {
+        recent.push(alert);
+      } else {
+        older.push(alert);
+      }
+    }
+
+    return { recent, older };
+  }, [securityAlerts]);
+
   const overview = useMemo(() => {
     const pageSessionUsersCount = users.filter((user) => user.activeSessionCount > 0).length;
     const pageLockedCount = users.filter((user) => isUserLocked(user)).length;
@@ -650,40 +690,35 @@ export function AdminUsersManager() {
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        actions={
+          <>
+            <button
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground transition hover:border-emerald-200 hover:text-primary disabled:opacity-60"
+              disabled={loading}
+              onClick={() => void loadUsers({ page: pagination.page })}
+              type="button"
+            >
+              <RefreshCcw className={cnIcon(loading)} />
+              刷新列表
+            </button>
+            <button
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
+              onClick={() => setCreateOpen(true)}
+              type="button"
+            >
+              <Plus className="h-4 w-4" />
+              新建用户
+            </button>
+          </>
+        }
+      />
+
       <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
         <div className="grid gap-0 xl:grid-cols-[1.05fr,0.95fr]">
           <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Admin</p>
-                <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">用户管理</h2>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-                  管理后台账号、角色边界、登录会话和密码重置，优先保证运营账号可用、管理员权限收敛。
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <button
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background/90 px-3 py-2 text-sm font-semibold text-foreground transition hover:border-emerald-200 hover:text-primary disabled:opacity-60"
-                  disabled={loading}
-                  onClick={() => void loadUsers({ page: pagination.page })}
-                  type="button"
-                >
-                  <RefreshCcw className={cnIcon(loading)} />
-                  刷新列表
-                </button>
-                <button
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
-                  onClick={() => setCreateOpen(true)}
-                  type="button"
-                >
-                  <Plus className="h-4 w-4" />
-                  新建用户
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">管理捷径</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <QuickActionCard
                 description="离岗、交接或异常登录时，先停用账号，立即回收当前登录能力。"
                 icon={ShieldAlert}
@@ -698,13 +733,9 @@ export function AdminUsersManager() {
           </div>
 
           <div className="bg-background px-6 py-7 sm:px-8">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Overview</p>
-            <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">当前页用户态势</h3>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              先看启用率、锁定数和风险账号，再决定是做权限调整、密码重置还是停用处理。
-            </p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">当前页用户态势</p>
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <AdminOverviewCard
                 label="总用户数"
                 note="当前筛选条件下的全部用户总量。"
@@ -782,15 +813,12 @@ export function AdminUsersManager() {
             ))}
           </div>
         ) : (
-          <div className="mt-6 rounded-xl border border-border bg-[linear-gradient(180deg,rgba(236,253,245,0.8)_0%,rgba(255,255,255,0.95)_100%)] px-6 py-8 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Check className="h-6 w-6" />
-            </div>
-            <p className="mt-4 text-base font-semibold text-foreground">当前页没有待优先处理项</p>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              可以切到“风险账号”“已锁定”或“活跃会话”视角继续巡检，或直接新建后台账号。
-            </p>
-          </div>
+          <EmptyState
+            className="mt-6"
+            description="可以切到“风险账号”“已锁定”或“活跃会话”视角继续巡检，或直接新建后台账号。"
+            icon={Check}
+            title="当前页没有待优先处理项"
+          />
         )}
       </section>
 
@@ -870,157 +898,179 @@ export function AdminUsersManager() {
         {message ? <p className="mt-4 text-sm text-emerald-700">{message}</p> : null}
         {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
 
-        <div className="mt-6 overflow-x-auto rounded-xl border border-border">
-          <table className="min-w-[1160px] w-full text-left text-sm">
-            <thead className="bg-muted/40 text-muted-foreground sticky top-0 bg-background/95 backdrop-blur z-10 sticky top-0 bg-background/95 backdrop-blur z-10">
-              <tr className="border-b border-border/70">
-                <SortableHeader field="username" label="用户" onSort={handleSort} renderIcon={renderSortIcon} />
-                <SortableHeader field="role" label="角色" onSort={handleSort} renderIcon={renderSortIcon} />
-                <SortableHeader field="status" label="状态与风险" onSort={handleSort} renderIcon={renderSortIcon} />
-                <th className="pb-3 pr-4">会话</th>
-                <SortableHeader field="lastLoginAt" label="上次活动" onSort={handleSort} renderIcon={renderSortIcon} />
-                <SortableHeader field="createdAt" label="创建时间" onSort={handleSort} renderIcon={renderSortIcon} />
-                <th className="pb-3 text-right">操作</th>
-              </tr>
-            </thead>
-            <tbody className="bg-background">
-              {loading ? (
-                <tr>
-                  <td className="px-4 py-8 text-muted-foreground" colSpan={7}>
-                    正在加载用户列表...
-                  </td>
+        {loading ? (
+          <TableSkeleton className="mt-6" rows={Math.min(8, pagination.limit)} />
+        ) : emptyState ? (
+          <EmptyState
+            className="mt-6"
+            description="可以调整搜索、角色或状态筛选，或直接创建新用户。"
+            icon={Search}
+            title="当前筛选条件下没有用户"
+          />
+        ) : (
+          <div className="mt-6 overflow-x-auto rounded-xl border border-border">
+            <table className="min-w-[1160px] w-full text-left text-sm">
+              <thead className="bg-muted/40 text-muted-foreground sticky top-0 z-10 bg-background/95 backdrop-blur">
+                <tr className="border-b border-border/70">
+                  <SortableHeader field="username" label="用户" onSort={handleSort} renderIcon={renderSortIcon} />
+                  <SortableHeader field="role" label="角色" onSort={handleSort} renderIcon={renderSortIcon} />
+                  <SortableHeader field="status" label="状态与风险" onSort={handleSort} renderIcon={renderSortIcon} />
+                  <th className="pb-3 pr-4">会话</th>
+                  <SortableHeader field="lastLoginAt" label="上次活动" onSort={handleSort} renderIcon={renderSortIcon} />
+                  <SortableHeader field="createdAt" label="创建时间" onSort={handleSort} renderIcon={renderSortIcon} />
+                  <th className="pb-3 text-right">操作</th>
                 </tr>
-              ) : null}
+              </thead>
+              <tbody className="bg-background">
+                {users.map((user) => {
+                  const userStatusBadge = getUserStatusBadge(user);
 
-              {emptyState ? (
-                <tr>
-                  <td className="px-4 py-8 text-muted-foreground" colSpan={7}>
-                    当前筛选条件下没有用户。
-                  </td>
-                </tr>
-              ) : null}
-
-              {!loading
-                ? users.map((user) => (
-                    <tr className={getUserRowClassName(user)} key={user.id}>
-                      <td className="p-4 pr-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">
-                            {user.username.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="truncate font-medium text-foreground">{user.username}</p>
-                            <p className="truncate text-xs text-muted-foreground">{user.email || "未设置邮箱"}</p>
-                            <p className="mt-1 text-xs text-muted-foreground/80">ID {user.id}</p>
-                          </div>
+                  return (
+                  <tr className={getUserRowClassName(user)} key={user.id}>
+                    <td className="p-4 pr-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">
+                          {user.username.slice(0, 2).toUpperCase()}
                         </div>
-                      </td>
-                      <td className="p-4 pr-4">
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                            user.role === "admin"
-                              ? "bg-amber-500/10 text-amber-600"
-                              : "bg-slate-100 text-foreground"
-                          }`}
-                        >
-                          {user.role === "admin" ? "管理员" : "普通用户"}
-                        </span>
-                      </td>
-                      <td className="p-4 pr-4">
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap gap-2">
-                            <span className={getStatusBadgeClass(user)}>
-                              {getStatusBadgeLabel(user)}
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-foreground">{user.username}</p>
+                          <p className="truncate text-xs text-muted-foreground">{user.email || "未设置邮箱"}</p>
+                          <p className="mt-1 text-xs text-muted-foreground/80">ID {user.id}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4 pr-4">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                          user.role === "admin"
+                            ? "bg-amber-500/10 text-amber-600"
+                            : "bg-slate-100 text-foreground"
+                        }`}
+                      >
+                        {user.role === "admin" ? "管理员" : "普通用户"}
+                      </span>
+                    </td>
+                    <td className="p-4 pr-4">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          <StatusBadge
+                            label={userStatusBadge.label}
+                            variant={userStatusBadge.variant}
+                          />
+                          {user.failedLoginCount > 0 ? (
+                            <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
+                              失败 {user.failedLoginCount} 次
                             </span>
-                            {user.failedLoginCount > 0 ? (
-                              <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
-                                失败 {user.failedLoginCount} 次
-                              </span>
-                            ) : null}
-                          </div>
-                          <p className="text-xs leading-5 text-muted-foreground">{getUserRiskSummary(user)}</p>
-                        </div>
-                      </td>
-                      <td className="p-4 pr-4">
-                        <div className="space-y-1 text-sm text-foreground">
-                          <p>
-                            {user.activeSessionCount > 0
-                              ? `${user.activeSessionCount} 个活跃会话`
-                              : "暂无活跃会话"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {!user.isActive
-                              ? "账号已停用，现有会话会被系统回收。"
-                              : user.activeSessionCount > 0
-                                ? "账号当前仍处于登录态。"
-                                : "可用于判断是否已完成交接。"}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="p-4 pr-4 text-foreground">{formatDateTime(user.lastLoginAt)}</td>
-                      <td className="p-4 pr-4 text-foreground">{formatDateTime(user.createdAt)}</td>
-                      <td className="p-4">
-                        <div className="flex flex-wrap justify-end gap-2">
-                          <ActionButton
-                            disabled={actionLoading !== null}
-                            icon={PencilLine}
-                            label="编辑"
-                            onClick={() => openEditModal(user)}
-                          />
-                          <ActionButton
-                            disabled={actionLoading !== null}
-                            icon={KeyRound}
-                            label="重置密码"
-                            onClick={() => void handleResetPassword(user)}
-                          />
-                          <ActionButton
-                            disabled={actionLoading !== null}
-                            icon={History}
-                            label="登录记录"
-                            onClick={() => void handleLoadLoginHistory(user)}
-                          />
-                          <ActionButton
-                            disabled={actionLoading !== null}
-                            icon={ShieldAlert}
-                            label="安全告警"
-                            onClick={() => void handleLoadSecurityAlerts(user)}
-                            tone={
-                              isUserLocked(user) || user.failedLoginCount > 0 || user.activeSessionCount > 1
-                                ? "amber"
-                                : "default"
-                            }
-                          />
-                          {isUserLocked(user) || user.failedLoginCount > 0 ? (
-                            <ActionButton
-                              disabled={actionLoading !== null}
-                              icon={RefreshCcw}
-                              label={isUserLocked(user) ? "解除锁定" : "清空失败"}
-                              onClick={() => void handleUnlockUser(user)}
-                              tone="amber"
-                            />
                           ) : null}
-                          <ActionButton
-                            disabled={actionLoading !== null}
-                            icon={user.isActive ? ShieldAlert : Check}
-                            label={user.isActive ? "停用" : "启用"}
-                            onClick={() => void handleToggleUserState(user)}
-                            tone={user.isActive ? "amber" : "emerald"}
-                          />
-                          <ActionButton
-                            disabled={actionLoading !== null || user.isActive}
-                            icon={Trash2}
-                            label="删除"
-                            onClick={() => void handleDeleteUser(user)}
-                            tone="danger"
-                          />
                         </div>
-                      </td>
-                    </tr>
-                  ))
-                : null}
-            </tbody>
-          </table>
-        </div>
+                        <p className="text-xs leading-5 text-muted-foreground">{getUserRiskSummary(user)}</p>
+                      </div>
+                    </td>
+                    <td className="p-4 pr-4">
+                      <div className="space-y-1 text-sm text-foreground">
+                        <p>
+                          {user.activeSessionCount > 0
+                            ? `${user.activeSessionCount} 个活跃会话`
+                            : "暂无活跃会话"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {!user.isActive
+                            ? "账号已停用，现有会话会被系统回收。"
+                            : user.activeSessionCount > 0
+                              ? "账号当前仍处于登录态。"
+                              : "可用于判断是否已完成交接。"}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="p-4 pr-4 text-foreground">{formatDateTime(user.lastLoginAt)}</td>
+                    <td className="p-4 pr-4 text-foreground">{formatDateTime(user.createdAt)}</td>
+                    <td className="p-4">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <ActionButton
+                          disabled={actionLoading !== null}
+                          icon={PencilLine}
+                          label="编辑"
+                          onClick={() => openEditModal(user)}
+                        />
+                        <ActionButton
+                          disabled={actionLoading !== null}
+                          icon={History}
+                          label="登录记录"
+                          onClick={() => void handleLoadLoginHistory(user)}
+                        />
+                        <DropdownMenu.Root>
+                          <DropdownMenu.Trigger asChild>
+                            <button
+                              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                              disabled={actionLoading !== null}
+                              type="button"
+                            >
+                              <MoreHorizontal className="h-3.5 w-3.5" />
+                              更多
+                            </button>
+                          </DropdownMenu.Trigger>
+                          <DropdownMenu.Portal>
+                            <DropdownMenu.Content
+                              align="end"
+                              className="z-50 min-w-[190px] rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+                              sideOffset={6}
+                            >
+                              <DropdownMenu.Item
+                                className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-none hover:bg-muted focus:bg-muted"
+                                onSelect={() => void handleLoadSecurityAlerts(user)}
+                              >
+                                <ShieldAlert className="h-4 w-4" />
+                                安全告警
+                              </DropdownMenu.Item>
+                              <DropdownMenu.Item
+                                className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-none hover:bg-muted focus:bg-muted"
+                                onSelect={() => void handleResetPassword(user)}
+                              >
+                                <KeyRound className="h-4 w-4" />
+                                重置密码
+                              </DropdownMenu.Item>
+                              {(isUserLocked(user) || user.failedLoginCount > 0) ? (
+                                <DropdownMenu.Item
+                                  className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-amber-700 outline-none hover:bg-amber-50 focus:bg-amber-50"
+                                  onSelect={() => void handleUnlockUser(user)}
+                                >
+                                  <RefreshCcw className="h-4 w-4" />
+                                  {isUserLocked(user) ? "解除锁定" : "清空失败"}
+                                </DropdownMenu.Item>
+                              ) : null}
+                              <DropdownMenu.Item
+                                className={cn(
+                                  "flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-none",
+                                  user.isActive
+                                    ? "text-amber-700 hover:bg-amber-50 focus:bg-amber-50"
+                                    : "text-primary hover:bg-emerald-50 focus:bg-emerald-50"
+                                )}
+                                onSelect={() => void handleToggleUserState(user)}
+                              >
+                                {user.isActive ? <ShieldAlert className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                                {user.isActive ? "停用账号" : "启用账号"}
+                              </DropdownMenu.Item>
+                              <DropdownMenu.Separator className="my-1 h-px bg-border" />
+                              <DropdownMenu.Item
+                                className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive outline-none hover:bg-destructive/10 focus:bg-destructive/10 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"
+                                disabled={user.isActive}
+                                onSelect={() => void handleDeleteUser(user)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                删除用户
+                              </DropdownMenu.Item>
+                            </DropdownMenu.Content>
+                          </DropdownMenu.Portal>
+                        </DropdownMenu.Root>
+                      </div>
+                    </td>
+                  </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         <div className="mt-6 flex flex-col gap-3 border-t border-border/60 pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
@@ -1220,7 +1270,10 @@ export function AdminUsersManager() {
       <ModalFrame
         description={selectedUser ? `查看 ${selectedUser.username} 最近的登录会话记录。` : undefined}
         eyebrow="用户管理"
-        onClose={() => setHistoryOpen(false)}
+        onClose={() => {
+          setHistoryOpen(false);
+          setHistoryIpQuery("");
+        }}
         open={historyOpen}
         title="登录记录"
       >
@@ -1229,7 +1282,18 @@ export function AdminUsersManager() {
         ) : (
           <div className="space-y-3">
             {loginHistory.length ? (
-              loginHistory.map((record) => (
+              <label className="relative block">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/80" />
+                <input
+                  className="w-full rounded-lg border border-border bg-muted/40 py-2 pl-9 pr-3 text-sm text-foreground"
+                  onChange={(event) => setHistoryIpQuery(event.target.value)}
+                  placeholder="按 IP 搜索登录记录"
+                  value={historyIpQuery}
+                />
+              </label>
+            ) : null}
+            {filteredLoginHistory.length ? (
+              filteredLoginHistory.map((record) => (
                 <div className="rounded-xl border border-border bg-muted/40 p-4" key={record.id}>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-2">
@@ -1271,8 +1335,18 @@ export function AdminUsersManager() {
                   </div>
                 </div>
               ))
+            ) : loginHistory.length ? (
+              <EmptyState
+                description="尝试输入更短的 IP 片段，或清空搜索查看全部记录。"
+                icon={Search}
+                title="没有匹配该 IP 的登录记录"
+              />
             ) : (
-              <p className="text-sm text-muted-foreground">暂无登录记录。</p>
+              <EmptyState
+                description="最近没有可展示的登录会话或审计事件。"
+                icon={History}
+                title="暂无登录记录"
+              />
             )}
           </div>
         )}
@@ -1288,57 +1362,103 @@ export function AdminUsersManager() {
         {alertsLoading ? (
           <p className="text-sm text-muted-foreground">正在分析安全告警...</p>
         ) : securityAlerts.length ? (
-          <div className="space-y-3">
-            {securityAlerts.map((alert) => (
-              <div
-                className={`rounded-xl border p-4 ${
-                  alert.severity === "critical"
-                    ? "border-destructive/20 bg-destructive/10"
-                    : alert.severity === "warning"
-                      ? "border-amber-200 bg-amber-500/10"
-                      : "border-border bg-muted/40"
-                }`}
-                key={alert.id}
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={getAlertSeverityBadgeClass(alert.severity)}>
-                        {getAlertSeverityLabel(alert.severity)}
-                      </span>
-                      <span className="text-xs text-muted-foreground">{formatDateTime(alert.createdAt)}</span>
-                    </div>
-                    <p className="mt-3 text-sm font-semibold text-foreground">{alert.title}</p>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{alert.description}</p>
-                  </div>
-                  <div className="rounded-lg bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground">
-                    {getAlertCategoryLabel(alert.category)}
-                  </div>
-                </div>
-
-                {alert.evidence.length ? (
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                    {alert.evidence.map((item) => (
-                      <div className="rounded-lg bg-background/80 px-3 py-3" key={`${alert.id}-${item.label}`}>
-                        <p className="text-xs text-muted-foreground">{item.label}</p>
-                        <p className="mt-1 text-sm font-medium text-foreground">{item.value}</p>
+          <div className="space-y-5">
+            {groupedSecurityAlerts.recent.length ? (
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">最近 7 天</p>
+                {groupedSecurityAlerts.recent.map((alert) => (
+                  <div
+                    className={`rounded-xl border p-4 ${
+                      alert.severity === "critical"
+                        ? "border-destructive/20 bg-destructive/10"
+                        : alert.severity === "warning"
+                          ? "border-amber-200 bg-amber-500/10"
+                          : "border-border bg-muted/40"
+                    }`}
+                    key={alert.id}
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={getAlertSeverityBadgeClass(alert.severity)}>
+                            {getAlertSeverityLabel(alert.severity)}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{formatDateTime(alert.createdAt)}</span>
+                        </div>
+                        <p className="mt-3 text-sm font-semibold text-foreground">{alert.title}</p>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">{alert.description}</p>
                       </div>
-                    ))}
+                      <div className="rounded-lg bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground">
+                        {getAlertCategoryLabel(alert.category)}
+                      </div>
+                    </div>
+
+                    {alert.evidence.length ? (
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                        {alert.evidence.map((item) => (
+                          <div className="rounded-lg bg-background/80 px-3 py-3" key={`${alert.id}-${item.label}`}>
+                            <p className="text-xs text-muted-foreground">{item.label}</p>
+                            <p className="mt-1 text-sm font-medium text-foreground">{item.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
+                ))}
               </div>
-            ))}
+            ) : null}
+
+            {groupedSecurityAlerts.older.length ? (
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">更早</p>
+                {groupedSecurityAlerts.older.map((alert) => (
+                  <div
+                    className={`rounded-xl border p-4 ${
+                      alert.severity === "critical"
+                        ? "border-destructive/20 bg-destructive/10"
+                        : alert.severity === "warning"
+                          ? "border-amber-200 bg-amber-500/10"
+                          : "border-border bg-muted/40"
+                    }`}
+                    key={alert.id}
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={getAlertSeverityBadgeClass(alert.severity)}>
+                            {getAlertSeverityLabel(alert.severity)}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{formatDateTime(alert.createdAt)}</span>
+                        </div>
+                        <p className="mt-3 text-sm font-semibold text-foreground">{alert.title}</p>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">{alert.description}</p>
+                      </div>
+                      <div className="rounded-lg bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground">
+                        {getAlertCategoryLabel(alert.category)}
+                      </div>
+                    </div>
+
+                    {alert.evidence.length ? (
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                        {alert.evidence.map((item) => (
+                          <div className="rounded-lg bg-background/80 px-3 py-3" key={`${alert.id}-${item.label}`}>
+                            <p className="text-xs text-muted-foreground">{item.label}</p>
+                            <p className="mt-1 text-sm font-medium text-foreground">{item.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
         ) : (
-          <div className="rounded-xl border border-border bg-muted/40 px-5 py-8 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <ShieldAlert className="h-6 w-6" />
-            </div>
-            <p className="mt-4 text-base font-semibold text-foreground">暂无安全告警</p>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              最近没有检测到高失败登录、多地点活跃会话或异常分散的登录来源。
-            </p>
-          </div>
+          <EmptyState
+            description="最近没有检测到高失败登录、多地点活跃会话或异常分散的登录来源。"
+            icon={ShieldAlert}
+            title="暂无安全告警"
+          />
         )}
       </ModalFrame>
     </div>
@@ -1391,29 +1511,20 @@ function getUserLockMinutes(lockedUntil: string | null) {
   return Math.max(0, Math.ceil((timestamp - Date.now()) / (60 * 1000)));
 }
 
-function getStatusBadgeClass(user: AdminUser) {
+function getUserStatusBadge(user: AdminUser): { label: string; variant: StatusBadgeVariant } {
   if (!user.isActive) {
-    return "rounded-full bg-destructive/10 px-3 py-1 text-xs font-semibold text-destructive";
-  }
-
-  if (isUserLocked(user)) {
-    return "rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600";
-  }
-
-  return "rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary";
-}
-
-function getStatusBadgeLabel(user: AdminUser) {
-  if (!user.isActive) {
-    return "已停用";
+    return { label: "已停用", variant: "disabled" };
   }
 
   if (isUserLocked(user)) {
     const remainingMinutes = getUserLockMinutes(user.lockedUntil);
-    return remainingMinutes > 0 ? `已锁定 · ${remainingMinutes} 分钟` : "已锁定";
+    return {
+      label: remainingMinutes > 0 ? `已锁定 · ${remainingMinutes} 分钟` : "已锁定",
+      variant: "warning"
+    };
   }
 
-  return "正常";
+  return { label: "正常", variant: "success" };
 }
 
 function getUserRiskSummary(user: AdminUser) {
@@ -1526,18 +1637,13 @@ function QuickActionCard(props: {
   title: string;
   description: string;
 }) {
-  const Icon = props.icon;
-
   return (
-    <div className="rounded-xl border border-border bg-background/90 p-4">
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" />
-        </span>
-      </div>
-      <p className="mt-4 text-sm font-semibold text-foreground">{props.title}</p>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">{props.description}</p>
-    </div>
+    <ShortcutCard
+      description={props.description}
+      icon={props.icon}
+      title={props.title}
+      tone="emerald"
+    />
   );
 }
 
@@ -1549,29 +1655,6 @@ function AdminOverviewCard(props: {
   selected?: boolean;
   onClick?: () => void;
 }) {
-  const toneClass =
-    props.tone === "emerald"
-      ? "bg-primary/10 text-primary"
-      : props.tone === "amber"
-        ? "bg-amber-500/10 text-amber-600"
-        : "bg-slate-100 text-foreground";
-  const valueClass =
-    props.tone === "emerald"
-      ? "text-primary"
-      : props.tone === "amber"
-        ? "text-amber-600"
-        : "text-foreground";
-
-  const content = (
-    <>
-      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${toneClass}`}>
-        {props.label}
-      </span>
-      <p className={`mt-4 font-mono tabular-nums text-xl font-semibold tracking-tight ${valueClass}`}>{props.value}</p>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">{props.note}</p>
-    </>
-  );
-
   if (props.onClick) {
     return (
       <button
@@ -1583,14 +1666,26 @@ function AdminOverviewCard(props: {
         onClick={props.onClick}
         type="button"
       >
-        {content}
+        <StatCard
+          className="border-0 bg-transparent p-0 shadow-none"
+          label={props.label}
+          note={props.note}
+          tone={props.tone}
+          value={props.value}
+        />
       </button>
     );
   }
 
   return (
     <div className="rounded-xl border border-border bg-muted/40 p-4">
-      {content}
+      <StatCard
+        className="border-0 bg-transparent p-0 shadow-none"
+        label={props.label}
+        note={props.note}
+        tone={props.tone}
+        value={props.value}
+      />
     </div>
   );
 }
@@ -1614,6 +1709,7 @@ function ActionQueueCard(props: {
       : props.item.tone === "warning"
         ? "bg-amber-100 text-amber-600"
         : "bg-primary/10 text-primary";
+  const userStatusBadge = getUserStatusBadge(props.item.user);
 
   return (
     <div className={`rounded-xl border px-5 py-5 ${toneClass}`}>
@@ -1633,7 +1729,10 @@ function ActionQueueCard(props: {
         <p className="text-sm font-semibold text-foreground">{props.item.user.username}</p>
         <p className="mt-1 text-xs text-muted-foreground">{props.item.user.email || "未设置邮箱"}</p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <span className={getStatusBadgeClass(props.item.user)}>{getStatusBadgeLabel(props.item.user)}</span>
+          <StatusBadge
+            label={userStatusBadge.label}
+            variant={userStatusBadge.variant}
+          />
           {props.item.user.activeSessionCount > 0 ? (
             <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
               {props.item.user.activeSessionCount} 个活跃会话

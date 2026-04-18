@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, KeyRound, ShieldCheck } from "lucide-react";
+import { ArrowRight, KeyRound, Loader2, ShieldCheck } from "lucide-react";
 
 import { fetchJson } from "@/lib/api-error-handler";
 import { cn } from "@autocashback/ui";
@@ -16,6 +16,14 @@ export function LoginForm(props: {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const usernameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!error) {
+      return;
+    }
+    usernameInputRef.current?.focus();
+  }, [error]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -80,6 +88,7 @@ export function LoginForm(props: {
             name="username"
             autoComplete="username"
             className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+            ref={usernameInputRef}
             onChange={(event) => setUsername(event.target.value)}
             placeholder="name@company.com"
             value={username}
@@ -113,6 +122,7 @@ export function LoginForm(props: {
           disabled={pending}
           type="submit"
         >
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
           {pending ? "正在验证…" : "安全登录"}
           {!pending ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : null}
         </button>

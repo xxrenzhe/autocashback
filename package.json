@@ -16,6 +16,7 @@
     "service:web": "tsx scripts/run-managed-service.ts web",
     "service:scheduler": "tsx scripts/run-managed-service.ts scheduler",
     "lint": "npm --workspace @autocashback/web run lint && eslint apps/scheduler/src packages scripts tests --ext .ts,.tsx",
+    "lint:ui-guards": "bash scripts/check-ui-regressions.sh",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "db:migrate": "tsx scripts/migrate-db.ts",

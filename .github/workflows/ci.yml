@@ -57,6 +57,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: UI Regression Guards
+        run: npm run lint:ui-guards
+
       - name: Type Check
         run: npm run type-check
 

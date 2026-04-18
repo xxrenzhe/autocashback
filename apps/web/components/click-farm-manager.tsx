@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 import type { ClickFarmTask, OfferRecord } from "@autocashback/domain";
-import { cn } from "@autocashback/ui";
+import { cn, PageHeader, ShortcutCard, StatCard, StatusBadge } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { ClickFarmTaskDialog } from "@/components/click-farm-task-dialog";
@@ -38,8 +38,6 @@ const sortOptions: Array<{ value: ClickFarmConsoleSort; label: string }> = [
   { value: "progress", label: "按任务进度" }
 ];
 
-
-
 function formatPercent(value: number | null) {
   if (value === null) {
     return "暂无样本";
@@ -48,96 +46,31 @@ function formatPercent(value: number | null) {
   return `${(value * 100).toFixed(1)}%`;
 }
 
-function OverviewCard({
-  label,
-  note,
-  tone,
-  value
-}: {
-  label: string;
-  note: string;
-  tone: "emerald" | "amber" | "slate";
-  value: string;
-}) {
-  const toneStyles = {
-    emerald: {
-      badge: "bg-primary/10 text-primary",
-      value: "text-primary"
-    },
-    amber: {
-      badge: "bg-amber-500/10 text-amber-600",
-      value: "text-amber-600"
-    },
-    slate: {
-      badge: "bg-slate-100 text-foreground",
-      value: "text-foreground"
-    }
-  } as const;
-
-  return (
-    <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-      <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", toneStyles[tone].badge)}>
-        {label}
-      </span>
-      <p className={cn("mt-5 font-mono tabular-nums text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
-    </div>
-  );
-}
-
-function ShortcutCard({
-  description,
-  href,
-  icon: Icon,
-  title
-}: {
-  description: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-}) {
-  return (
-    <Link
-      className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
-      href={href}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" />
-        </span>
-        <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-      </div>
-      <p className="mt-4 text-sm font-semibold text-foreground">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-    </Link>
-  );
-}
-
 function statusMeta(task: ClickFarmTask) {
   if (task.status === "running") {
     return {
       label: "运行中",
-      className: "bg-primary/10 text-primary"
+      variant: "running" as const
     };
   }
 
   if (task.status === "pending") {
     return {
       label: "等待开始",
-      className: "bg-slate-100 text-foreground"
+      variant: "pending" as const
     };
   }
 
   if (task.status === "paused" || task.status === "stopped") {
     return {
       label: "已暂停",
-      className: "bg-amber-500/10 text-amber-600"
+      variant: "warning" as const
     };
   }
 
   return {
     label: "已完成",
-    className: "bg-slate-100 text-foreground"
+    variant: "success" as const
   };
 }
 
@@ -150,7 +83,7 @@ export function ClickFarmManager() {
   const [offers, setOffers] = useState<OfferRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-        const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<ClickFarmTask["status"] | "all">("all");
   const [countryFilter, setCountryFilter] = useState("all");
   const [sort, setSort] = useState<ClickFarmConsoleSort>("recent");
@@ -212,9 +145,6 @@ export function ClickFarmManager() {
       setLoading(true);
     }
 
-    if (!options?.preserveNotice) {
-                }
-
     try {
       const [tasksResult, offersResult] = await Promise.all([
         fetchJson<{ tasks: ClickFarmTask[] }>("/api/click-farm/tasks", { cache: "no-store" }),
@@ -272,7 +202,7 @@ export function ClickFarmManager() {
     }
 
     setTaskActionLoading(`${action}-${task.id}`);
-    
+
     const endpoint =
       action === "delete"
         ? `/api/click-farm/tasks/${task.id}`
@@ -304,89 +234,94 @@ export function ClickFarmManager() {
     <div className="space-y-6">
       <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
         <div className="border-b border-border/70 p-5">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Click Farm</p>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <h2 className="text-xl font-semibold tracking-tight text-foreground">补点击任务控制台</h2>
+          <PageHeader
+            actions={
+              <div className="flex flex-wrap gap-3">
+                <button
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  disabled={!selectedOffer}
+                  onClick={() => selectedOffer && openDialogForOffer(selectedOffer)}
+                  type="button"
+                >
+                  <CirclePlus className="h-4 w-4" />
+                  新建 / 编辑任务
+                </button>
+                <button
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
+                  disabled={refreshing}
+                  onClick={() => void loadAll({ background: true, preserveNotice: true })}
+                  type="button"
+                >
+                  <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
+                  {refreshing ? "刷新中…" : "刷新列表"}
+                </button>
+              </div>
+            }
+            description="统一查看补点击任务的节奏、成功率和暂停原因。先处理异常任务，再补齐新的 Offer 任务。"
+            eyebrow="Click Farm"
+            title={
+              <span className="flex flex-wrap items-center gap-3">
+                <span>补点击任务控制台</span>
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                   {allConsole.overview.totalTasks} tasks
                 </span>
-              </div>
-              <p className="mt-4 text-sm leading-7 text-muted-foreground">
-                统一查看补点击任务的节奏、成功率和暂停原因。先处理异常任务，再补齐新的 Offer 任务。
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <button
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                disabled={!selectedOffer}
-                onClick={() => selectedOffer && openDialogForOffer(selectedOffer)}
-                type="button"
-              >
-                <CirclePlus className="h-4 w-4" />
-                新建 / 编辑任务
-              </button>
-              <button
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
-                disabled={refreshing}
-                onClick={() => void loadAll({ background: true, preserveNotice: true })}
-                type="button"
-              >
-                <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
-                {refreshing ? "刷新中…" : "刷新列表"}
-              </button>
-            </div>
-          </div>
-
-          
-
-          
+              </span>
+            }
+          />
         </div>
 
         <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
-          <ShortcutCard
-            description="从 Offer 维度进入最适合创建补点击任务，也方便同步检查佣金与换链状态。"
-            href="/offers"
-            icon={Target}
-            title="Offer 管理"
-          />
-          <ShortcutCard
-            description="查看调度器与统一队列状态，确认补点击任务是否正常入队。"
-            href="/queue"
-            icon={Workflow}
-            title="队列监控"
-          />
-          <ShortcutCard
-            description="代理不足时任务会自动暂停，先去设置页确认代理可用性。"
-            href="/settings"
-            icon={Settings2}
-            title="代理与设置"
-          />
+          <Link href="/offers">
+            <ShortcutCard
+              description="从 Offer 维度进入最适合创建补点击任务，也方便同步检查佣金与换链状态。"
+              icon={Target}
+              title="Offer 管理"
+              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+            />
+          </Link>
+          <Link href="/queue">
+            <ShortcutCard
+              description="查看调度器与统一队列状态，确认补点击任务是否正常入队。"
+              icon={Workflow}
+              title="队列监控"
+              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+            />
+          </Link>
+          <Link href="/settings">
+            <ShortcutCard
+              description="代理不足时任务会自动暂停，先去设置页确认代理可用性。"
+              icon={Settings2}
+              title="代理与设置"
+              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+            />
+          </Link>
         </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-4">
-        <OverviewCard
+        <StatCard
+          icon={Zap}
           label="运行中任务"
           note="当前处于等待开始或运行中的补点击任务。"
           tone="emerald"
           value={String(allConsole.overview.activeTasks)}
         />
-        <OverviewCard
+        <StatCard
+          icon={AlertTriangle}
           label="暂停 / 异常"
           note="包含暂停、缺少下次调度或成功率偏低的任务。"
           tone={allConsole.overview.warningTasks > 0 ? "amber" : "emerald"}
           value={String(allConsole.overview.warningTasks)}
         />
-        <OverviewCard
+        <StatCard
+          icon={Workflow}
           label="累计点击"
           note="当前账号下所有补点击任务累计点击次数。"
           tone="slate"
           value={String(allConsole.overview.totalClicks)}
         />
-        <OverviewCard
+        <StatCard
+          icon={Target}
           label="平均成功率"
           note="按已有点击样本汇总的整体成功率。"
           tone={allConsole.overview.averageSuccessRate >= 80 ? "emerald" : "amber"}
@@ -554,9 +489,7 @@ export function ClickFarmManager() {
 
                           <td className="py-4 pr-4">
                             <div className="min-w-[140px] space-y-2">
-                              <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", currentStatus.className)}>
-                                {currentStatus.label}
-                              </span>
+                              <StatusBadge label={currentStatus.label} variant={currentStatus.variant} />
                               {row.task.pauseReason ? (
                                 <p className="text-xs text-amber-600">{row.task.pauseMessage || "任务已暂停"}</p>
                               ) : row.nextRunMissing ? (
@@ -578,27 +511,33 @@ export function ClickFarmManager() {
                           </td>
 
                           <td className="py-4 pr-4">
-                            <div className="min-w-[180px]">
-                              <div className="flex items-center gap-2">
-                                <div className="h-2.5 w-20 overflow-hidden rounded-full bg-stone-200">
-                                  <div
-                                    className={cn(
-                                      "h-full rounded-full",
-                                      row.needsAttention ? "bg-amber-500/100" : "bg-primary"
-                                    )}
-                                    style={{ width: `${row.progressPercent}%` }}
-                                  />
-                                </div>
-                                <span className="text-xs font-semibold text-muted-foreground">
-                                  {row.progressPercent.toFixed(0)}%
+                            <div className="min-w-[180px] space-y-2">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span
+                                  className={cn(
+                                    "rounded-full px-2.5 py-1 text-[11px] font-semibold",
+                                    row.needsAttention ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"
+                                  )}
+                                >
+                                  成功率 {formatPercent(row.successRate)}
+                                </span>
+                                <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+                                  进度 {row.progressPercent.toFixed(0)}%
                                 </span>
                               </div>
-                              <p className="mt-2 text-xs text-muted-foreground">
-                                成功率 {formatPercent(row.successRate)}
+                              <p className="text-xs text-muted-foreground">
+                                点击总量 {row.task.totalClicks}（成功 {row.task.successClicks} / 失败 {row.task.failedClicks}）
                               </p>
-                              <p className="mt-2 text-xs text-muted-foreground">
-                                总点击 {row.task.totalClicks} · 成功 {row.task.successClicks} · 失败 {row.task.failedClicks}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={cn(
+                                    "rounded-full px-2.5 py-1 text-[11px] font-semibold",
+                                    row.needsAttention ? "bg-amber-500/10 text-amber-600" : "bg-slate-100 text-foreground"
+                                  )}
+                                >
+                                  {row.needsAttention ? "需关注质量" : "质量稳定"}
+                                </span>
+                              </div>
                             </div>
                           </td>
 
@@ -756,47 +695,63 @@ export function ClickFarmManager() {
             <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">先处理这些任务</h3>
 
             <div className="mt-5 space-y-4">
-              {pausedRows.map((row) => (
-                <button
-                  className="w-full rounded-xl border border-border bg-background p-4 text-left transition hover:bg-muted/40"
-                  key={`paused-${row.task.id}`}
-                  onClick={() => row.offer && openDialogForOffer(row.offer)}
-                  type="button"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
-                      <AlertTriangle className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{row.brandName}</p>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        {row.task.pauseMessage || "任务已暂停，建议检查代理或手动恢复。"}
-                      </p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-foreground">已暂停任务</h4>
+                  <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-600">
+                    {pausedRows.length}
+                  </span>
+                </div>
+                {pausedRows.map((row) => (
+                  <button
+                    className="w-full rounded-xl border border-amber-200 bg-amber-500/5 p-4 text-left transition hover:bg-amber-500/10"
+                    key={`paused-${row.task.id}`}
+                    onClick={() => row.offer && openDialogForOffer(row.offer)}
+                    type="button"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
+                        <AlertTriangle className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground">{row.brandName}</p>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                          {row.task.pauseMessage || "任务已暂停，建议检查代理或手动恢复。"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                ))}
+              </div>
 
-              {weakRows.map((row) => (
-                <button
-                  className="w-full rounded-xl border border-border bg-background p-4 text-left transition hover:bg-muted/40"
-                  key={`weak-${row.task.id}`}
-                  onClick={() => row.offer && openDialogForOffer(row.offer)}
-                  type="button"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
-                      <AlertTriangle className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{row.brandName}</p>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        当前成功率只有 {formatPercent(row.successRate)}，建议复核时段、Referer 和代理稳定性。
-                      </p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-foreground">成功率偏低</h4>
+                  <span className="rounded-full bg-orange-500/10 px-2.5 py-1 text-[11px] font-semibold text-orange-600">
+                    {weakRows.length}
+                  </span>
+                </div>
+                {weakRows.map((row) => (
+                  <button
+                    className="w-full rounded-xl border border-orange-200 bg-orange-500/5 p-4 text-left transition hover:bg-orange-500/10"
+                    key={`weak-${row.task.id}`}
+                    onClick={() => row.offer && openDialogForOffer(row.offer)}
+                    type="button"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-orange-500/10 text-orange-600">
+                        <AlertTriangle className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground">{row.brandName}</p>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                          当前成功率只有 {formatPercent(row.successRate)}，建议复核时段、Referer 和代理稳定性。
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                ))}
+              </div>
 
               {!pausedRows.length && !weakRows.length ? (
                 <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">

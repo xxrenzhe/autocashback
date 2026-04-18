@@ -18,7 +18,7 @@ import {
   WalletCards
 } from "lucide-react";
 
-import { CardSkeleton, EmptyState, ShortcutCard, StatCard, StatSkeleton, cn } from "@autocashback/ui";
+import { CardSkeleton, EmptyState, PageHeader, ShortcutCard, StatCard, StatSkeleton, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import type {
@@ -28,35 +28,6 @@ import type {
   DashboardRiskItem
 } from "@/lib/dashboard-summary";
 import { fetchJson } from "@/lib/api-error-handler";
-
-const coreEntryLinks = [
-  {
-    id: "accounts",
-    title: "账号管理",
-    description: "维护返利平台账号、邮箱和收款信息。",
-    href: "/accounts"
-  },
-  {
-    id: "offers",
-    title: "Offer 管理",
-    description: "补齐推广链接、国家、品牌和佣金上限。",
-    href: "/offers"
-  },
-  {
-    id: "link-swap",
-    title: "换链管理",
-    description: "查看执行状态、失败记录和手动触发结果。",
-    href: "/link-swap"
-  },
-  {
-    id: "google-ads",
-    title: "Google Ads",
-    description: "维护授权状态、客户号和广告侧联动配置。",
-    href: "/google-ads"
-  }
-] as const;
-
-
 
 function resolveActionIcon(href: string) {
   if (href.startsWith("/accounts")) {
@@ -237,37 +208,47 @@ export function DashboardClientPage({ username }: { username: string }) {
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        actions={
+          <button
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-50"
+            disabled={refreshing}
+            onClick={() => void loadSummary(true)}
+            type="button"
+          >
+            <RefreshCcw className={cn("h-3.5 w-3.5", refreshing ? "animate-spin" : "")} />
+            {refreshing ? "刷新中" : "刷新"}
+          </button>
+        }
+        title={`${username}，先看今天的总览`}
+        description="先确认 Offer、换链和账号的核心状态，再进入对应模块处理动作和风险。"
+      />
+
       <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
-        <div className="grid gap-0 xl:grid-cols-[1.2fr,0.9fr]">
+        <div className="grid gap-0 xl:grid-cols-[1.15fr,0.85fr]">
           <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">Dashboard</p>
-            <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">{username}，先看今天的总览</h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-              先确认 Offer、换链和账号的核心状态，再进入对应模块处理动作和风险。
-            </p>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {coreEntryLinks.map((item) => (
-                <ActionCard item={{ ...item, tone: "emerald" }} key={item.id} />
-              ))}
+            <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">今天先关注系统节奏，再决定进入哪个模块</h2>
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-emerald-200/80 bg-white/80 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">上次执行</p>
+                <p className="mt-3 text-sm font-semibold text-foreground">{formatDateTime(data.overview.latestRunAt)}</p>
+              </div>
+              <div className="rounded-xl border border-emerald-200/80 bg-white/80 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">最近成功率</p>
+                <p className="mt-3 text-sm font-semibold text-foreground">{data.overview.successRate}%</p>
+              </div>
+              <div className="rounded-xl border border-emerald-200/80 bg-white/80 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">待处理风险</p>
+                <p className="mt-3 text-sm font-semibold text-foreground">{data.risks.length} 项</p>
+              </div>
             </div>
           </div>
 
           <div className="border-t border-border/70 bg-background/80 px-6 py-7 xl:border-l xl:border-t-0">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">总览</p>
-                <p className="mt-3 text-sm font-semibold text-foreground">运行脉搏</p>
-              </div>
-              <button
-                className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-50"
-                disabled={refreshing}
-                onClick={() => void loadSummary(true)}
-                type="button"
-              >
-                <RefreshCcw className={cn("h-3.5 w-3.5", refreshing ? "animate-spin" : "")} />
-                {refreshing ? "刷新中" : "刷新"}
-              </button>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">运行脉搏</p>
+              <p className="mt-3 text-sm font-semibold text-foreground">把右侧视作今日的操作提示板</p>
             </div>
 
             <div className="mt-5 grid gap-3">
@@ -319,7 +300,7 @@ export function DashboardClientPage({ username }: { username: string }) {
         <StatCard
           label="最近成功率"
           note="最近换链执行记录里的成功比例。"
-          tone="emerald"
+          tone={data.overview.successRate >= 80 ? "emerald" : "amber"}
           value={`${data.overview.successRate}%`}
         />
         <StatCard

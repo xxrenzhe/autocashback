@@ -1,34 +1,81 @@
 "use client";
 
+import * as Tabs from "@radix-ui/react-tabs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle,
   ArrowRight,
   Globe2,
   KeyRound,
+  LockKeyhole,
   Link2,
   NotebookPen,
   ShieldCheck
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import type { ProxySettingEntry } from "@autocashback/domain";
-import { EmptyState, ShortcutCard, StatCard } from "@autocashback/ui";
+import { ShortcutCard, StatCard } from "@autocashback/ui";
 
-import { AccountSecurityPanel } from "@/components/account-security-panel";
+import { AccountSecuritySettingsTab } from "@/components/settings/account-security-settings-tab";
+import { GoogleAdsSettingsTab } from "@/components/settings/google-ads-settings-tab";
+import { PlatformNotesSettingsTab } from "@/components/settings/platform-notes-settings-tab";
+import { ProxySettingsTab } from "@/components/settings/proxy-settings-tab";
+import { ScriptSettingsTab } from "@/components/settings/script-settings-tab";
+import {
+  SETTINGS_TAB_ITEMS,
+  getHashForSettingsTab,
+  getSettingsTabFromHash,
+  type SettingsTabValue
+} from "@/components/settings/tabs";
+import type {
+  GoogleAdsConfig,
+  PlatformNotes,
+  ProxyValidationState,
+  ScriptTemplatePayload,
+  SettingRow
+} from "@/components/settings/types";
 import { fetchJson } from "@/lib/api-error-handler";
 import { buildSettingsOverview } from "@/lib/settings-overview";
 
-type SettingRow = {
-  category: string;
-  key: string;
-  value: string;
-  isSensitive?: boolean;
+type HeroShortcut = {
+  tab: SettingsTabValue;
+  title: string;
+  description: string;
+  icon: LucideIcon;
 };
 
-type ScriptTemplatePayload = {
-  token: string;
-  template: string;
-};
+const heroShortcuts: HeroShortcut[] = [
+  {
+    tab: "proxy",
+    title: "代理与国家覆盖",
+    description: "确认目标国家代理是否齐备，避免换链和诊断任务失败。",
+    icon: Globe2
+  },
+  {
+    tab: "google-ads",
+    title: "Google Ads 授权",
+    description: "基础参数齐全后再做 OAuth 授权和账号同步。",
+    icon: ShieldCheck
+  },
+  {
+    tab: "script",
+    title: "脚本与 Token",
+    description: "统一维护 MCC 脚本模板和当前有效 Script Token。",
+    icon: KeyRound
+  },
+  {
+    tab: "account-security",
+    title: "账号安全",
+    description: "统一管理密码更新和活跃会话撤销。",
+    icon: LockKeyhole
+  },
+  {
+    tab: "platform-notes",
+    title: "平台接入备注",
+    description: "沉淀返利平台处理规范，减少账号和 Offer 操作分歧。",
+    icon: NotebookPen
+  }
+];
 
 const emptyProxyEntry: ProxySettingEntry = {
   label: "",
@@ -64,13 +111,13 @@ function parseProxyEntries(raw: string): ProxySettingEntry[] {
 
 export function SettingsManager() {
   const [proxyEntries, setProxyEntries] = useState<ProxySettingEntry[]>([]);
-  const [proxyValidation, setProxyValidation] = useState<Record<number, { status: "idle" | "success" | "error" | "loading"; message: string }>>({});
-  const [platformNotes, setPlatformNotes] = useState({
+  const [proxyValidation, setProxyValidation] = useState<Record<number, ProxyValidationState>>({});
+  const [platformNotes, setPlatformNotes] = useState<PlatformNotes>({
     topcashback: "",
     rakuten: "",
     custom: ""
   });
-  const [googleAdsConfig, setGoogleAdsConfig] = useState({
+  const [googleAdsConfig, setGoogleAdsConfig] = useState<GoogleAdsConfig>({
     clientId: "",
     clientSecret: "",
     developerToken: "",
@@ -90,6 +137,7 @@ export function SettingsManager() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [rotatingToken, setRotatingToken] = useState(false);
+  const [activeTab, setActiveTab] = useState<SettingsTabValue>("proxy");
 
   const overview = useMemo(
     () =>
@@ -106,6 +154,31 @@ export function SettingsManager() {
         script
       }),
     [googleAdsConfig, platformNotes, proxyEntries, script]
+  );
+
+  const syncTabFromHash = useCallback((rawHash: string) => {
+    const tab = getSettingsTabFromHash(rawHash);
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, []);
+
+  const updateTabHash = useCallback((tab: SettingsTabValue) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const nextHash = getHashForSettingsTab(tab);
+    if (window.location.hash !== nextHash) {
+      window.location.hash = nextHash;
+    }
+  }, []);
+
+  const selectTab = useCallback(
+    (tab: SettingsTabValue) => {
+      setActiveTab(tab);
+      updateTabHash(tab);
+    },
+    [updateTabHash]
   );
 
   const loadSettings = useCallback(async () => {
@@ -152,13 +225,36 @@ export function SettingsManager() {
       tokenExpiresAt: googleAdsPayload.credentials?.tokenExpiresAt || "",
       lastVerifiedAt: googleAdsPayload.credentials?.lastVerifiedAt || ""
     });
-    setScriptAppUrl(window.location.origin);
+    setScriptAppUrl(typeof window === "undefined" ? "" : window.location.origin);
     setLoading(false);
   }, []);
 
   useEffect(() => {
     void loadSettings();
   }, [loadSettings]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    syncTabFromHash(window.location.hash);
+    const handleHashChange = () => {
+      syncTabFromHash(window.location.hash);
+    };
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+    };
+  }, [syncTabFromHash]);
+
+  const handleTabValueChange = useCallback(
+    (nextValue: string) => {
+      selectTab(nextValue as SettingsTabValue);
+    },
+    [selectTab]
+  );
 
   async function saveSettings() {
     setMessage("");
@@ -300,6 +396,20 @@ export function SettingsManager() {
     }
   }
 
+  const updateGoogleAdsConfig = useCallback((next: Partial<GoogleAdsConfig>) => {
+    setGoogleAdsConfig((current) => ({
+      ...current,
+      ...next
+    }));
+  }, []);
+
+  const updatePlatformNote = useCallback((key: keyof PlatformNotes, value: string) => {
+    setPlatformNotes((current) => ({
+      ...current,
+      [key]: value
+    }));
+  }, []);
+
   function updateProxyEntry(index: number, next: Partial<ProxySettingEntry>) {
     setProxyEntries((current) =>
       current.map((entry, entryIndex) =>
@@ -366,50 +476,24 @@ export function SettingsManager() {
               先确认代理、Google Ads、平台备注和脚本是否就绪，再进入对应分组修改具体配置。
             </p>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <a
-                href="#proxy-settings"
-              >
-                <ShortcutCard
-                  description="确认目标国家代理是否齐备，避免换链和诊断任务失败。"
-                  icon={Globe2}
-                  title="代理与国家覆盖"
-                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-                />
-              </a>
-
-              <a
-                href="#google-ads-settings"
-              >
-                <ShortcutCard
-                  description="基础参数齐全后再做 OAuth 授权和账号同步。"
-                  icon={ShieldCheck}
-                  title="Google Ads 授权"
-                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-                />
-              </a>
-
-              <a
-                href="#platform-settings"
-              >
-                <ShortcutCard
-                  description="沉淀返利平台处理规范，减少账号和 Offer 操作分歧。"
-                  icon={NotebookPen}
-                  title="平台接入备注"
-                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-                />
-              </a>
-
-              <a
-                href="#script-settings"
-              >
-                <ShortcutCard
-                  description="统一维护 MCC 脚本模板和当前有效 Script Token。"
-                  icon={KeyRound}
-                  title="脚本与 Token"
-                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-                />
-              </a>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {heroShortcuts.map((shortcut) => (
+                <button
+                  className="w-full text-left"
+                  key={shortcut.tab}
+                  onClick={() => selectTab(shortcut.tab)}
+                  type="button"
+                >
+                  <ShortcutCard
+                    description={shortcut.description}
+                    icon={shortcut.icon}
+                    title={shortcut.title}
+                    trailing={
+                      <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
+                    }
+                  />
+                </button>
+              ))}
             </div>
           </div>
 
@@ -496,375 +580,78 @@ export function SettingsManager() {
         </section>
       ) : null}
 
-      <AccountSecurityPanel />
+      <Tabs.Root className="space-y-4" onValueChange={handleTabValueChange} value={activeTab}>
+        <Tabs.List className="flex flex-wrap gap-2 rounded-xl border border-border bg-muted/30 p-2">
+          {SETTINGS_TAB_ITEMS.map((tab) => (
+            <Tabs.Trigger
+              className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-background/80 hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-white"
+              key={tab.value}
+              value={tab.value}
+            >
+              {tab.label}
+            </Tabs.Trigger>
+          ))}
+        </Tabs.List>
 
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" id="proxy-settings">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">代理配置</p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按国家维护解析代理</h3>
-          </div>
-          <button
-            className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
-            onClick={addProxyEntry}
-            type="button"
-          >
-            新增代理
-          </button>
-        </div>
-
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          按 AutoCashBack 的代理配置方式维护。每条代理绑定一个国家代码，调度器会优先选择与 Offer 国家匹配的代理，未命中时回退到
-          `GLOBAL`。
-        </p>
-
-        <div className="mt-5 grid gap-3 rounded-xl border border-border bg-muted/40 p-5 text-sm text-muted-foreground lg:grid-cols-3">
-          <p>活跃代理：{overview.activeProxyCount}</p>
-          <p>覆盖国家/区域：{overview.configuredProxyCountries}</p>
-          <p>GLOBAL 兜底：{overview.hasGlobalProxy ? "已配置" : "未配置"}</p>
-        </div>
-
-        <div className="mt-5 space-y-4">
-          {proxyEntries.length ? (
-            proxyEntries.map((entry, index) => (
-              <div className="rounded-xl border border-border bg-muted/40 p-5" key={`${entry.label}-${index}`}>
-                <div className="grid gap-4 lg:grid-cols-[140px,1fr,140px,120px]">
-                  <label className="block text-sm font-medium text-foreground">
-                    国家
-                    <input
-                      className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 uppercase"
-                      maxLength={12}
-                      value={entry.country}
-                      onChange={(event) =>
-                        updateProxyEntry(index, { country: event.target.value.toUpperCase() })
-                      }
-                    />
-                  </label>
-                  <label className="block text-sm font-medium text-foreground">
-                    代理 URL
-                    <input
-                      className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2"
-                      placeholder="http://user:pass@host:port"
-                      value={entry.url}
-                      onChange={(event) => updateProxyEntry(index, { url: event.target.value })}
-                    />
-                  </label>
-                  <label className="block text-sm font-medium text-foreground">
-                    标签
-                    <input
-                      className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2"
-                      placeholder="US-main"
-                      value={entry.label}
-                      onChange={(event) => updateProxyEntry(index, { label: event.target.value })}
-                    />
-                  </label>
-                  <label className="block text-sm font-medium text-foreground">
-                    状态
-                    <select
-                      className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2"
-                      value={entry.active ? "active" : "paused"}
-                      onChange={(event) =>
-                        updateProxyEntry(index, { active: event.target.value === "active" })
-                      }
-                    >
-                      <option value="active">active</option>
-                      <option value="paused">paused</option>
-                    </select>
-                  </label>
-                </div>
-
-                <div className="mt-4 flex justify-end">
-                  <div className="flex flex-wrap items-center justify-end gap-3">
-                    {proxyValidation[index]?.message ? (
-                      <span
-                        className={`text-xs ${
-                          proxyValidation[index]?.status === "success"
-                            ? "text-primary"
-                            : proxyValidation[index]?.status === "error"
-                              ? "text-destructive"
-                              : "text-muted-foreground"
-                        }`}
-                      >
-                        {proxyValidation[index]?.message}
-                      </span>
-                    ) : null}
-                    <button
-                      className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
-                      onClick={() => validateProxyEntry(index, entry.url)}
-                      type="button"
-                    >
-                      验证代理
-                    </button>
-                    <button
-                      className="rounded-full border border-destructive/20 bg-destructive/10 px-4 py-2 text-xs font-semibold text-destructive"
-                      onClick={() => removeProxyEntry(index)}
-                      type="button"
-                    >
-                      删除
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <EmptyState
-              className="text-left"
-              description="建议至少录入一个 GLOBAL 代理，确保终链解析任务可执行。"
-              icon={Globe2}
-              title="还没有代理配置"
-            />
-          )}
-        </div>
-      </section>
-
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" id="google-ads-settings">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Google Ads API</p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">OAuth 凭证配置</h3>
-          </div>
-          <button
-            className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
-            onClick={() => {
-              window.location.href = "/google-ads";
+        <Tabs.Content className="outline-none" value="proxy">
+          <ProxySettingsTab
+            onAddProxyEntry={addProxyEntry}
+            onRemoveProxyEntry={removeProxyEntry}
+            onUpdateProxyEntry={updateProxyEntry}
+            onValidateProxyEntry={validateProxyEntry}
+            overview={{
+              activeProxyCount: overview.activeProxyCount,
+              configuredProxyCountries: overview.configuredProxyCountries,
+              hasGlobalProxy: overview.hasGlobalProxy
             }}
-            type="button"
-          >
-            打开账号页
-          </button>
-        </div>
+            proxyEntries={proxyEntries}
+            proxyValidation={proxyValidation}
+          />
+        </Tabs.Content>
 
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          在这里保存 Google Ads OAuth 基础参数。首次保存后请发起授权；如果你修改了基础参数，系统会清除旧授权状态，需重新获取
-          Refresh Token 并同步账号。
-        </p>
-
-        <div className="mt-5 grid gap-3 rounded-xl border border-border bg-muted/40 p-5 text-sm text-muted-foreground lg:grid-cols-3">
-          <p>基础项完成度：{overview.googleAdsBaseConfigCount} / 4</p>
-          <p>OAuth 状态：{googleAdsConfig.hasRefreshToken ? "已授权" : "未授权"}</p>
-          <p>最近验证：{googleAdsConfig.lastVerifiedAt || "尚未验证"}</p>
-        </div>
-
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <label className="block text-sm font-medium text-foreground">
-            Client ID
-            <input
-              className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
-              placeholder={
-                googleAdsConfig.hasClientId ? "已配置，留空表示保持不变" : "Google OAuth Client ID"
-              }
-              value={googleAdsConfig.clientId}
-              onChange={(event) =>
-                setGoogleAdsConfig((current) => ({
-                  ...current,
-                  clientId: event.target.value
-                }))
-              }
-            />
-          </label>
-
-          <label className="block text-sm font-medium text-foreground">
-            Client Secret
-            <input
-              className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
-              placeholder={
-                googleAdsConfig.hasClientSecret ? "已配置，留空表示保持不变" : "Google OAuth Client Secret"
-              }
-              value={googleAdsConfig.clientSecret}
-              onChange={(event) =>
-                setGoogleAdsConfig((current) => ({
-                  ...current,
-                  clientSecret: event.target.value
-                }))
-              }
-            />
-          </label>
-
-          <label className="block text-sm font-medium text-foreground">
-            Developer Token
-            <input
-              className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
-              placeholder={
-                googleAdsConfig.hasDeveloperToken ? "已配置，留空表示保持不变" : "Google Ads Developer Token"
-              }
-              value={googleAdsConfig.developerToken}
-              onChange={(event) =>
-                setGoogleAdsConfig((current) => ({
-                  ...current,
-                  developerToken: event.target.value
-                }))
-              }
-            />
-          </label>
-
-          <label className="block text-sm font-medium text-foreground">
-            Login Customer ID
-            <input
-              className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono tabular-nums"
-              placeholder="1234567890"
-              value={googleAdsConfig.loginCustomerId}
-              onChange={(event) =>
-                setGoogleAdsConfig((current) => ({
-                  ...current,
-                  loginCustomerId: event.target.value
-                }))
-              }
-            />
-          </label>
-        </div>
-
-        <div className="mt-5 grid gap-3 rounded-xl border border-border bg-muted/40 p-5 text-sm text-muted-foreground lg:grid-cols-3">
-          <p>Client ID：{googleAdsConfig.hasClientId ? "已保存" : "未配置"}</p>
-          <p>Client Secret：{googleAdsConfig.hasClientSecret ? "已保存" : "未配置"}</p>
-          <p>Developer Token：{googleAdsConfig.hasDeveloperToken ? "已保存" : "未配置"}</p>
-          <p>Refresh Token：{googleAdsConfig.hasRefreshToken ? "已获取" : "未授权"}</p>
-          <p>最近验证：{googleAdsConfig.lastVerifiedAt || "尚未验证"}</p>
-          <p>Token 过期：{googleAdsConfig.tokenExpiresAt || "未获取"}</p>
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-3">
-          <button
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
-            onClick={saveGoogleAdsConfig}
-            type="button"
-          >
-            保存 Google Ads 配置
-          </button>
-          <button
-            className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
-            onClick={() => {
+        <Tabs.Content className="outline-none" value="google-ads">
+          <GoogleAdsSettingsTab
+            googleAdsConfig={googleAdsConfig}
+            onAuthorizeGoogleAds={() => {
               window.location.href = "/api/auth/google-ads/authorize";
             }}
-            type="button"
-          >
-            发起 OAuth 授权
-          </button>
-          <button
-            className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
-            onClick={verifyGoogleAdsConfig}
-            type="button"
-          >
-            验证并同步
-          </button>
-          <button
-            className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive"
-            onClick={clearGoogleAdsConfig}
-            type="button"
-          >
-            清除配置
-          </button>
-        </div>
-      </section>
+            onClearGoogleAdsConfig={clearGoogleAdsConfig}
+            onGoogleAdsConfigChange={updateGoogleAdsConfig}
+            onOpenGoogleAdsPage={() => {
+              window.location.href = "/google-ads";
+            }}
+            onSaveGoogleAdsConfig={saveGoogleAdsConfig}
+            onVerifyGoogleAdsConfig={verifyGoogleAdsConfig}
+            overview={{ googleAdsBaseConfigCount: overview.googleAdsBaseConfigCount }}
+          />
+        </Tabs.Content>
 
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" id="platform-settings">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">返利网配置</p>
-        <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">平台接入策略</h3>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          在这里维护各返利平台的运营说明、登录入口和处理规范，方便团队统一查看和协作。
-        </p>
+        <Tabs.Content className="outline-none" value="script">
+          <ScriptSettingsTab
+            loading={loading}
+            onCopyScriptTemplate={() => {
+              void navigator.clipboard.writeText(script.template);
+            }}
+            onRotateToken={rotateToken}
+            overview={{ scriptReady: overview.scriptReady }}
+            rotatingToken={rotatingToken}
+            script={script}
+            scriptAppUrl={scriptAppUrl}
+          />
+        </Tabs.Content>
 
-        <div className="mt-5 rounded-xl border border-border bg-muted/40 p-5 text-sm text-muted-foreground">
-          当前已填写 {overview.noteCount} / 3 份平台说明。建议至少补齐 TopCashback、Rakuten 和 Custom 的登录入口、风控点和操作规范。
-        </div>
+        <Tabs.Content className="outline-none" value="account-security">
+          <AccountSecuritySettingsTab />
+        </Tabs.Content>
 
-        <div className="mt-5 grid gap-4 xl:grid-cols-3">
-          <label className="rounded-xl border border-border bg-muted/40 p-5 text-sm font-medium text-foreground">
-            TopCashback
-            <textarea
-              className="mt-3 min-h-36 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal"
-              value={platformNotes.topcashback}
-              onChange={(event) =>
-                setPlatformNotes({ ...platformNotes, topcashback: event.target.value })
-              }
-            />
-          </label>
-          <label className="rounded-xl border border-border bg-muted/40 p-5 text-sm font-medium text-foreground">
-            Rakuten
-            <textarea
-              className="mt-3 min-h-36 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal"
-              value={platformNotes.rakuten}
-              onChange={(event) =>
-                setPlatformNotes({ ...platformNotes, rakuten: event.target.value })
-              }
-            />
-          </label>
-          <label className="rounded-xl border border-border bg-muted/40 p-5 text-sm font-medium text-foreground">
-            Custom
-            <textarea
-              className="mt-3 min-h-36 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal"
-              value={platformNotes.custom}
-              onChange={(event) =>
-                setPlatformNotes({ ...platformNotes, custom: event.target.value })
-              }
-            />
-          </label>
-        </div>
-      </section>
-
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" id="script-settings">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">换链接配置</p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">默认 MCC 脚本</h3>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              系统已经把站点地址和 Script Token 注入到脚本里。Script Token 默认长期有效，同一时间只有当前这一枚 token 生效。
-              你只需要复制后粘贴到 Google Ads Scripts / MCC，并确保对应 Campaign 已绑定好 Offer 的 `campaignLabel`。
-            </p>
-          </div>
-          <div className="rounded-xl border border-border bg-muted/40 px-3 py-2">
-            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Script Token</p>
-            <p className="mt-2 font-mono tabular-nums text-sm text-foreground">{script.token || "尚未生成"}</p>
-          </div>
-        </div>
-
-        <div className="mt-5 rounded-xl border border-border bg-muted/40 p-5 text-sm text-muted-foreground">
-          {overview.scriptReady ? (
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <ShieldCheck className="h-4 w-4" />
-              </span>
-              <p>当前脚本模板和 Token 都已就绪，可以直接复制到 Google Ads Scripts / MCC 使用。</p>
-            </div>
-          ) : (
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
-                <AlertTriangle className="h-4 w-4" />
-              </span>
-              <p>脚本模板或 Token 尚未生成，建议先确认基础配置和当前登录状态。</p>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-3">
-          <button
-            className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
-            disabled={rotatingToken}
-            onClick={rotateToken}
-            type="button"
-          >
-            {rotatingToken ? "更换中..." : "更换 Token"}
-          </button>
-          <button
-            className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
-            disabled={loading || !script.template || rotatingToken}
-            onClick={() => navigator.clipboard.writeText(script.template)}
-            type="button"
-          >
-            复制最新换链接脚本
-          </button>
-        </div>
-
-        <div className="mt-4 space-y-2 text-sm leading-6 text-muted-foreground">
-          <p>复制后无需再修改脚本内容。若你更换 Token，旧 Token 会立即失效，你需要重新复制一次最新脚本。</p>
-          <p>快照接口地址：<span className="font-mono tabular-nums text-xs text-foreground">{scriptAppUrl}/api/script/link-swap/snapshot</span></p>
-        </div>
-
-        <textarea
-          className="mt-5 min-h-72 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono tabular-nums text-xs"
-          readOnly
-          value={script.template}
-        />
-      </section>
+        <Tabs.Content className="outline-none" value="platform-notes">
+          <PlatformNotesSettingsTab
+            onPlatformNoteChange={updatePlatformNote}
+            overview={{ noteCount: overview.noteCount }}
+            platformNotes={platformNotes}
+          />
+        </Tabs.Content>
+      </Tabs.Root>
 
       <div className="flex items-center gap-4">
         <button

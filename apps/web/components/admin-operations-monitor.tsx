@@ -16,7 +16,16 @@ import {
   Wrench
 } from "lucide-react";
 
-import { cn } from "@autocashback/ui";
+import {
+  EmptyState,
+  MetricGroup,
+  PageHeader,
+  ShortcutCard,
+  StatCard,
+  StatusBadge,
+  cn,
+  getToneStyles
+} from "@autocashback/ui";
 
 import { fetchJson } from "@/lib/api-error-handler";
 import {
@@ -24,7 +33,6 @@ import {
   type AdminAuditLogRecord,
   type AdminClickFarmStats,
   type AdminClickFarmTaskRow,
-  type AdminOperationsMetric,
   type AdminProxyHealth,
   type AdminUrlSwapHealth,
   type AdminUrlSwapStats
@@ -39,146 +47,24 @@ function formatPercent(value: number | null) {
   return `${Number.isInteger(normalized) ? normalized.toFixed(0) : normalized}%`;
 }
 
-function toneStyles(tone: "emerald" | "amber" | "red" | "slate") {
-  if (tone === "emerald") {
-    return {
-      badge: "bg-primary/10 text-primary",
-      icon: "bg-primary/10 text-primary",
-      value: "text-primary"
-    };
-  }
-
-  if (tone === "amber") {
-    return {
-      badge: "bg-amber-500/10 text-amber-600",
-      icon: "bg-amber-500/10 text-amber-600",
-      value: "text-amber-600"
-    };
-  }
-
-  if (tone === "red") {
-    return {
-      badge: "bg-destructive/10 text-destructive",
-      icon: "bg-destructive/10 text-destructive",
-      value: "text-destructive"
-    };
-  }
-
-  return {
-    badge: "bg-slate-100 text-foreground",
-    icon: "bg-slate-100 text-foreground",
-    value: "text-foreground"
-  };
-}
-
-function OverviewCard({
-  icon: Icon,
-  label,
-  note,
-  tone,
-  value
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  note: string;
-  tone: "emerald" | "amber" | "red" | "slate";
-  value: string;
-}) {
-  const styles = toneStyles(tone);
-
-  return (
-    <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-      <div className="flex items-start justify-between gap-4">
-        <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", styles.badge)}>
-          {label}
-        </span>
-        <span className={cn("flex h-10 w-10 items-center justify-center rounded-lg", styles.icon)}>
-          <Icon className="h-4 w-4" />
-        </span>
-      </div>
-      <p className={cn("mt-5 font-mono tabular-nums text-4xl font-semibold", styles.value)}>{value}</p>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
-    </div>
-  );
-}
-
-function ShortcutCard({
-  description,
-  href,
-  icon: Icon,
-  title
-}: {
-  description: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-}) {
-  return (
-    <Link
-      className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
-      href={href}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" />
-        </span>
-        <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-      </div>
-      <p className="mt-4 text-sm font-semibold text-foreground">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-    </Link>
-  );
-}
-
-function MetricGroup({
-  description,
-  metrics,
-  title
-}: {
-  description: string;
-  metrics: AdminOperationsMetric[];
-  title: string;
-}) {
-  return (
-    <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-      <p className="text-xs font-semibold uppercase tracking-wider text-primary">{title}</p>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        {metrics.map((metric) => {
-          const styles = toneStyles(metric.tone);
-          return (
-            <div className="rounded-xl border border-border bg-background p-4" key={metric.id}>
-              <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", styles.badge)}>
-                {metric.label}
-              </span>
-              <p className={cn("mt-4 font-mono tabular-nums text-xl font-semibold tracking-tight", styles.value)}>{metric.value}</p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{metric.note}</p>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
 function taskStatusMeta(status: string) {
   if (status === "running") {
-    return { label: "运行中", className: "bg-primary/10 text-primary" };
+    return { label: "运行中", variant: "running" as const };
   }
 
   if (status === "pending") {
-    return { label: "待执行", className: "bg-slate-100 text-foreground" };
+    return { label: "待执行", variant: "pending" as const };
   }
 
   if (status === "paused" || status === "stopped") {
-    return { label: "已暂停", className: "bg-amber-500/10 text-amber-600" };
+    return { label: "已暂停", variant: "warning" as const };
   }
 
   if (status === "completed") {
-    return { label: "已完成", className: "bg-slate-100 text-foreground" };
+    return { label: "已完成", variant: "success" as const };
   }
 
-  return { label: status || "未知状态", className: "bg-slate-100 text-foreground" };
+  return { label: status || "未知状态", variant: "info" as const };
 }
 
 export function AdminOperationsMonitor() {
@@ -270,28 +156,27 @@ export function AdminOperationsMonitor() {
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        actions={
+          <button
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background/90 px-3 py-2 text-sm font-semibold text-foreground transition hover:border-emerald-200 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={loading || refreshing}
+            onClick={() => void loadAll({ background: !loading })}
+            type="button"
+          >
+            <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
+            {refreshing ? "刷新中…" : "刷新监控"}
+          </button>
+        }
+        title="业务运营控制台"
+        description="先看整体负载和风险，再跳转到换链接、补点击、代理或 Offer 页面做针对性处理。"
+      />
+
       <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
         <div className="grid gap-0 xl:grid-cols-[1.1fr,0.9fr]">
           <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Admin Ops</p>
-                <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">业务运营控制台</h3>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-                  先看整体负载和风险，再跳转到换链接、补点击、代理或 Offer 页面做针对性处理。
-                </p>
-              </div>
-
-              <button
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-background/90 px-3 py-2 text-sm font-semibold text-foreground transition hover:border-emerald-200 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={loading || refreshing}
-                onClick={() => void loadAll({ background: !loading })}
-                type="button"
-              >
-                <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
-                {refreshing ? "刷新中…" : "刷新监控"}
-              </button>
-            </div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Admin Ops</p>
+            <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">把风险和负载看成同一个运营面</h3>
 
             {message ? (
               <p className="mt-4 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -300,30 +185,38 @@ export function AdminOperationsMonitor() {
             ) : null}
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <ShortcutCard
-                description="查看到点待执行、连续失败和终链缺失任务。"
-                href="/link-swap"
-                icon={Workflow}
-                title="处理换链接任务"
-              />
-              <ShortcutCard
-                description="优先恢复暂停任务，复查成功率下滑的补点击计划。"
-                href="/click-farm"
-                icon={Target}
-                title="处理补点击任务"
-              />
-              <ShortcutCard
-                description="维护代理国家覆盖和失效线路，避免批量任务被拖慢。"
-                href="/settings#proxy-settings"
-                icon={Globe2}
-                title="维护代理池"
-              />
-              <ShortcutCard
-                description="补齐终链和品牌信息，减少换链接任务空跑。"
-                href="/offers"
-                icon={ShieldCheck}
-                title="复核 Offer 准备度"
-              />
+              <Link href="/link-swap">
+                <ShortcutCard
+                  description="查看到点待执行、连续失败和终链缺失任务。"
+                  icon={Workflow}
+                  title="处理换链接任务"
+                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+                />
+              </Link>
+              <Link href="/click-farm">
+                <ShortcutCard
+                  description="优先恢复暂停任务，复查成功率下滑的补点击计划。"
+                  icon={Target}
+                  title="处理补点击任务"
+                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+                />
+              </Link>
+              <Link href="/settings#proxy-settings">
+                <ShortcutCard
+                  description="维护代理国家覆盖和失效线路，避免批量任务被拖慢。"
+                  icon={Globe2}
+                  title="维护代理池"
+                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+                />
+              </Link>
+              <Link href="/offers">
+                <ShortcutCard
+                  description="补齐终链和品牌信息，减少换链接任务空跑。"
+                  icon={ShieldCheck}
+                  title="复核 Offer 准备度"
+                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+                />
+              </Link>
             </div>
           </div>
 
@@ -338,28 +231,28 @@ export function AdminOperationsMonitor() {
               <p className="mt-6 rounded-xl bg-muted/40 px-4 py-5 text-sm text-muted-foreground">正在加载业务监控...</p>
             ) : (
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <OverviewCard
+                <StatCard
                   icon={Workflow}
                   label="受监控任务"
                   note="换链接与补点击任务合计，便于快速评估总负载。"
                   tone="slate"
                   value={String(consoleData.overview.monitoredTasks)}
                 />
-                <OverviewCard
+                <StatCard
                   icon={Target}
                   label="当前活跃"
                   note="启用或正在执行的任务量，反映现阶段系统压力。"
                   tone={consoleData.overview.activeTasks > 0 ? "emerald" : "slate"}
                   value={String(consoleData.overview.activeTasks)}
                 />
-                <OverviewCard
+                <StatCard
                   icon={ShieldAlert}
                   label="风险信号"
                   note={`包含 ${consoleData.overview.suspiciousAuditCount} 条需要复核的安全或配置日志。`}
                   tone={consoleData.overview.riskCount > 0 ? "red" : "emerald"}
                   value={String(consoleData.overview.riskCount)}
                 />
-                <OverviewCard
+                <StatCard
                   icon={Globe2}
                   label="代理可用率"
                   note="建议保持高于 90%，避免调度器可运行但任务实际落空。"
@@ -426,12 +319,11 @@ export function AdminOperationsMonitor() {
                     </Link>
                   ))
                 ) : (
-                  <div className="rounded-xl border border-border bg-primary/10/60 px-4 py-5">
-                    <p className="text-sm font-semibold text-primary">当前没有明显风险</p>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      调度器、代理和最近审计日志都处于稳定区间，可以继续按计划推进任务。
-                    </p>
-                  </div>
+                  <EmptyState
+                    className="bg-primary/10/60"
+                    description="调度器、代理和最近审计日志都处于稳定区间，可以继续按计划推进任务。"
+                    title="当前没有明显风险"
+                  />
                 )}
               </div>
             </section>
@@ -439,9 +331,25 @@ export function AdminOperationsMonitor() {
             <div className="space-y-6">
               <MetricGroup
                 description="重点关注待调度任务、24 小时成功率，以及仍缺终链的 Offer。"
-                metrics={consoleData.urlSwapMetrics}
                 title="换链接脉冲"
-              />
+              >
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {consoleData.urlSwapMetrics.map((metric) => {
+                    const styles = getToneStyles(metric.tone);
+                    return (
+                      <div className="rounded-xl border border-border bg-background p-4" key={metric.id}>
+                        <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", styles.badge)}>
+                          {metric.label}
+                        </span>
+                        <p className={cn("mt-4 font-mono tabular-nums text-xl font-semibold tracking-tight", styles.value)}>
+                          {metric.value}
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">{metric.note}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </MetricGroup>
 
               <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Proxy</p>
@@ -452,7 +360,7 @@ export function AdminOperationsMonitor() {
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   {consoleData.proxyMetrics.map((metric) => {
-                    const styles = toneStyles(metric.tone);
+                    const styles = getToneStyles(metric.tone);
                     return (
                       <div className="rounded-xl border border-border bg-background p-4" key={metric.id}>
                         <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", styles.badge)}>
@@ -512,9 +420,7 @@ export function AdminOperationsMonitor() {
                               <p className="text-sm font-semibold text-foreground">
                                 {task.brandName || `Task #${task.id}`}
                               </p>
-                              <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-semibold", meta.className)}>
-                                {meta.label}
-                              </span>
+                              <StatusBadge className="px-2.5 py-1 text-[11px]" label={meta.label} variant={meta.variant} />
                               <span
                                 className={cn(
                                   "rounded-full px-2.5 py-1 text-[11px] font-semibold",
@@ -662,9 +568,25 @@ export function AdminOperationsMonitor() {
 
           <MetricGroup
             description="补点击任务的活跃量、暂停量和整体成功率决定了是否适合继续放量。"
-            metrics={consoleData.clickFarmMetrics}
             title="补点击负载"
-          />
+          >
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {consoleData.clickFarmMetrics.map((metric) => {
+                const styles = getToneStyles(metric.tone);
+                return (
+                  <div className="rounded-xl border border-border bg-background p-4" key={metric.id}>
+                    <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", styles.badge)}>
+                      {metric.label}
+                    </span>
+                    <p className={cn("mt-4 font-mono tabular-nums text-xl font-semibold tracking-tight", styles.value)}>
+                      {metric.value}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{metric.note}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </MetricGroup>
         </>
       ) : null}
     </div>

@@ -14,6 +14,7 @@ import {
   ExternalLink,
   History,
   Link2,
+  MoreHorizontal,
   Pause,
   PencilLine,
   Play,
@@ -22,9 +23,20 @@ import {
   ShieldAlert,
   Target
 } from "lucide-react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 import type { LinkSwapRunRecord, LinkSwapTaskRecord, OfferRecord } from "@autocashback/domain";
-import { cn } from "@autocashback/ui";
+import {
+  CardSkeleton,
+  EmptyState,
+  PageHeader,
+  ShortcutCard,
+  StatCard,
+  StatSkeleton,
+  StatusBadge,
+  cn,
+  getStatusBadgeMeta
+} from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { LinkSwapTaskDialog } from "@/components/link-swap-task-dialog";
@@ -160,77 +172,18 @@ function SortableHeader({
   );
 }
 
-function SummaryCard({
-  label,
-  value,
-  note,
-  tone,
-  icon: Icon
-}: {
-  label: string;
-  value: string;
-  note: string;
-  tone: "emerald" | "amber" | "slate";
-  icon: React.ComponentType<{ className?: string }>;
-}) {
-  const toneStyles = {
-    emerald: {
-      badge: "bg-primary/10 text-primary",
-      icon: "bg-primary/10 text-primary"
-    },
-    amber: {
-      badge: "bg-amber-500/10 text-amber-600",
-      icon: "bg-amber-500/10 text-amber-600"
-    },
-    slate: {
-      badge: "bg-slate-100 text-foreground",
-      icon: "bg-slate-100 text-foreground"
-    }
-  } as const;
-
-  return (
-    <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-      <div className="flex items-start justify-between gap-4">
-        <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", toneStyles[tone].badge)}>
-          {label}
-        </span>
-        <span className={cn("flex h-10 w-10 items-center justify-center rounded-lg", toneStyles[tone].icon)}>
-          <Icon className="h-4 w-4" />
-        </span>
-      </div>
-      <p className="mt-5 font-mono tabular-nums text-4xl font-semibold text-foreground">{value}</p>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
-    </div>
-  );
-}
-
-function statusPill(status: LinkSwapConsoleStatus) {
+function statusVariant(status: LinkSwapConsoleStatus) {
   switch (status) {
     case "running":
-      return "bg-primary/10 text-primary";
+      return "running" as const;
     case "paused":
-      return "bg-slate-100 text-foreground";
+      return "paused" as const;
     case "warning":
-      return "bg-amber-500/10 text-amber-600";
+      return "warning" as const;
     case "error":
-      return "bg-destructive/10 text-destructive";
+      return "error" as const;
     default:
-      return "bg-slate-100 text-foreground";
-  }
-}
-
-function statusLabel(status: LinkSwapConsoleStatus) {
-  switch (status) {
-    case "running":
-      return "运行中";
-    case "paused":
-      return "已暂停";
-    case "warning":
-      return "预警";
-    case "error":
-      return "异常";
-    default:
-      return status;
+      return "idle" as const;
   }
 }
 
@@ -440,18 +393,15 @@ export function LinkSwapManager() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-          <div className="h-8 w-48 animate-pulse rounded-full bg-primary/10" />
-          <div className="mt-4 h-4 w-80 animate-pulse rounded-full bg-muted" />
-        </section>
+        <PageHeader />
         <section className="grid gap-4 xl:grid-cols-5">
           {Array.from({ length: 5 }).map((_, index) => (
-            <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" key={index}>
-              <div className="h-6 w-20 animate-pulse rounded-full bg-muted" />
-              <div className="mt-5 h-10 w-24 animate-pulse rounded-full bg-muted" />
-              <div className="mt-3 h-4 w-full animate-pulse rounded-full bg-muted" />
-            </div>
+            <StatSkeleton key={index} />
           ))}
+        </section>
+        <section className="grid gap-5 xl:grid-cols-[1.2fr,0.8fr]">
+          <CardSkeleton className="min-h-80" />
+          <CardSkeleton className="min-h-80" />
         </section>
       </div>
     );
@@ -459,73 +409,54 @@ export function LinkSwapManager() {
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        actions={
+          <button
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-60"
+            disabled={refreshing}
+            onClick={() => void loadAll({ refresh: true })}
+            type="button"
+          >
+            <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
+            {refreshing ? "刷新中" : "刷新"}
+          </button>
+        }
+      />
+
       <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
         <div className="grid gap-0 xl:grid-cols-[1.15fr,0.85fr]">
           <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Link Swap</p>
-                <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">换链任务控制台</h2>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-                  统一查看任务状态、执行节奏、最近结果和脚本对接信息，先处理异常和预警，再调整具体任务。
-                </p>
-              </div>
-              <button
-                className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-60"
-                disabled={refreshing}
-                onClick={() => void loadAll({ refresh: true })}
-                type="button"
-              >
-                <RefreshCcw className={cn("h-3.5 w-3.5", refreshing ? "animate-spin" : "")} />
-                {refreshing ? "刷新中" : "刷新"}
-              </button>
-            </div>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <Link
-                className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
-                href="/offers"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Target className="h-5 w-5" />
-                  </span>
-                  <ExternalLink className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-                </div>
-                <p className="mt-4 text-sm font-semibold text-foreground">查看 Offer</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">先补齐品牌、国家和 campaignLabel，再回到这里管理任务。</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">联动入口</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <Link href="/offers">
+                <ShortcutCard
+                  description="先补齐品牌、国家和 campaignLabel，再回到这里管理任务。"
+                  icon={Target}
+                  title="查看 Offer"
+                  trailing={<ExternalLink className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+                />
               </Link>
 
-              <Link
-                className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
-                href="/google-ads"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Link2 className="h-5 w-5" />
-                  </span>
-                  <ExternalLink className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-                </div>
-                <p className="mt-4 text-sm font-semibold text-foreground">Google Ads 配置</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">API 模式依赖 Customer ID、Campaign ID 和授权状态。</p>
+              <Link href="/google-ads">
+                <ShortcutCard
+                  description="API 模式依赖 Customer ID、Campaign ID 和授权状态。"
+                  icon={Link2}
+                  title="Google Ads 配置"
+                  trailing={<ExternalLink className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+                />
               </Link>
 
-              <Link
-                className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
-                href="/settings"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Settings2 className="h-5 w-5" />
-                  </span>
-                  <ExternalLink className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-                </div>
-                <p className="mt-4 text-sm font-semibold text-foreground">代理与系统设置</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">异常任务优先检查目标国家代理和脚本运行环境。</p>
+              <Link href="/settings">
+                <ShortcutCard
+                  description="异常任务优先检查目标国家代理和脚本运行环境。"
+                  icon={Settings2}
+                  title="代理与系统设置"
+                  trailing={<ExternalLink className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+                />
               </Link>
 
               <button
-                className="group rounded-xl border border-border bg-background/90 p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
+                className="text-left"
                 onClick={() => {
                   setHistoryTask(null);
                   setHistoryRecords(runs.slice(0, 20));
@@ -534,14 +465,12 @@ export function LinkSwapManager() {
                 }}
                 type="button"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <History className="h-5 w-5" />
-                  </span>
-                  <ExternalLink className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-                </div>
-                <p className="mt-4 text-sm font-semibold text-foreground">查看执行历史</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">从任务行打开历史弹窗，快速定位失败原因和最近 suffix。</p>
+                <ShortcutCard
+                  description="从任务行打开历史弹窗，快速定位失败原因和最近 suffix。"
+                  icon={History}
+                  title="查看执行历史"
+                  trailing={<ExternalLink className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+                />
               </button>
             </div>
           </div>
@@ -549,34 +478,38 @@ export function LinkSwapManager() {
           <div className="border-t border-border/70 bg-background/80 px-6 py-7 xl:border-l xl:border-t-0">
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">脚本对接</p>
             <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">MCC 执行说明</h3>
-            <ol className="mt-5 space-y-3 text-sm leading-7 text-muted-foreground">
+            <ol className="mt-4 space-y-2.5 text-sm leading-7 text-muted-foreground">
               <li>1. 先在对应 Offer 中确认 campaignLabel、目标国家和最终推广链接配置正确。</li>
               <li>2. Script 模式直接复制下面的模板，粘贴到 Google Ads Scripts 或 MCC 环境。</li>
               <li>3. Google Ads API 模式由平台直接更新目标 Campaign，需要先完成授权和 ID 配置。</li>
               <li>4. 每次更换 Token 后，旧脚本立即失效，请重新复制最新模板。</li>
             </ol>
 
-            <div className="mt-5 rounded-xl border border-border bg-muted/40 p-5">
-              <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Script Token</p>
-              <p className="mt-2 break-all font-mono tabular-nums text-sm text-foreground">{script.token || "尚未生成"}</p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <button
-                  className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
-                  disabled={rotatingToken}
-                  onClick={() => void rotateToken()}
-                  type="button"
-                >
-                  {rotatingToken ? "更换中..." : "更换 Token"}
-                </button>
-                <button
-                  className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                  disabled={!script.template || rotatingToken}
-                  onClick={() => void copyScriptTemplate()}
-                  type="button"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  复制最新脚本
-                </button>
+            <div className="mt-4 rounded-xl border border-border bg-muted/40 p-4">
+              <div className="space-y-1">
+                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Script Token</p>
+                <p className="break-all font-mono tabular-nums text-sm text-foreground">{script.token || "尚未生成"}</p>
+              </div>
+              <div className="mt-3 border-t border-border/70 pt-3">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
+                    disabled={rotatingToken}
+                    onClick={() => void rotateToken()}
+                    type="button"
+                  >
+                    {rotatingToken ? "更换中..." : "更换 Token"}
+                  </button>
+                  <button
+                    className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                    disabled={!script.template || rotatingToken}
+                    onClick={() => void copyScriptTemplate()}
+                    type="button"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    复制最新脚本
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -584,35 +517,35 @@ export function LinkSwapManager() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-5">
-        <SummaryCard
+        <StatCard
           icon={Link2}
           label="总任务"
           note="当前用户下所有换链任务数量。"
           tone="slate"
           value={`${consoleData.stats.totalTasks}`}
         />
-        <SummaryCard
+        <StatCard
           icon={Play}
           label="运行中"
           note="当前处于可调度状态的任务。"
           tone="emerald"
           value={`${consoleData.stats.runningTasks}`}
         />
-        <SummaryCard
+        <StatCard
           icon={Pause}
           label="已暂停"
           note="已停用或暂不调度的任务。"
           tone="slate"
           value={`${consoleData.stats.pausedTasks}`}
         />
-        <SummaryCard
+        <StatCard
           icon={ShieldAlert}
           label="预警/异常"
           note="存在连续失败或状态异常的任务。"
           tone="amber"
           value={`${consoleData.stats.warningTasks}`}
         />
-        <SummaryCard
+        <StatCard
           icon={CheckCircle2}
           label="最近成功率"
           note="基于最近执行记录计算的成功比例。"
@@ -757,6 +690,8 @@ export function LinkSwapManager() {
                 {paginatedRows.length ? (
                   paginatedRows.map((row: LinkSwapConsoleRow) => {
                     const isRunning = row.statusGroup === "running";
+                    const taskStatusVariant = statusVariant(row.statusGroup);
+                    const taskStatusMeta = getStatusBadgeMeta(taskStatusVariant);
                     return (
                       <tr className="border-b border-border/40 align-top" key={row.task.id}>
                         <td className="py-4 pr-4">
@@ -773,9 +708,7 @@ export function LinkSwapManager() {
                           </div>
                         </td>
                         <td className="py-4 pr-4">
-                          <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", statusPill(row.statusGroup))}>
-                            {statusLabel(row.statusGroup)}
-                          </span>
+                          <StatusBadge label={taskStatusMeta.label} variant={taskStatusVariant} />
                         </td>
                         <td className="py-4 pr-4 text-foreground">
                           {row.task.mode === "script" ? "Script" : "Google Ads API"}
@@ -809,38 +742,53 @@ export function LinkSwapManager() {
                               <History className="h-3.5 w-3.5" />
                               历史
                             </button>
-                            {isRunning ? (
-                              <>
+                            <DropdownMenu.Root>
+                              <DropdownMenu.Trigger asChild>
                                 <button
                                   className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground disabled:opacity-50"
-                                  disabled={taskActionLoading === `swap-now-${row.task.id}`}
-                                  onClick={() => void handleTaskAction(row.task.id, "swap-now")}
+                                  disabled={Boolean(taskActionLoading)}
                                   type="button"
                                 >
-                                  <Play className="h-3.5 w-3.5" />
-                                  立即执行
+                                  <MoreHorizontal className="h-3.5 w-3.5" />
+                                  更多
                                 </button>
-                                <button
-                                  className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                                  disabled={taskActionLoading === `disable-${row.task.id}`}
-                                  onClick={() => void handleTaskAction(row.task.id, "disable")}
-                                  type="button"
+                              </DropdownMenu.Trigger>
+                              <DropdownMenu.Portal>
+                                <DropdownMenu.Content
+                                  align="end"
+                                  className="z-50 min-w-[170px] rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+                                  sideOffset={6}
                                 >
-                                  <Pause className="h-3.5 w-3.5" />
-                                  暂停
-                                </button>
-                              </>
-                            ) : (
-                              <button
-                                className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                                disabled={taskActionLoading === `enable-${row.task.id}`}
-                                onClick={() => void handleTaskAction(row.task.id, "enable")}
-                                type="button"
-                              >
-                                <Play className="h-3.5 w-3.5" />
-                                恢复
-                              </button>
-                            )}
+                                  <DropdownMenu.Item
+                                    className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-none hover:bg-muted focus:bg-muted data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"
+                                    disabled={!isRunning || taskActionLoading === `swap-now-${row.task.id}`}
+                                    onSelect={() => void handleTaskAction(row.task.id, "swap-now")}
+                                  >
+                                    <Play className="h-4 w-4" />
+                                    立即执行
+                                  </DropdownMenu.Item>
+                                  {isRunning ? (
+                                    <DropdownMenu.Item
+                                      className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-amber-700 outline-none hover:bg-amber-50 focus:bg-amber-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"
+                                      disabled={taskActionLoading === `disable-${row.task.id}`}
+                                      onSelect={() => void handleTaskAction(row.task.id, "disable")}
+                                    >
+                                      <Pause className="h-4 w-4" />
+                                      暂停任务
+                                    </DropdownMenu.Item>
+                                  ) : (
+                                    <DropdownMenu.Item
+                                      className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-primary outline-none hover:bg-emerald-50 focus:bg-emerald-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"
+                                      disabled={taskActionLoading === `enable-${row.task.id}`}
+                                      onSelect={() => void handleTaskAction(row.task.id, "enable")}
+                                    >
+                                      <Play className="h-4 w-4" />
+                                      恢复任务
+                                    </DropdownMenu.Item>
+                                  )}
+                                </DropdownMenu.Content>
+                              </DropdownMenu.Portal>
+                            </DropdownMenu.Root>
                           </div>
                         </td>
                       </tr>
@@ -848,10 +796,16 @@ export function LinkSwapManager() {
                   })
                 ) : (
                   <tr>
-                    <td className="py-8 text-muted-foreground" colSpan={8}>
-                      {consoleData.rows.length === 0
-                        ? "当前还没有换链任务。创建 Offer 后会自动生成对应任务。"
-                        : "当前筛选条件下没有匹配的任务。"}
+                    <td className="py-6" colSpan={8}>
+                      <EmptyState
+                        description={
+                          consoleData.rows.length === 0
+                            ? "创建 Offer 后会自动生成对应任务。"
+                            : "可以调整关键词、状态或模式筛选后重试。"
+                        }
+                        icon={Link2}
+                        title={consoleData.rows.length === 0 ? "当前还没有换链任务" : "当前筛选条件下没有匹配任务"}
+                      />
                     </td>
                   </tr>
                 )}
@@ -976,9 +930,11 @@ export function LinkSwapManager() {
                   );
                 })
               ) : (
-                <p className="rounded-xl border border-dashed border-border bg-muted/40 px-4 py-5 text-sm text-muted-foreground">
-                  还没有换链执行记录。
-                </p>
+                <EmptyState
+                  description="任务执行后会自动记录在这里。"
+                  icon={History}
+                  title="还没有换链执行记录"
+                />
               )}
             </div>
           </div>
@@ -1037,7 +993,11 @@ export function LinkSwapManager() {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">当前任务还没有执行历史。</p>
+          <EmptyState
+            description="任务执行后会在这里展示运行结果和回写状态。"
+            icon={History}
+            title="当前任务还没有执行历史"
+          />
         )}
       </ModalFrame>
     </div>

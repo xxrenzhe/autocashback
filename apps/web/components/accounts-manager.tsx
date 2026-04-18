@@ -28,7 +28,7 @@ import {
   type CashbackAccount,
   type OfferRecord
 } from "@autocashback/domain";
-import { cn } from "@autocashback/ui";
+import { cn, PageHeader, ShortcutCard, StatCard, StatusBadge } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { fetchJson } from "@/lib/api-error-handler";
@@ -64,83 +64,6 @@ const sortOptions: Array<{ value: AccountsConsoleSort; label: string }> = [
   { value: "linked-offers", label: "按挂接 Offer 数" }
 ];
 
-function OverviewCard({
-  label,
-  note,
-  tone,
-  value
-}: {
-  label: string;
-  note: string;
-  tone: "emerald" | "amber" | "slate";
-  value: string;
-}) {
-  const toneStyles = {
-    emerald: {
-      badge: "bg-primary/10 text-primary",
-      value: "text-primary"
-    },
-    amber: {
-      badge: "bg-amber-500/10 text-amber-600",
-      value: "text-amber-600"
-    },
-    slate: {
-      badge: "bg-slate-100 text-foreground",
-      value: "text-foreground"
-    }
-  } as const;
-
-  return (
-    <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-      <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", toneStyles[tone].badge)}>
-        {label}
-      </span>
-      <p className={cn("mt-5 font-mono tabular-nums text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
-    </div>
-  );
-}
-
-function ShortcutCard({
-  description,
-  href,
-  icon: Icon,
-  title
-}: {
-  description: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-}) {
-  return (
-    <Link
-      className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
-      href={href}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" />
-        </span>
-        <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-      </div>
-      <p className="mt-4 text-sm font-semibold text-foreground">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-    </Link>
-  );
-}
-
-function statusMeta(status: CashbackAccount["status"]) {
-  return status === "active"
-    ? {
-        label: "启用中",
-        className: "bg-primary/10 text-primary"
-      }
-    : {
-        label: "已暂停",
-        className: "bg-amber-500/10 text-amber-600"
-      };
-}
-
 export function AccountsManager() {
   const [accounts, setAccounts] = useState<CashbackAccount[]>([]);
   const [offers, setOffers] = useState<OfferRecord[]>([]);
@@ -150,7 +73,7 @@ export function AccountsManager() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [pending, setPending] = useState(false);
-        const router = useRouter();
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -243,9 +166,6 @@ export function AccountsManager() {
       setLoading(true);
     }
 
-    if (!options?.preserveNotice) {
-                }
-
     try {
       const [accountsResult, offersResult] = await Promise.all([
         fetchJson<{ accounts: CashbackAccount[] }>("/api/cashback-accounts", { cache: "no-store" }),
@@ -277,15 +197,13 @@ export function AccountsManager() {
   function resetForm() {
     setForm(initialForm);
     setEditingId(null);
-        setEditorOpen(false);
+    setEditorOpen(false);
   }
-
-  
 
   function startCreateAccount() {
     setForm(initialForm);
     setEditingId(null);
-        setEditorOpen(true);
+    setEditorOpen(true);
   }
 
   function clearFilters() {
@@ -302,7 +220,7 @@ export function AccountsManager() {
   async function submitForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
-        
+
     if (!form.accountName.trim()) {
       setPending(false);
       toast.error("请填写必填项");
@@ -353,7 +271,6 @@ export function AccountsManager() {
       return;
     }
 
-        
     const result = await fetchJson<{ success: boolean }>("/api/cashback-accounts", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -383,7 +300,7 @@ export function AccountsManager() {
       notes: account.notes || "",
       status: account.status
     });
-            setEditorOpen(true);
+    setEditorOpen(true);
   }
 
   const hasActiveFilters = Boolean(
@@ -398,86 +315,93 @@ export function AccountsManager() {
     <div className="space-y-6">
       <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
         <div className="border-b border-border/70 p-5">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Accounts</p>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <h2 className="text-xl font-semibold tracking-tight text-foreground">返利账号控制台</h2>
+          <PageHeader
+            actions={
+              <div className="flex flex-wrap gap-3">
+                <button
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
+                  onClick={startCreateAccount}
+                  type="button"
+                >
+                  <CirclePlus className="h-4 w-4" />
+                  新建账号
+                </button>
+                <button
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
+                  disabled={refreshing}
+                  onClick={() => void loadData({ background: true, preserveNotice: true })}
+                  type="button"
+                >
+                  <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
+                  {refreshing ? "刷新中…" : "刷新列表"}
+                </button>
+              </div>
+            }
+            description="在这里统一维护返利平台账号、收款方式和挂接的 Offer。先看账号覆盖，再补齐平台和投放归属。"
+            eyebrow="Accounts"
+            title={
+              <span className="flex flex-wrap items-center gap-3">
+                <span>返利账号控制台</span>
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                   {allConsole.overview.totalAccounts} accounts
                 </span>
-              </div>
-              <p className="mt-4 text-sm leading-7 text-muted-foreground">
-                在这里统一维护返利平台账号、收款方式和挂接的 Offer。先看账号覆盖，再补齐平台和投放归属。
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <button
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
-                onClick={startCreateAccount}
-                type="button"
-              >
-                <CirclePlus className="h-4 w-4" />
-                新建账号
-              </button>
-              <button
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
-                disabled={refreshing}
-                onClick={() => void loadData({ background: true, preserveNotice: true })}
-                type="button"
-              >
-                <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
-                {refreshing ? "刷新中…" : "刷新列表"}
-              </button>
-            </div>
-          </div>
-
-          
+              </span>
+            }
+          />
         </div>
 
         <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
-          <ShortcutCard
-            description="账号创建后通常下一步就是挂接 Offer，方便后续进入换链或补点击流程。"
-            href="/offers"
-            icon={Target}
-            title="Offer 管理"
-          />
-          <ShortcutCard
-            description="提现方式、平台备注和代理策略需要协同维护，避免后续任务执行出错。"
-            href="/settings"
-            icon={Settings2}
-            title="系统设置"
-          />
-          <ShortcutCard
-            description="Google Ads 已连接后，可以更快完成账号与投放侧的联动排查。"
-            href="/google-ads"
-            icon={WalletCards}
-            title="Google Ads"
-          />
+          <Link href="/offers">
+            <ShortcutCard
+              description="账号创建后通常下一步就是挂接 Offer，方便后续进入换链或补点击流程。"
+              icon={Target}
+              title="Offer 管理"
+              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+            />
+          </Link>
+          <Link href="/settings">
+            <ShortcutCard
+              description="提现方式、平台备注和代理策略需要协同维护，避免后续任务执行出错。"
+              icon={Settings2}
+              title="系统设置"
+              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+            />
+          </Link>
+          <Link href="/google-ads">
+            <ShortcutCard
+              description="Google Ads 已连接后，可以更快完成账号与投放侧的联动排查。"
+              icon={WalletCards}
+              title="Google Ads"
+              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+            />
+          </Link>
         </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-4">
-        <OverviewCard
+        <StatCard
+          icon={CreditCard}
           label="启用账号"
           note="当前可正常挂接 Offer 的返利平台账号。"
           tone="emerald"
           value={String(allConsole.overview.activeAccounts)}
         />
-        <OverviewCard
+        <StatCard
+          icon={CreditCard}
           label="暂停账号"
           note="已暂停的账号建议确认是否仍有 Offer 依赖。"
           tone={allConsole.overview.pausedAccounts > 0 ? "amber" : "emerald"}
           value={String(allConsole.overview.pausedAccounts)}
         />
-        <OverviewCard
+        <StatCard
+          icon={Target}
           label="挂接 Offer"
           note="所有账号下已绑定的 Offer 总数。"
           tone="slate"
           value={String(allConsole.overview.linkedOfferCount)}
         />
-        <OverviewCard
+        <StatCard
+          icon={WalletCards}
           label="平台覆盖"
           note="当前已经启用的返利平台类型数量。"
           tone="emerald"
@@ -620,8 +544,6 @@ export function AccountsManager() {
                   </thead>
                   <tbody>
                     {consoleData.rows.map((row) => {
-                      const currentStatus = statusMeta(row.account.status);
-
                       return (
                         <tr className="border-b border-border hover:bg-muted/30 transition-colors" key={row.account.id}>
                           <td className="py-4 pr-4">
@@ -662,9 +584,10 @@ export function AccountsManager() {
                           </td>
 
                           <td className="py-4 pr-4">
-                            <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", currentStatus.className)}>
-                              {currentStatus.label}
-                            </span>
+                            <StatusBadge
+                              label={row.account.status === "active" ? "启用中" : "已暂停"}
+                              variant={row.account.status === "active" ? "active" : "warning"}
+                            />
                           </td>
 
                           <td className="py-4">

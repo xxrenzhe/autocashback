@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 import type { GoogleAdsAccountRecord, GoogleAdsCredentialStatus } from "@autocashback/domain";
-import { ShortcutCard, StatCard } from "@autocashback/ui";
+import { cn, PageHeader, ShortcutCard, StatCard } from "@autocashback/ui";
 
 import { fetchJson } from "@/lib/api-error-handler";
 import { buildGoogleAdsOverview } from "@/lib/google-ads-overview";
@@ -223,6 +223,33 @@ export function GoogleAdsManager() {
   );
   const hasStoredConfig = Boolean(credentials?.hasCredentials);
   const needsOAuth = Boolean(hasStoredConfig && !credentials?.hasRefreshToken);
+  const oauthSteps = [
+    {
+      key: "base",
+      label: "基础配置",
+      note: "保存 Client / Token / MCC",
+      complete: hasStoredConfig
+    },
+    {
+      key: "oauth",
+      label: "OAuth 授权",
+      note: "授权 Google Ads 访问",
+      complete: Boolean(credentials?.hasRefreshToken)
+    },
+    {
+      key: "verify",
+      label: "配置验证",
+      note: "执行验证并刷新凭证状态",
+      complete: Boolean(credentials?.lastVerifiedAt)
+    },
+    {
+      key: "sync",
+      label: "账号同步",
+      note: "拉取可访问客户号列表",
+      complete: accounts.length > 0
+    }
+  ] as const;
+  const currentOauthStep = oauthSteps.findIndex((step) => !step.complete);
   const messageClassName =
     messageTone === "success"
       ? "text-primary"
@@ -266,24 +293,22 @@ export function GoogleAdsManager() {
       <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
         <div className="grid gap-0 xl:grid-cols-[1.05fr,0.95fr]">
           <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Google Ads</p>
-                <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">账号连接控制台</h2>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-                  先确认基础配置、OAuth 状态和可访问账号数量，再决定是去设置页补参数，还是直接同步和诊断。
-                </p>
-              </div>
-              <button
-                className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-60"
-                disabled={syncing}
-                onClick={() => verifyAndSync(true)}
-                type="button"
-              >
-                <RefreshCcw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
-                {syncing ? "同步中" : "快速同步"}
-              </button>
-            </div>
+            <PageHeader
+              actions={
+                <button
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-60"
+                  disabled={syncing}
+                  onClick={() => verifyAndSync(true)}
+                  type="button"
+                >
+                  <RefreshCcw className={cn("h-3.5 w-3.5", syncing ? "animate-spin" : "")} />
+                  {syncing ? "同步中" : "快速同步"}
+                </button>
+              }
+              description="先确认基础配置、OAuth 状态和可访问账号数量，再决定是去设置页补参数，还是直接同步和诊断。"
+              eyebrow="Google Ads"
+              title="账号连接控制台"
+            />
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <Link href="/settings#google-ads-settings">
@@ -413,6 +438,41 @@ export function GoogleAdsManager() {
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             查看当前账号的 Google Ads 连接状态，并完成授权、验证和可访问账号同步。
           </p>
+          <ol className="mt-5 grid gap-3 sm:grid-cols-2">
+            {oauthSteps.map((step, index) => {
+              const isCurrent = currentOauthStep === -1 ? index === oauthSteps.length - 1 : index === currentOauthStep;
+              return (
+                <li
+                  className={cn(
+                    "rounded-xl border p-3 transition-colors",
+                    step.complete
+                      ? "border-primary/20 bg-primary/10"
+                      : isCurrent
+                        ? "border-amber-200 bg-amber-500/10"
+                        : "border-border bg-muted/30"
+                  )}
+                  key={step.key}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        "flex h-6 w-6 items-center justify-center rounded-full border text-xs font-semibold",
+                        step.complete
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : isCurrent
+                            ? "border-amber-500 text-amber-700"
+                            : "border-border text-muted-foreground"
+                      )}
+                    >
+                      {index + 1}
+                    </span>
+                    <p className="text-sm font-semibold text-foreground">{step.label}</p>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">{step.note}</p>
+                </li>
+              );
+            })}
+          </ol>
 
           <div className="mt-5 grid gap-3">
             <div className="rounded-xl border border-border bg-muted/40 p-5 text-sm text-foreground">
@@ -464,7 +524,7 @@ export function GoogleAdsManager() {
             </button>
           </div>
 
-          {message ? <p className={`mt-4 text-sm ${messageClassName}`}>{message}</p> : null}
+          {message ? <p className={cn("mt-4 text-sm", messageClassName)}>{message}</p> : null}
         </div>
 
         <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
@@ -595,9 +655,10 @@ export function GoogleAdsManager() {
                       <p className="mt-1 font-mono tabular-nums text-xs text-muted-foreground">{customer.customerId}</p>
                     </div>
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      className={cn(
+                        "rounded-full px-3 py-1 text-xs font-semibold",
                         customer.ok ? "bg-emerald-50 text-emerald-700" : "bg-destructive/10 text-destructive"
-                      }`}
+                      )}
                     >
                       {customer.ok ? "读取成功" : customer.error?.code || "失败"}
                     </span>

@@ -7,6 +7,7 @@ import {
   Boxes,
   ChevronLeft,
   ChevronRight,
+  Circle,
   LayoutDashboard,
   Link2,
   ListOrdered,
@@ -20,7 +21,7 @@ import {
   X
 } from "lucide-react";
 
-import { cn } from "@autocashback/ui";
+import { cn, PageHeaderProvider } from "@autocashback/ui";
 import { Toaster } from "sonner";
 import type { CurrentUser } from "@autocashback/domain";
 
@@ -79,17 +80,30 @@ function NavSection({
   items,
   label,
   pathname,
-  collapsed
+  collapsed,
+  variant = "default"
 }: {
   items: NavItem[];
   label: string;
   pathname: string;
   collapsed: boolean;
+  variant?: "admin" | "default";
 }) {
+  const activeClassName =
+    variant === "admin"
+      ? "bg-violet-500/10 text-violet-700"
+      : "bg-primary/10 text-primary";
+  const iconActiveClassName = variant === "admin" ? "text-violet-700" : "text-primary";
+  const labelClassName =
+    variant === "admin"
+      ? "flex items-center gap-2 px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-violet-700"
+      : "px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider";
+
   return (
     <div>
       {!collapsed ? (
-        <p className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <p className={labelClassName}>
+          {variant === "admin" ? <Shield className="h-3 w-3" /> : null}
           {label}
         </p>
       ) : null}
@@ -105,16 +119,14 @@ function NavSection({
               className={cn(
                 "group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 collapsed ? "justify-center" : "gap-3",
-                active 
-                  ? "bg-primary/10 text-primary" 
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                active ? activeClassName : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
               title={collapsed ? item.label : undefined}
             >
               <Icon
                 className={cn(
                   "h-4 w-4 flex-shrink-0",
-                  active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                  active ? iconActiveClassName : "text-muted-foreground group-hover:text-foreground"
                 )}
                 aria-hidden="true"
               />
@@ -137,6 +149,7 @@ export function AppShell({
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [healthStatus, setHealthStatus] = useState<"healthy" | "loading" | "stale" | "unhealthy">("loading");
 
   const displayName = user.username || user.email;
   const userInitial = displayName.slice(0, 1).toUpperCase();
@@ -149,10 +162,64 @@ export function AppShell({
     setMobileNavOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadHealth() {
+      try {
+        const response = await fetch("/api/health", { cache: "no-store" });
+        const payload = (await response.json()) as { checks?: { scheduler?: string }; status?: string };
+        if (cancelled) {
+          return;
+        }
+
+        if (payload.checks?.scheduler === "stale") {
+          setHealthStatus("stale");
+          return;
+        }
+
+        setHealthStatus(payload.status === "healthy" ? "healthy" : "unhealthy");
+      } catch {
+        if (!cancelled) {
+          setHealthStatus("unhealthy");
+        }
+      }
+    }
+
+    void loadHealth();
+    const timer = window.setInterval(() => {
+      void loadHealth();
+    }, 60_000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, []);
+
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
     window.location.href = "/login";
   }
+
+  const healthMeta = {
+    healthy: {
+      className: "text-primary",
+      label: "系统健康"
+    },
+    loading: {
+      className: "text-slate-300",
+      label: "正在检查系统状态"
+    },
+    stale: {
+      className: "text-amber-500",
+      label: "调度心跳延迟"
+    },
+    unhealthy: {
+      className: "text-destructive",
+      label: "系统异常"
+    }
+  }[healthStatus];
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -212,16 +279,19 @@ export function AppShell({
                 items={adminLinks}
                 label="系统管理"
                 pathname={pathname}
+                variant="admin"
               />
             ) : null}
           </div>
 
           <div className="mt-4 border-t pt-4">
-            <div
+            <Link
+              href="/settings#account-security-settings"
               className={cn(
-                "mb-2 flex items-center rounded-md px-3 py-2",
+                "mb-2 flex items-center rounded-md px-3 py-2 transition-colors hover:bg-muted",
                 sidebarOpen ? "justify-between" : "justify-center"
               )}
+              title={!sidebarOpen ? "打开账号设置" : undefined}
             >
               <div className={cn("flex items-center gap-2", sidebarOpen ? "" : "justify-center")}>
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
@@ -234,7 +304,7 @@ export function AppShell({
                   </div>
                 ) : null}
               </div>
-            </div>
+            </Link>
 
             <button
               className={cn(
@@ -271,19 +341,21 @@ export function AppShell({
             >
               {sidebarOpen ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
             </button>
-            <h1 className="text-lg font-semibold tracking-tight text-foreground">{pageTitle}</h1>
           </div>
-
+          <div className="flex items-center gap-3">
+            <span
+              aria-label={healthMeta.label}
+              className="inline-flex h-2.5 w-2.5 rounded-full"
+              title={healthMeta.label}
+            >
+              <Circle className={cn("h-2.5 w-2.5 fill-current", healthMeta.className)} />
+            </span>
+          </div>
         </header>
 
         <main className="flex-1 p-4 sm:p-5 lg:p-8">
           <div className="mx-auto max-w-7xl">
-            {pageDescription && (
-              <div className="mb-6">
-                <p className="text-sm text-muted-foreground">{pageDescription}</p>
-              </div>
-            )}
-            {children}
+            <PageHeaderProvider value={{ title: pageTitle, description: pageDescription }}>{children}</PageHeaderProvider>
           </div>
         </main>
       </div>
