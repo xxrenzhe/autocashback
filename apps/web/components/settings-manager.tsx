@@ -14,7 +14,8 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import type { ProxySettingEntry } from "@autocashback/domain";
-import { ShortcutCard, StatCard } from "@autocashback/ui";
+import { PageHeader, ShortcutCard, StatCard } from "@autocashback/ui";
+import { toast } from "sonner";
 
 import { AccountSecuritySettingsTab } from "@/components/settings/account-security-settings-tab";
 import { GoogleAdsSettingsTab } from "@/components/settings/google-ads-settings-tab";
@@ -134,7 +135,6 @@ export function SettingsManager() {
     template: ""
   });
   const [scriptAppUrl, setScriptAppUrl] = useState("");
-  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [rotatingToken, setRotatingToken] = useState(false);
   const [activeTab, setActiveTab] = useState<SettingsTabValue>("proxy");
@@ -190,9 +190,9 @@ export function SettingsManager() {
     ]);
     const failure = [settingsResult, scriptResult, googleAdsResult].find((item) => !item.success);
     if (failure && !failure.success) {
-      setMessage(failure.userMessage);
+      toast.error(failure.userMessage);
       setLoading(false);
-      return;
+      return false;
     }
 
     const payload = settingsResult.success ? settingsResult.data : { settings: [] };
@@ -227,6 +227,7 @@ export function SettingsManager() {
     });
     setScriptAppUrl(typeof window === "undefined" ? "" : window.location.origin);
     setLoading(false);
+    return true;
   }, []);
 
   useEffect(() => {
@@ -257,8 +258,6 @@ export function SettingsManager() {
   );
 
   async function saveSettings() {
-    setMessage("");
-
     const updates: SettingRow[] = [
       {
         category: "proxy",
@@ -297,37 +296,39 @@ export function SettingsManager() {
       body: JSON.stringify({ updates })
     });
 
-    setMessage(result.success ? "已保存设置" : result.userMessage);
-    if (result.success) {
-      await loadSettings();
+    if (!result.success) {
+      toast.error(result.userMessage);
+      return;
+    }
+
+    if (await loadSettings()) {
+      toast.success("已保存设置");
     }
   }
 
   async function rotateToken() {
     setRotatingToken(true);
-    setMessage("");
 
     try {
       const result = await fetchJson("/api/script/link-swap/rotate-token", {
         method: "POST"
       });
       if (!result.success) {
-        setMessage(result.userMessage);
+        toast.error(result.userMessage);
         return;
       }
 
-      await loadSettings();
-      setMessage("Token 已更换，旧脚本立即失效，请重新复制最新换链接脚本。");
+      if (await loadSettings()) {
+        toast.success("Token 已更换，旧脚本立即失效，请重新复制最新换链接脚本。");
+      }
     } catch {
-      setMessage("Token 更换失败");
+      toast.error("Token 更换失败");
     } finally {
       setRotatingToken(false);
     }
   }
 
   async function saveGoogleAdsConfig() {
-    setMessage("");
-
     try {
       const result = await fetchJson<{ credentials?: { hasRefreshToken?: boolean } }>(
         "/api/google-ads/credentials",
@@ -343,56 +344,55 @@ export function SettingsManager() {
         }
       );
       if (!result.success) {
-        setMessage(result.userMessage);
+        toast.error(result.userMessage);
         return;
       }
 
-      await loadSettings();
-      setMessage(
-        result.data.credentials?.hasRefreshToken
-          ? "Google Ads 配置已保存"
-          : "Google Ads 配置已保存，请重新发起 OAuth 授权"
-      );
+      if (await loadSettings()) {
+        toast.success(
+          result.data.credentials?.hasRefreshToken
+            ? "Google Ads 配置已保存"
+            : "Google Ads 配置已保存，请重新发起 OAuth 授权"
+        );
+      }
     } catch {
-      setMessage("Google Ads 配置保存失败");
+      toast.error("Google Ads 配置保存失败");
     }
   }
 
   async function verifyGoogleAdsConfig() {
-    setMessage("");
-
     try {
       const result = await fetchJson<{ accountCount?: number }>("/api/google-ads/credentials/verify", {
         method: "POST"
       });
       if (!result.success) {
-        setMessage(result.userMessage);
+        toast.error(result.userMessage);
         return;
       }
 
-      await loadSettings();
-      setMessage(`Google Ads 配置验证成功，已同步 ${result.data.accountCount || 0} 个账号`);
+      if (await loadSettings()) {
+        toast.success(`Google Ads 配置验证成功，已同步 ${result.data.accountCount || 0} 个账号`);
+      }
     } catch {
-      setMessage("Google Ads 配置验证失败");
+      toast.error("Google Ads 配置验证失败");
     }
   }
 
   async function clearGoogleAdsConfig() {
-    setMessage("");
-
     try {
       const result = await fetchJson("/api/google-ads/credentials", {
         method: "DELETE"
       });
       if (!result.success) {
-        setMessage(result.userMessage);
+        toast.error(result.userMessage);
         return;
       }
 
-      await loadSettings();
-      setMessage("Google Ads 配置已清除");
+      if (await loadSettings()) {
+        toast.success("Google Ads 配置已清除");
+      }
     } catch {
-      setMessage("Google Ads 配置清除失败");
+      toast.error("Google Ads 配置清除失败");
     }
   }
 
@@ -470,11 +470,11 @@ export function SettingsManager() {
       <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
         <div className="grid gap-0 xl:grid-cols-[1.1fr,0.9fr]">
           <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Settings</p>
-            <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">系统配置控制台</h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-              先确认代理、Google Ads、平台备注和脚本是否就绪，再进入对应分组修改具体配置。
-            </p>
+            <PageHeader
+              description="先确认代理、Google Ads、平台备注和脚本是否就绪，再进入对应分组修改具体配置。"
+              eyebrow="Settings"
+              title="系统配置控制台"
+            />
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {heroShortcuts.map((shortcut) => (
@@ -568,18 +568,6 @@ export function SettingsManager() {
         />
       </section>
 
-      {message ? (
-        <section
-          className={`rounded-xl border px-5 py-4 text-sm ${
-            message.includes("失败")
-              ? "border-destructive/20 bg-destructive/10 text-red-800"
-              : "border-emerald-200 bg-emerald-50 text-emerald-800"
-          }`}
-        >
-          {message}
-        </section>
-      ) : null}
-
       <Tabs.Root className="space-y-4" onValueChange={handleTabValueChange} value={activeTab}>
         <Tabs.List className="flex flex-wrap gap-2 rounded-xl border border-border bg-muted/30 p-2">
           {SETTINGS_TAB_ITEMS.map((tab) => (
@@ -662,7 +650,6 @@ export function SettingsManager() {
         >
           保存设置
         </button>
-        {message ? <span className="text-sm text-muted-foreground">{message}</span> : null}
       </div>
     </div>
   );

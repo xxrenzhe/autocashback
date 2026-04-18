@@ -14,6 +14,7 @@ import {
 
 import type { GoogleAdsAccountRecord, GoogleAdsCredentialStatus } from "@autocashback/domain";
 import { cn, PageHeader, ShortcutCard, StatCard } from "@autocashback/ui";
+import { toast } from "sonner";
 
 import { fetchJson } from "@/lib/api-error-handler";
 import { buildGoogleAdsOverview } from "@/lib/google-ads-overview";
@@ -115,21 +116,34 @@ export function GoogleAdsManager() {
   const [accounts, setAccounts] = useState<GoogleAdsAccountRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messageTone, setMessageTone] = useState<MessageTone>("info");
   const [diagnosing, setDiagnosing] = useState(false);
   const [probeCustomerId, setProbeCustomerId] = useState("");
   const [diagnoseResult, setDiagnoseResult] = useState<DiagnosePayload | null>(null);
 
   const overview = useMemo(() => buildGoogleAdsOverview(credentials, accounts), [accounts, credentials]);
 
-  async function loadAll(options?: { refreshAccounts?: boolean; preserveMessage?: boolean }) {
+  function showStatusToast(status: { tone: MessageTone; text: string }) {
+    if (status.tone === "success") {
+      toast.success(status.text);
+      return;
+    }
+
+    if (status.tone === "warning") {
+      toast.warning(status.text);
+      return;
+    }
+
+    if (status.tone === "info") {
+      toast.info(status.text);
+      return;
+    }
+
+    toast.error(status.text);
+  }
+
+  async function loadAll(options?: { refreshAccounts?: boolean }) {
     const refreshAccounts = Boolean(options?.refreshAccounts);
     setLoading(true);
-    if (!options?.preserveMessage) {
-      setMessage("");
-      setMessageTone("info");
-    }
 
     try {
       const credentialsResult = await fetchJson<{ credentials: GoogleAdsCredentialStatus | null }>(
@@ -145,7 +159,7 @@ export function GoogleAdsManager() {
 
       if (!nextCredentials?.hasRefreshToken && !refreshAccounts) {
         setAccounts([]);
-        return;
+        return true;
       }
 
       const accountsResult = await fetchJson<{ accounts: GoogleAdsAccountRecord[] }>(
@@ -156,16 +170,17 @@ export function GoogleAdsManager() {
       }
 
       setAccounts(accountsResult.data.accounts || []);
+      return true;
     } catch (error: unknown) {
-      setMessageTone("error");
-      setMessage(error instanceof Error ? error.message : "加载 Google Ads 数据失败");
+      toast.error(error instanceof Error ? error.message : "加载 Google Ads 数据失败");
+      return false;
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadAll();
+    void loadAll();
   }, []);
 
   useEffect(() => {
@@ -173,25 +188,31 @@ export function GoogleAdsManager() {
     const success = url.searchParams.get("success");
     const error = url.searchParams.get("error");
 
-    if (success === "oauth_connected") {
-      void (async () => {
-        await loadAll({
-          refreshAccounts: true,
-          preserveMessage: true
-        });
-        setMessageTone("success");
-        setMessage(getGoogleAdsStatusMessage(success).text);
-      })();
-    } else if (error) {
-      const status = getGoogleAdsStatusMessage(error);
-      setMessageTone(status.tone);
-      setMessage(status.text);
+    if (!success && !error) {
+      return;
     }
+
+    void (async () => {
+      if (success === "oauth_connected") {
+        const refreshed = await loadAll({
+          refreshAccounts: true
+        });
+        if (refreshed) {
+          showStatusToast(getGoogleAdsStatusMessage(success));
+        }
+      } else if (error) {
+        showStatusToast(getGoogleAdsStatusMessage(error));
+      }
+
+      url.searchParams.delete("success");
+      url.searchParams.delete("error");
+      const nextSearch = url.searchParams.toString();
+      window.history.replaceState({}, "", `${url.pathname}${nextSearch ? `?${nextSearch}` : ""}${url.hash}`);
+    })();
   }, []);
 
   async function verifyAndSync(refresh = true) {
     setSyncing(true);
-    setMessage("");
 
     try {
       const verifyResult = await fetchJson<{ accountCount?: number }>("/api/google-ads/credentials/verify", {
@@ -201,15 +222,14 @@ export function GoogleAdsManager() {
         throw new Error(verifyResult.userMessage);
       }
 
-      await loadAll({
-        refreshAccounts: refresh,
-        preserveMessage: true
+      const refreshed = await loadAll({
+        refreshAccounts: refresh
       });
-      setMessageTone("success");
-      setMessage(`Google Ads 配置验证成功，已同步 ${verifyResult.data.accountCount || 0} 个账号。`);
+      if (refreshed) {
+        toast.success(`Google Ads 配置验证成功，已同步 ${verifyResult.data.accountCount || 0} 个账号。`);
+      }
     } catch (error: unknown) {
-      setMessageTone("error");
-      setMessage(error instanceof Error ? error.message : "Google Ads 验证失败");
+      toast.error(error instanceof Error ? error.message : "Google Ads 验证失败");
     } finally {
       setSyncing(false);
     }
@@ -250,18 +270,9 @@ export function GoogleAdsManager() {
     }
   ] as const;
   const currentOauthStep = oauthSteps.findIndex((step) => !step.complete);
-  const messageClassName =
-    messageTone === "success"
-      ? "text-primary"
-      : messageTone === "warning"
-        ? "text-amber-600"
-        : messageTone === "error"
-          ? "text-destructive"
-          : "text-muted-foreground";
 
   async function diagnoseCredentials() {
     setDiagnosing(true);
-    setMessage("");
 
     const result = await fetchJson<{ data: DiagnosePayload }>("/api/google-ads/diagnose", {
       method: "POST",
@@ -275,16 +286,14 @@ export function GoogleAdsManager() {
     });
 
     if (!result.success) {
-      setMessageTone("error");
-      setMessage(result.userMessage);
+      toast.error(result.userMessage);
       setDiagnoseResult(null);
       setDiagnosing(false);
       return;
     }
 
     setDiagnoseResult(result.data.data);
-    setMessageTone("success");
-    setMessage("Google Ads 诊断完成，可据此判断 MCC、Developer Token 和 OAuth 权限问题。");
+    toast.success("Google Ads 诊断完成，可据此判断 MCC、Developer Token 和 OAuth 权限问题。");
     setDiagnosing(false);
   }
 
@@ -523,8 +532,6 @@ export function GoogleAdsManager() {
               {syncing ? "同步中..." : "验证并同步账号"}
             </button>
           </div>
-
-          {message ? <p className={cn("mt-4 text-sm", messageClassName)}>{message}</p> : null}
         </div>
 
         <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
