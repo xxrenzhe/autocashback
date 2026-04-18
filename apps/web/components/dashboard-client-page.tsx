@@ -2,7 +2,7 @@
 
 import { formatDateTime } from "@/lib/format";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -153,7 +153,7 @@ export function DashboardClientPage({ username }: { username: string }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   
-  async function loadSummary(refresh = false) {
+  const loadSummary = useCallback(async (refresh = false) => {
     if (refresh) {
       setRefreshing(true);
     } else {
@@ -177,11 +177,11 @@ export function DashboardClientPage({ username }: { username: string }) {
     setData(result.data);
     setLoading(false);
     setRefreshing(false);
-  }
+  }, []);
 
   useEffect(() => {
     void loadSummary();
-  }, []);
+  }, [loadSummary]);
 
   if (loading) {
     return <LoadingState />;
@@ -272,14 +272,14 @@ export function DashboardClientPage({ username }: { username: string }) {
 
               <div className="rounded-xl border border-border bg-muted/40 p-4">
                 <div className="flex items-center justify-between gap-4">
-                  <p className="text-sm font-semibold text-foreground">当前风险焦点</p>
-                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  <p className="text-sm font-semibold text-foreground">待处理动作</p>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground/80" />
                 </div>
-                <p className="mt-2 text-sm text-muted-foreground">{data.risks[0]?.description || "当前没有高优先级风险。"}</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  当前还有 {data.actions.length} 项建议动作，优先处理最上方的高影响操作。
+                </p>
               </div>
             </div>
-
-            {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
           </div>
         </div>
       </section>

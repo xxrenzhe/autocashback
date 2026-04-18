@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 import type { GoogleAdsAccountRecord, GoogleAdsCredentialStatus } from "@autocashback/domain";
-import { cn, PageHeader, ShortcutCard, StatCard } from "@autocashback/ui";
+import { EmptyState, PageHeader, ShortcutCard, StatCard, TableSkeleton, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { fetchJson } from "@/lib/api-error-handler";
@@ -547,7 +547,7 @@ export function GoogleAdsManager() {
 
           <div className="mt-5 overflow-x-auto">
             {loading ? (
-              <p className="rounded-lg bg-muted/40 px-4 py-5 text-sm text-muted-foreground">正在加载账号...</p>
+              <TableSkeleton rows={5} />
             ) : accounts.length ? (
               <table className="min-w-full text-left text-sm">
                 <thead>
@@ -599,9 +599,11 @@ export function GoogleAdsManager() {
                 </tbody>
               </table>
             ) : (
-              <p className="rounded-lg bg-muted/40 px-4 py-5 text-sm text-muted-foreground">
-                暂无可访问账号。先在设置页保存 Google Ads 基础配置，再完成 OAuth 授权。
-              </p>
+              <EmptyState
+                description="先在设置页保存 Google Ads 基础配置，再完成 OAuth 授权。"
+                icon={Building2}
+                title="暂无可访问账号"
+              />
             )}
           </div>
         </div>

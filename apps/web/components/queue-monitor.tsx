@@ -23,7 +23,7 @@ import type {
   QueueTaskStatus,
   QueueTaskType
 } from "@autocashback/domain";
-import { cn, MetricGroup, PageHeader, ShortcutCard, StatCard, StatusBadge } from "@autocashback/ui";
+import { EmptyState, MetricGroup, PageHeader, ShortcutCard, StatCard, StatusBadge, TableSkeleton, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 import { AdminOperationsMonitor } from "@/components/admin-operations-monitor";
 import { fetchJson } from "@/lib/api-error-handler";
@@ -672,15 +672,7 @@ export function QueueMonitor() {
             </div>
 
             {loading ? (
-              <div className="space-y-4 p-5">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div className="rounded-xl border border-border bg-muted/40 px-4 py-5" key={index}>
-                    <div className="h-4 w-32 animate-pulse rounded-full bg-stone-200" />
-                    <div className="mt-4 h-4 w-full animate-pulse rounded-full bg-stone-200" />
-                    <div className="mt-3 h-4 w-5/6 animate-pulse rounded-full bg-stone-200" />
-                  </div>
-                ))}
-              </div>
+              <TableSkeleton className="m-5" rows={6} />
             ) : consoleData.rows.length ? (
               <div className="space-y-4 p-5">
                 {visibleRows.map((row) => {
@@ -746,12 +738,11 @@ export function QueueMonitor() {
                 ) : null}
               </div>
             ) : (
-              <div className="px-6 py-10 text-center">
-                <p className="text-base font-semibold text-foreground">当前筛选条件下没有队列任务</p>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  可以放宽筛选条件，或去业务页检查是否还有待入队的任务。
-                </p>
-              </div>
+              <EmptyState
+                description="可以放宽筛选条件，或去业务页检查是否还有待入队的任务。"
+                icon={Workflow}
+                title="当前筛选条件下没有队列任务"
+              />
             )}
           </section>
         </div>

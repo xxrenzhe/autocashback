@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 import type { ClickFarmTask, OfferRecord } from "@autocashback/domain";
-import { cn, PageHeader, ShortcutCard, StatCard, StatusBadge } from "@autocashback/ui";
+import { EmptyState, PageHeader, ShortcutCard, StatCard, StatusBadge, TableSkeleton, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { ClickFarmTaskDialog } from "@/components/click-farm-task-dialog";
@@ -439,15 +439,7 @@ export function ClickFarmManager() {
             </div>
 
             {loading ? (
-              <div className="space-y-4 p-5">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div className="rounded-xl border border-border bg-muted/40 px-4 py-5" key={index}>
-                    <div className="h-4 w-32 animate-pulse rounded-full bg-stone-200" />
-                    <div className="mt-4 h-4 w-full animate-pulse rounded-full bg-stone-200" />
-                    <div className="mt-3 h-4 w-5/6 animate-pulse rounded-full bg-stone-200" />
-                  </div>
-                ))}
-              </div>
+              <TableSkeleton className="m-5" rows={6} />
             ) : consoleData.rows.length ? (
               <div className="overflow-x-auto p-5">
                 <table className="min-w-full text-left text-sm">
@@ -606,33 +598,34 @@ export function ClickFarmManager() {
                 </table>
               </div>
             ) : (
-              <div className="px-6 py-10 text-center">
-                <p className="text-base font-semibold text-foreground">
-                  {searchQuery || statusFilter !== "all" || countryFilter !== "all"
-                    ? "当前筛选条件下没有任务"
-                    : "还没有补点击任务"}
-                </p>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  先从 Offer 里选择一个条目，再创建对应的补点击任务。
-                </p>
-                <div className="mt-5 flex flex-wrap justify-center gap-3">
-                  <Link
-                    className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
-                    href="/offers"
-                  >
-                    去 Offer 管理
-                  </Link>
-                  {selectedOffer ? (
-                    <button
-                      className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
-                      onClick={() => openDialogForOffer(selectedOffer)}
-                      type="button"
+              <EmptyState
+                action={
+                  <div className="flex flex-wrap justify-center gap-3">
+                    <Link
+                      className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
+                      href="/offers"
                     >
-                      直接创建
-                    </button>
-                  ) : null}
-                </div>
-              </div>
+                      去 Offer 管理
+                    </Link>
+                    {selectedOffer ? (
+                      <button
+                        className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
+                        onClick={() => openDialogForOffer(selectedOffer)}
+                        type="button"
+                      >
+                        直接创建
+                      </button>
+                    ) : null}
+                  </div>
+                }
+                description="先从 Offer 里选择一个条目，再创建对应的补点击任务。"
+                icon={Zap}
+                title={
+                  searchQuery || statusFilter !== "all" || countryFilter !== "all"
+                    ? "当前筛选条件下没有任务"
+                    : "还没有补点击任务"
+                }
+              />
             )}
           </section>
         </div>

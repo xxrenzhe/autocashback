@@ -28,7 +28,7 @@ import {
   type CashbackAccount,
   type OfferRecord
 } from "@autocashback/domain";
-import { cn, PageHeader, ShortcutCard, StatCard, StatusBadge } from "@autocashback/ui";
+import { EmptyState, PageHeader, ShortcutCard, StatCard, StatusBadge, TableSkeleton, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { fetchJson } from "@/lib/api-error-handler";
@@ -520,15 +520,7 @@ export function AccountsManager() {
             </div>
 
             {loading ? (
-              <div className="space-y-4 p-5">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div className="rounded-xl border border-border bg-muted/40 px-4 py-5" key={index}>
-                    <div className="h-4 w-32 animate-pulse rounded-full bg-stone-200" />
-                    <div className="mt-4 h-4 w-full animate-pulse rounded-full bg-stone-200" />
-                    <div className="mt-3 h-4 w-5/6 animate-pulse rounded-full bg-stone-200" />
-                  </div>
-                ))}
-              </div>
+              <TableSkeleton className="m-5" rows={6} />
             ) : consoleData.rows.length ? (
               <div className="overflow-x-auto p-5">
                 <table className="min-w-full text-left text-sm">
@@ -615,32 +607,31 @@ export function AccountsManager() {
                 </table>
               </div>
             ) : (
-              <div className="px-6 py-10 text-center">
-                <p className="text-base font-semibold text-foreground">
-                  {hasActiveFilters ? "当前筛选条件下没有账号" : "还没有返利账号"}
-                </p>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  先创建返利平台账号，再继续挂接 Offer 和自动化任务。
-                </p>
-                <div className="mt-5 flex flex-wrap justify-center gap-3">
-                  {hasActiveFilters ? (
+              <EmptyState
+                action={
+                  <div className="flex flex-wrap justify-center gap-3">
+                    {hasActiveFilters ? (
+                      <button
+                        className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
+                        onClick={clearFilters}
+                        type="button"
+                      >
+                        清空筛选
+                      </button>
+                    ) : null}
                     <button
-                      className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
-                      onClick={clearFilters}
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
+                      onClick={startCreateAccount}
                       type="button"
                     >
-                      清空筛选
+                      新建账号
                     </button>
-                  ) : null}
-                  <button
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
-                    onClick={startCreateAccount}
-                    type="button"
-                  >
-                    新建账号
-                  </button>
-                </div>
-              </div>
+                  </div>
+                }
+                description="先创建返利平台账号，再继续挂接 Offer 和自动化任务。"
+                icon={WalletCards}
+                title={hasActiveFilters ? "当前筛选条件下没有账号" : "还没有返利账号"}
+              />
             )}
           </section>
         </div>
