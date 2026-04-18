@@ -18,7 +18,7 @@ import {
   WalletCards
 } from "lucide-react";
 
-import { cn } from "@autocashback/ui";
+import { CardSkeleton, EmptyState, ShortcutCard, StatCard, StatSkeleton, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import type {
@@ -78,64 +78,18 @@ function resolveActionIcon(href: string) {
   return Boxes;
 }
 
-function OverviewCard({
-  label,
-  value,
-  note,
-  tone = "slate"
-}: {
-  label: string;
-  value: string;
-  note: string;
-  tone?: "emerald" | "amber" | "slate";
-}) {
-  const toneStyles = {
-    emerald: {
-      badge: "bg-primary/10 text-primary",
-      value: "text-primary"
-    },
-    amber: {
-      badge: "bg-amber-500/10 text-amber-600",
-      value: "text-amber-600"
-    },
-    slate: {
-      badge: "bg-slate-100 text-foreground",
-      value: "text-foreground"
-    }
-  } as const;
-
-  return (
-    <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-      <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", toneStyles[tone].badge)}>
-        {label}
-      </span>
-      <p className={cn("mt-5 font-mono tabular-nums text-4xl font-semibold", toneStyles[tone].value)}>{value}</p>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
-    </div>
-  );
-}
-
 function ActionCard({ item }: { item: DashboardActionItem }) {
   const Icon = resolveActionIcon(item.href);
-  const toneStyles = {
-    emerald: "bg-primary/10 text-primary",
-    amber: "bg-amber-500/10 text-amber-600",
-    slate: "bg-slate-100 text-foreground"
-  } as const;
 
   return (
-    <Link
-      className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
-      href={item.href}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <span className={cn("flex h-11 w-11 items-center justify-center rounded-lg", toneStyles[item.tone])}>
-          <Icon className="h-5 w-5" />
-        </span>
-        <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-      </div>
-      <p className="mt-4 text-sm font-semibold text-foreground">{item.title}</p>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+    <Link href={item.href}>
+      <ShortcutCard
+        description={item.description}
+        icon={Icon}
+        title={item.title}
+        tone={item.tone}
+        trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+      />
     </Link>
   );
 }
@@ -208,12 +162,15 @@ function LoadingState() {
       </section>
       <section className="grid gap-4 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" key={index}>
-            <div className="h-6 w-20 animate-pulse rounded-full bg-muted" />
-            <div className="mt-5 h-10 w-24 animate-pulse rounded-full bg-muted" />
-            <div className="mt-3 h-4 w-full animate-pulse rounded-full bg-muted" />
-          </div>
+          <StatSkeleton key={index} />
         ))}
+      </section>
+      <section className="grid gap-5 xl:grid-cols-[0.95fr,1.05fr]">
+        <div className="space-y-6">
+          <CardSkeleton />
+          <CardSkeleton />
+        </div>
+        <CardSkeleton className="min-h-64" />
       </section>
     </div>
   );
@@ -261,16 +218,20 @@ export function DashboardClientPage({ username }: { username: string }) {
 
   if (!data) {
     return (
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-        <p className="text-sm text-destructive">{error || "仪表盘数据加载失败"}</p>
-        <button
-          className="mt-4 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
-          onClick={() => void loadSummary()}
-          type="button"
-        >
-          重新加载
-        </button>
-      </section>
+      <EmptyState
+        action={
+          <button
+            className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
+            onClick={() => void loadSummary()}
+            type="button"
+          >
+            重新加载
+          </button>
+        }
+        description={error || "请重新加载仪表盘数据。"}
+        icon={AlertTriangle}
+        title="仪表盘数据加载失败"
+      />
     );
   }
 
@@ -343,25 +304,25 @@ export function DashboardClientPage({ username }: { username: string }) {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-4">
-        <OverviewCard
+        <StatCard
           label="启用中 Offer"
           note="已经进入运营或告警状态的 Offer 数量。"
           tone="emerald"
           value={`${data.overview.activeOffers}`}
         />
-        <OverviewCard
+        <StatCard
           label="启用中换链任务"
           note="由调度器持续执行的自动换链任务数量。"
           tone="slate"
           value={`${data.overview.activeTasks}`}
         />
-        <OverviewCard
+        <StatCard
           label="最近成功率"
           note="最近换链执行记录里的成功比例。"
           tone="emerald"
           value={`${data.overview.successRate}%`}
         />
-        <OverviewCard
+        <StatCard
           label="佣金预警"
           note="已达到或接近佣金阈值，需要人工复核的 Offer 数量。"
           tone="amber"
@@ -411,11 +372,11 @@ export function DashboardClientPage({ username }: { username: string }) {
             {data.recentRuns.length ? (
               data.recentRuns.map((run) => <RunCard key={run.id} run={run} />)
             ) : (
-              <div className="rounded-xl border border-dashed border-border bg-muted/40 px-5 py-6">
-                <p className="text-sm text-muted-foreground">
-                  还没有换链执行记录。创建 Offer 并启用换链任务后，这里会按时间顺序显示最新结果。
-                </p>
-              </div>
+              <EmptyState
+                description="创建 Offer 并启用换链任务后，这里会按时间顺序显示最新结果。"
+                icon={Boxes}
+                title="还没有换链执行记录"
+              />
             )}
           </div>
         </div>

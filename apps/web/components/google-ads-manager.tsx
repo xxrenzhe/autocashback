@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import type { GoogleAdsAccountRecord, GoogleAdsCredentialStatus } from "@autocashback/domain";
+import { ShortcutCard, StatCard } from "@autocashback/ui";
 
 import { fetchJson } from "@/lib/api-error-handler";
 import { buildGoogleAdsOverview } from "@/lib/google-ads-overview";
@@ -107,50 +108,6 @@ function getGoogleAdsStatusMessage(code: string): { tone: MessageTone; text: str
         text: `Google Ads 授权失败：${code}`
       };
   }
-}
-
-function OverviewCard({
-  icon: Icon,
-  label,
-  note,
-  tone,
-  value
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  note: string;
-  tone: "emerald" | "amber" | "slate";
-  value: string;
-}) {
-  const toneStyles = {
-    emerald: {
-      badge: "bg-primary/10 text-primary",
-      icon: "bg-primary/10 text-primary"
-    },
-    amber: {
-      badge: "bg-amber-500/10 text-amber-600",
-      icon: "bg-amber-500/10 text-amber-600"
-    },
-    slate: {
-      badge: "bg-slate-100 text-foreground",
-      icon: "bg-slate-100 text-foreground"
-    }
-  } as const;
-
-  return (
-    <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-      <div className="flex items-start justify-between gap-4">
-        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${toneStyles[tone].badge}`}>
-          {label}
-        </span>
-        <span className={`flex h-10 w-10 items-center justify-center rounded-lg ${toneStyles[tone].icon}`}>
-          <Icon className="h-4 w-4" />
-        </span>
-      </div>
-      <p className="mt-5 font-mono tabular-nums text-4xl font-semibold text-foreground">{value}</p>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
-    </div>
-  );
 }
 
 export function GoogleAdsManager() {
@@ -329,68 +286,59 @@ export function GoogleAdsManager() {
             </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <Link
-                className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
-                href="/settings#google-ads-settings"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <ShieldCheck className="h-5 w-5" />
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-                </div>
-                <p className="mt-4 text-sm font-semibold text-foreground">补齐基础配置</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">去设置页维护 Client ID、Developer Token 和 Login Customer ID。</p>
+              <Link href="/settings#google-ads-settings">
+                <ShortcutCard
+                  description="去设置页维护 Client ID、Developer Token 和 Login Customer ID。"
+                  icon={ShieldCheck}
+                  title="补齐基础配置"
+                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+                />
               </Link>
-
               <button
-                className="group rounded-xl border border-border bg-background/90 p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none disabled:opacity-60"
+                className="block text-left disabled:opacity-60"
                 disabled={!canConnect}
                 onClick={() => {
                   window.location.href = "/api/auth/google-ads/authorize";
                 }}
                 type="button"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <KeyRound className="h-5 w-5" />
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-                </div>
-                <p className="mt-4 text-sm font-semibold text-foreground">发起 OAuth 授权</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">基础参数完整后再授权，避免无效回调和重复操作。</p>
+                <ShortcutCard
+                  className="h-full"
+                  description="基础参数完整后再授权，避免无效回调和重复操作。"
+                  icon={KeyRound}
+                  title="发起 OAuth 授权"
+                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+                />
               </button>
 
               <button
-                className="group rounded-xl border border-border bg-background/90 p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none disabled:opacity-60"
+                className="block text-left disabled:opacity-60"
                 disabled={!credentials?.hasRefreshToken || syncing}
                 onClick={() => verifyAndSync(true)}
                 type="button"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Building2 className="h-5 w-5" />
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-                </div>
-                <p className="mt-4 text-sm font-semibold text-foreground">同步账号</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">刷新可访问 Customer 列表，确认 MCC 和广告账号映射。</p>
+                <ShortcutCard
+                  className="h-full"
+                  description="刷新可访问 Customer 列表，确认 MCC 和广告账号映射。"
+                  icon={Building2}
+                  title="同步账号"
+                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+                />
               </button>
 
               <button
-                className="group rounded-xl border border-border bg-background/90 p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none disabled:opacity-60"
+                className="block text-left disabled:opacity-60"
                 disabled={!credentials?.hasRefreshToken || diagnosing}
                 onClick={diagnoseCredentials}
                 type="button"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <TestTube2 className="h-5 w-5" />
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-                </div>
-                <p className="mt-4 text-sm font-semibold text-foreground">执行诊断</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">快速定位 MCC 权限、Developer Token 和测试账号问题。</p>
+                <ShortcutCard
+                  className="h-full"
+                  description="快速定位 MCC 权限、Developer Token 和测试账号问题。"
+                  icon={TestTube2}
+                  title="执行诊断"
+                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+                />
               </button>
             </div>
           </div>
@@ -422,7 +370,7 @@ export function GoogleAdsManager() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-4">
-        <OverviewCard
+        <StatCard
           icon={ShieldCheck}
           label="连接状态"
           note={
@@ -435,21 +383,21 @@ export function GoogleAdsManager() {
           tone={overview.fullyConnected ? "emerald" : "amber"}
           value={overview.fullyConnected ? "ready" : overview.needsOAuth ? "oauth" : "setup"}
         />
-        <OverviewCard
+        <StatCard
           icon={Building2}
           label="可访问账号"
           note="当前同步到本地的 Google Ads 账号总数。"
           tone="slate"
           value={`${overview.accountCount}`}
         />
-        <OverviewCard
+        <StatCard
           icon={ShieldCheck}
           label="Manager 账号"
           note="可访问账号中的 MCC / Manager 数量。"
           tone="slate"
           value={`${overview.managerCount}`}
         />
-        <OverviewCard
+        <StatCard
           icon={CheckCircle2}
           label="测试账号"
           note="标记为测试环境的账号数量。"

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import type { ProxySettingEntry } from "@autocashback/domain";
+import { EmptyState, ShortcutCard, StatCard } from "@autocashback/ui";
 
 import { AccountSecurityPanel } from "@/components/account-security-panel";
 import { fetchJson } from "@/lib/api-error-handler";
@@ -59,50 +60,6 @@ function parseProxyEntries(raw: string): ProxySettingEntry[] {
   } catch {
     return [];
   }
-}
-
-function OverviewCard({
-  icon: Icon,
-  label,
-  note,
-  tone,
-  value
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  note: string;
-  tone: "emerald" | "amber" | "slate";
-  value: string;
-}) {
-  const toneStyles = {
-    emerald: {
-      badge: "bg-primary/10 text-primary",
-      icon: "bg-primary/10 text-primary"
-    },
-    amber: {
-      badge: "bg-amber-500/10 text-amber-600",
-      icon: "bg-amber-500/10 text-amber-600"
-    },
-    slate: {
-      badge: "bg-slate-100 text-foreground",
-      icon: "bg-slate-100 text-foreground"
-    }
-  } as const;
-
-  return (
-    <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-      <div className="flex items-start justify-between gap-4">
-        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${toneStyles[tone].badge}`}>
-          {label}
-        </span>
-        <span className={`flex h-10 w-10 items-center justify-center rounded-lg ${toneStyles[tone].icon}`}>
-          <Icon className="h-4 w-4" />
-        </span>
-      </div>
-      <p className="mt-5 font-mono tabular-nums text-4xl font-semibold text-foreground">{value}</p>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
-    </div>
-  );
 }
 
 export function SettingsManager() {
@@ -411,59 +368,47 @@ export function SettingsManager() {
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <a
-                className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
                 href="#proxy-settings"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Globe2 className="h-5 w-5" />
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-                </div>
-                <p className="mt-4 text-sm font-semibold text-foreground">代理与国家覆盖</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">确认目标国家代理是否齐备，避免换链和诊断任务失败。</p>
+                <ShortcutCard
+                  description="确认目标国家代理是否齐备，避免换链和诊断任务失败。"
+                  icon={Globe2}
+                  title="代理与国家覆盖"
+                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+                />
               </a>
 
               <a
-                className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
                 href="#google-ads-settings"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <ShieldCheck className="h-5 w-5" />
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-                </div>
-                <p className="mt-4 text-sm font-semibold text-foreground">Google Ads 授权</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">基础参数齐全后再做 OAuth 授权和账号同步。</p>
+                <ShortcutCard
+                  description="基础参数齐全后再做 OAuth 授权和账号同步。"
+                  icon={ShieldCheck}
+                  title="Google Ads 授权"
+                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+                />
               </a>
 
               <a
-                className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
                 href="#platform-settings"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <NotebookPen className="h-5 w-5" />
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-                </div>
-                <p className="mt-4 text-sm font-semibold text-foreground">平台接入备注</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">沉淀返利平台处理规范，减少账号和 Offer 操作分歧。</p>
+                <ShortcutCard
+                  description="沉淀返利平台处理规范，减少账号和 Offer 操作分歧。"
+                  icon={NotebookPen}
+                  title="平台接入备注"
+                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+                />
               </a>
 
               <a
-                className="group rounded-xl border border-border bg-background/90 p-4 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md motion-reduce:transform-none"
                 href="#script-settings"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <KeyRound className="h-5 w-5" />
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-                </div>
-                <p className="mt-4 text-sm font-semibold text-foreground">脚本与 Token</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">统一维护 MCC 脚本模板和当前有效 Script Token。</p>
+                <ShortcutCard
+                  description="统一维护 MCC 脚本模板和当前有效 Script Token。"
+                  icon={KeyRound}
+                  title="脚本与 Token"
+                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
+                />
               </a>
             </div>
           </div>
@@ -503,14 +448,14 @@ export function SettingsManager() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-4">
-        <OverviewCard
+        <StatCard
           icon={Globe2}
           label="活跃代理"
           note={`已覆盖 ${overview.configuredProxyCountries} 个国家/区域${overview.hasGlobalProxy ? "，含 GLOBAL 兜底" : "，未含 GLOBAL 兜底"}`}
           tone={overview.hasGlobalProxy ? "emerald" : "amber"}
           value={`${overview.activeProxyCount}`}
         />
-        <OverviewCard
+        <StatCard
           icon={ShieldCheck}
           label="Google Ads 基础项"
           note={
@@ -523,14 +468,14 @@ export function SettingsManager() {
           tone={overview.googleAdsFullyConnected ? "emerald" : "amber"}
           value={`${overview.googleAdsBaseConfigCount}/4`}
         />
-        <OverviewCard
+        <StatCard
           icon={NotebookPen}
           label="平台备注"
           note="建议三类平台都维护处理规范，方便账号和 Offer 协作。"
           tone={overview.noteCount >= 2 ? "emerald" : "slate"}
           value={`${overview.noteCount}/3`}
         />
-        <OverviewCard
+        <StatCard
           icon={Link2}
           label="脚本状态"
           note={overview.scriptReady ? "脚本模板和当前 Token 已可直接复制使用。" : "脚本模板或 Token 尚未准备好。"}
@@ -662,9 +607,12 @@ export function SettingsManager() {
               </div>
             ))
           ) : (
-            <div className="rounded-xl border border-dashed border-border bg-muted/40 px-5 py-6 text-sm text-muted-foreground">
-              还没有代理配置。建议至少录入一个 `GLOBAL` 代理，确保终链解析任务可执行。
-            </div>
+            <EmptyState
+              className="text-left"
+              description="建议至少录入一个 GLOBAL 代理，确保终链解析任务可执行。"
+              icon={Globe2}
+              title="还没有代理配置"
+            />
           )}
         </div>
       </section>
