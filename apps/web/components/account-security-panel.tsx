@@ -105,9 +105,9 @@ export function AccountSecurityPanel() {
   return (
     <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-primary">账户安全</p>
-          <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">密码与登录会话</h3>
+        <div className="space-y-1">
+          <h3 className="text-sm font-semibold text-foreground">密码与登录会话</h3>
+          <p className="text-xs text-muted-foreground">更新密码并管理当前活跃设备。</p>
         </div>
         <button
           className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive"
@@ -183,11 +183,13 @@ export function AccountSecurityPanel() {
                 <div className="rounded-lg border border-border bg-background p-4" key={session.sessionId}>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {session.isCurrent ? "当前设备" : "其他设备"}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">{session.ipAddress || "未知 IP"}</p>
-                      <p className="mt-1 break-all text-xs text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold text-foreground">{session.isCurrent ? "当前设备" : "其他设备"}</p>
+                        <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] text-muted-foreground">
+                          {session.ipAddress || "未知 IP"}
+                        </span>
+                      </div>
+                      <p className="mt-2 break-all text-xs text-muted-foreground">
                         {session.userAgent || "未知 User-Agent"}
                       </p>
                     </div>

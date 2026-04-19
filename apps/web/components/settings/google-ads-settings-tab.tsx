@@ -13,9 +13,11 @@ export function GoogleAdsSettingsTab({
   return (
     <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm" id="google-ads-settings">
       <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-primary">Google Ads API</p>
-          <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">OAuth 凭证配置</h3>
+        <div className="flex flex-wrap items-center gap-3">
+          <h3 className="text-sm font-semibold text-foreground">Google Ads 凭证</h3>
+          <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+            {googleAdsConfig.hasRefreshToken ? "oauth" : "setup"}
+          </span>
         </div>
         <button
           className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
@@ -26,11 +28,20 @@ export function GoogleAdsSettingsTab({
         </button>
       </div>
 
-      <div className="mt-4 grid gap-3 rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground lg:grid-cols-3">
-        <p>基础项完成度：{overview.googleAdsBaseConfigCount} / 4</p>
-        <p>OAuth 状态：{googleAdsConfig.hasRefreshToken ? "已授权" : "未授权"}</p>
-        <p>最近验证：{googleAdsConfig.lastVerifiedAt || "尚未验证"}</p>
-      </div>
+      <dl className="mt-4 grid gap-3 rounded-xl border border-border bg-muted/30 p-4 text-sm lg:grid-cols-3">
+        <div>
+          <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">基础项</dt>
+          <dd className="mt-1 font-medium text-foreground">{overview.googleAdsBaseConfigCount} / 4</dd>
+        </div>
+        <div>
+          <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">OAuth</dt>
+          <dd className="mt-1 font-medium text-foreground">{googleAdsConfig.hasRefreshToken ? "已授权" : "未授权"}</dd>
+        </div>
+        <div>
+          <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">最近验证</dt>
+          <dd className="mt-1 font-medium text-foreground">{googleAdsConfig.lastVerifiedAt || "--"}</dd>
+        </div>
+      </dl>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <label className="block text-sm font-medium text-foreground">
@@ -82,14 +93,36 @@ export function GoogleAdsSettingsTab({
         </label>
       </div>
 
-      <div className="mt-4 grid gap-3 rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground lg:grid-cols-3">
-        <p>Client ID：{googleAdsConfig.hasClientId ? "已保存" : "未配置"}</p>
-        <p>Client Secret：{googleAdsConfig.hasClientSecret ? "已保存" : "未配置"}</p>
-        <p>Developer Token：{googleAdsConfig.hasDeveloperToken ? "已保存" : "未配置"}</p>
-        <p>Refresh Token：{googleAdsConfig.hasRefreshToken ? "已获取" : "未授权"}</p>
-        <p>最近验证：{googleAdsConfig.lastVerifiedAt || "尚未验证"}</p>
-        <p>Token 过期：{googleAdsConfig.tokenExpiresAt || "未获取"}</p>
-      </div>
+      <dl className="mt-4 grid gap-3 rounded-xl border border-border bg-muted/30 p-4 text-sm lg:grid-cols-3">
+        <div>
+          <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Client ID</dt>
+          <dd className="mt-1 font-medium text-foreground">{googleAdsConfig.hasClientId ? "已保存" : "未配置"}</dd>
+        </div>
+        <div>
+          <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Client Secret</dt>
+          <dd className="mt-1 font-medium text-foreground">
+            {googleAdsConfig.hasClientSecret ? "已保存" : "未配置"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Developer Token</dt>
+          <dd className="mt-1 font-medium text-foreground">
+            {googleAdsConfig.hasDeveloperToken ? "已保存" : "未配置"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Refresh Token</dt>
+          <dd className="mt-1 font-medium text-foreground">{googleAdsConfig.hasRefreshToken ? "已获取" : "未授权"}</dd>
+        </div>
+        <div>
+          <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">最近验证</dt>
+          <dd className="mt-1 font-medium text-foreground">{googleAdsConfig.lastVerifiedAt || "--"}</dd>
+        </div>
+        <div>
+          <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Token 过期</dt>
+          <dd className="mt-1 font-medium text-foreground">{googleAdsConfig.tokenExpiresAt || "--"}</dd>
+        </div>
+      </dl>
 
       <div className="mt-4 flex flex-wrap gap-3">
         <button
