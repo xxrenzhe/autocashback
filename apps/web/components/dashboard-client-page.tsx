@@ -17,7 +17,7 @@ import {
   WalletCards
 } from "lucide-react";
 
-import { CardSkeleton, EmptyState, PageHeader, ShortcutCard, StatCard, StatSkeleton, cn } from "@autocashback/ui";
+import { EmptyState, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import type {
@@ -52,13 +52,25 @@ function ActionCard({ item }: { item: DashboardActionItem }) {
   const Icon = resolveActionIcon(item.href);
 
   return (
-    <Link href={item.href}>
-      <ShortcutCard
-        icon={Icon}
-        title={item.title}
-        tone={item.tone}
-        trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-      />
+    <Link
+      className="group flex items-center justify-between gap-4 rounded-lg border border-border bg-background px-3 py-2.5 text-sm transition hover:bg-muted/40"
+      href={item.href}
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        <span
+          className={cn(
+            "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg",
+            item.tone === "amber" ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"
+          )}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate font-semibold text-foreground">{item.title}</span>
+          <span className="block truncate text-xs text-muted-foreground">{item.description}</span>
+        </span>
+      </span>
+      <ArrowRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition group-hover:text-primary" />
     </Link>
   );
 }
@@ -71,24 +83,23 @@ function RiskCard({ item }: { item: DashboardRiskItem }) {
   } as const;
 
   return (
-    <Link className="rounded-xl border border-border bg-background p-4 transition hover:bg-muted/40" href={item.href}>
-      <div className="flex items-start gap-3">
-        <span
-          className={cn(
-            "mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg",
-            severityStyles[item.severity]
-          )}
-        >
+    <Link
+      className="group flex items-center justify-between gap-4 rounded-lg border border-border bg-background px-3 py-2.5 transition hover:bg-muted/40"
+      href={item.href}
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        <span className={cn("flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg", severityStyles[item.severity])}>
           {item.severity === "low" ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
         </span>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-foreground">{item.title}</p>
-            <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground/80">{item.severity}</span>
-          </div>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
-        </div>
-      </div>
+        <span className="min-w-0">
+          <span className="flex items-center gap-2">
+            <span className="truncate text-sm font-semibold text-foreground">{item.title}</span>
+            <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{item.severity}</span>
+          </span>
+          <span className="block truncate text-xs text-muted-foreground">{item.description}</span>
+        </span>
+      </span>
+      <ArrowRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition group-hover:text-primary" />
     </Link>
   );
 }
@@ -98,23 +109,17 @@ function RunCard({ run }: { run: DashboardRecentRun }) {
     run.status === "success" ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive";
 
   return (
-    <div className="rounded-xl border border-border bg-muted/40 p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-background text-primary shadow-sm">
-              <Boxes className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-foreground">Offer #{run.offerId}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(run.createdAt)}</p>
-            </div>
-          </div>
-          <p className="mt-4 break-all text-sm leading-6 text-muted-foreground">
-            {run.resolvedSuffix || run.errorMessage || "本次执行未返回 suffix。"}
-          </p>
-        </div>
-        <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", statusStyles)}>
+    <div className="grid gap-3 rounded-lg border border-border bg-background px-3 py-2.5 text-sm md:grid-cols-[120px,120px,1fr] md:items-center">
+      <div>
+        <p className="font-semibold text-foreground">Offer #{run.offerId}</p>
+        <p className="mt-1 text-xs text-muted-foreground md:hidden">{formatDateTime(run.createdAt)}</p>
+      </div>
+      <div className="hidden text-xs text-muted-foreground md:block">{formatDateTime(run.createdAt)}</div>
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <p className="truncate text-xs text-muted-foreground">
+          {run.resolvedSuffix || run.errorMessage || "未返回 suffix"}
+        </p>
+        <span className={cn("inline-flex flex-shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold", statusStyles)}>
           {run.status === "success" ? "成功" : "失败"}
         </span>
       </div>
@@ -122,24 +127,49 @@ function RunCard({ run }: { run: DashboardRecentRun }) {
   );
 }
 
+function DashboardMetric({
+  label,
+  value,
+  tone = "default"
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "success" | "warning";
+}) {
+  const toneClassName =
+    tone === "success"
+      ? "border-emerald-200 bg-emerald-500/10 text-emerald-700"
+      : tone === "warning"
+        ? "border-amber-200 bg-amber-500/10 text-amber-700"
+        : "border-border bg-card text-foreground";
+
+  return (
+    <div className={cn("rounded-xl border px-4 py-3", toneClassName)}>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+    </div>
+  );
+}
+
 function LoadingState() {
   return (
-    <div className="space-y-6">
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-        <div className="h-8 w-48 animate-pulse rounded-full bg-primary/10" />
-        <div className="mt-4 h-4 w-80 animate-pulse rounded-full bg-muted" />
+    <div className="space-y-4">
+      <section className="flex items-center justify-between gap-4">
+        <div>
+          <div className="h-7 w-40 animate-pulse rounded-full bg-primary/10" />
+          <div className="mt-3 h-4 w-64 animate-pulse rounded-full bg-muted" />
+        </div>
+        <div className="h-9 w-20 animate-pulse rounded-lg bg-muted" />
       </section>
-      <section className="grid gap-4 xl:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <StatSkeleton key={index} />
+          <div className="h-24 animate-pulse rounded-xl border border-border bg-card" key={index} />
         ))}
       </section>
-      <section className="grid gap-5 xl:grid-cols-[0.95fr,1.05fr]">
-        <div className="space-y-6">
-          <CardSkeleton />
-          <CardSkeleton />
-        </div>
-        <CardSkeleton className="min-h-64" />
+      <section className="grid gap-4 xl:grid-cols-[0.9fr,1.1fr]">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div className="min-h-40 animate-pulse rounded-xl border border-border bg-card" key={index} />
+        ))}
       </section>
     </div>
   );
@@ -205,49 +235,52 @@ export function DashboardClientPage({ username }: { username: string }) {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        actions={
-          <button
-            className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-50"
-            disabled={refreshing}
-            onClick={() => void loadSummary(true)}
-            type="button"
-          >
-            <RefreshCcw className={cn("h-3.5 w-3.5", refreshing ? "animate-spin" : "")} />
-            {refreshing ? "刷新中" : "刷新"}
-          </button>
-        }
-        title={`${username}，今日概览`}
-      />
-
-      <section className="grid gap-4 xl:grid-cols-4">
-        <StatCard label="启用中 Offer" tone="emerald" value={`${data.overview.activeOffers}`} />
-        <StatCard label="启用中换链任务" tone="slate" value={`${data.overview.activeTasks}`} />
-        <StatCard
-          label="最近成功率"
-          tone={data.overview.successRate >= 80 ? "emerald" : "amber"}
-          value={`${data.overview.successRate}%`}
-        />
-        <StatCard label="佣金预警" tone="amber" value={`${data.overview.warningOffers}`} />
+    <div className="space-y-4">
+      <section className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">仪表盘</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {username} · {data.overview.activeOffers} 个启用 Offer · {data.overview.activeTasks} 个换链任务
+          </p>
+        </div>
+        <button
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-50"
+          disabled={refreshing}
+          onClick={() => void loadSummary(true)}
+          type="button"
+        >
+          <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
+          {refreshing ? "刷新中" : "刷新"}
+        </button>
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[0.95fr,1.05fr]">
-        <div className="space-y-6">
-          <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <DashboardMetric label="启用 Offer" tone="success" value={`${data.overview.activeOffers}`} />
+        <DashboardMetric label="换链任务" value={`${data.overview.activeTasks}`} />
+        <DashboardMetric
+          label="最近成功率"
+          tone={data.overview.successRate >= 80 ? "success" : "warning"}
+          value={`${data.overview.successRate}%`}
+        />
+        <DashboardMetric label="佣金预警" tone="warning" value={`${data.overview.warningOffers}`} />
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[0.9fr,1.1fr]">
+        <div className="space-y-4">
+          <div className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">行动</p>
-            <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">当前优先处理项</h3>
-            <div className="mt-5 grid gap-3">
+            <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">当前优先处理项</h3>
+            <div className="mt-4 grid gap-2">
               {data.actions.map((item) => (
                 <ActionCard item={item} key={item.id} />
               ))}
             </div>
           </div>
 
-          <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
+          <div className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">风险</p>
-            <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">需要留意的问题</h3>
-            <div className="mt-5 space-y-3">
+            <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">需要留意的问题</h3>
+            <div className="mt-4 space-y-2">
               {data.risks.map((item) => (
                 <RiskCard item={item} key={item.id} />
               ))}
@@ -255,11 +288,11 @@ export function DashboardClientPage({ username }: { username: string }) {
           </div>
         </div>
 
-        <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
+        <div className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">执行记录</p>
-              <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">最近 5 条换链结果</h3>
+              <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">最近 5 条换链结果</h3>
             </div>
             <Link
               className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/40"
@@ -270,7 +303,7 @@ export function DashboardClientPage({ username }: { username: string }) {
             </Link>
           </div>
 
-          <div className="mt-5 space-y-3">
+          <div className="mt-4 space-y-2">
             {data.recentRuns.length ? (
               data.recentRuns.map((run) => <RunCard key={run.id} run={run} />)
             ) : (
