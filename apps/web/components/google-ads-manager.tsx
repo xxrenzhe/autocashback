@@ -365,9 +365,9 @@ export function GoogleAdsManager() {
 
       <section className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">OAuth 状态</p>
-            <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">连接进度</h2>
+          <div className="space-y-1">
+            <h2 className="text-sm font-semibold text-foreground">连接进度</h2>
+            <p className="text-xs text-muted-foreground">基础配置、OAuth、验证与账号同步。</p>
           </div>
           <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
             {currentOauthStep === -1 ? "已完成" : `Step ${currentOauthStep + 1}`}
@@ -410,12 +410,26 @@ export function GoogleAdsManager() {
           })}
         </ol>
 
-        <div className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2 xl:grid-cols-4">
-          <p>基础配置：{credentials?.hasCredentials ? "已保存" : "未完成"}</p>
-          <p>Refresh Token：{credentials?.hasRefreshToken ? "已获取" : "未授权"}</p>
-          <p>最近验证：{credentials?.lastVerifiedAt || "尚未验证"}</p>
-          <p>Token 过期：{credentials?.tokenExpiresAt || "未获取"}</p>
-        </div>
+        <dl className="mt-4 grid gap-3 rounded-xl border border-border/70 bg-muted/20 p-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">基础配置</dt>
+            <dd className="mt-1 font-medium text-foreground">{credentials?.hasCredentials ? "已保存" : "未完成"}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Refresh Token</dt>
+            <dd className="mt-1 font-medium text-foreground">
+              {credentials?.hasRefreshToken ? "已获取" : "未授权"}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">最近验证</dt>
+            <dd className="mt-1 font-medium text-foreground">{credentials?.lastVerifiedAt || "--"}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Token 过期</dt>
+            <dd className="mt-1 font-medium text-foreground">{credentials?.tokenExpiresAt || "--"}</dd>
+          </div>
+        </dl>
 
         {!hasStoredConfig ? (
           <div className="mt-4 rounded-lg border border-amber-200 bg-amber-500/10 px-4 py-3 text-sm text-amber-800">
@@ -527,9 +541,9 @@ export function GoogleAdsManager() {
 
       <section className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">诊断工具</p>
-            <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">Google Ads OAuth / MCC 诊断</h3>
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold text-foreground">OAuth / MCC 诊断</h3>
+            <p className="text-xs text-muted-foreground">快速判断 OAuth、MCC 和账号读取异常。</p>
           </div>
           <div className="flex flex-wrap gap-3">
             <input
@@ -559,48 +573,77 @@ export function GoogleAdsManager() {
             </div>
 
             {diagnoseResult.probe?.error ? (
-              <div className="rounded-xl border border-amber-200 bg-amber-500/10 p-5 text-sm text-amber-800">
-                <p className="font-semibold">探测 Customer ID 失败</p>
-                <p className="mt-2">{diagnoseResult.probe.error.code}</p>
-                {diagnoseResult.probe.error.hint ? <p className="mt-2">{diagnoseResult.probe.error.hint}</p> : null}
+              <div className="rounded-lg border border-amber-200 bg-amber-500/10 px-4 py-3 text-sm text-amber-800">
+                <p className="font-semibold">探测 Customer ID 失败 · {diagnoseResult.probe.error.code}</p>
+                {diagnoseResult.probe.error.hint ? <p className="mt-1">{diagnoseResult.probe.error.hint}</p> : null}
               </div>
             ) : null}
 
-            <div className="grid gap-3">
-              {diagnoseResult.customers.map((customer) => (
-                <div className="rounded-xl border border-border bg-muted/30 p-4" key={customer.customerId}>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {customer.descriptiveName || `Customer ${customer.customerId}`}
-                      </p>
-                      <p className="mt-1 font-mono tabular-nums text-xs text-muted-foreground">{customer.customerId}</p>
-                    </div>
-                    <span
-                      className={cn(
-                        "rounded-full px-3 py-1 text-xs font-semibold",
-                        customer.ok ? "bg-emerald-50 text-emerald-700" : "bg-destructive/10 text-destructive"
-                      )}
-                    >
-                      {customer.ok ? "读取成功" : customer.error?.code || "失败"}
-                    </span>
-                  </div>
-
-                  {customer.ok ? (
-                    <div className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-                      <p>Manager：{customer.manager ? "是" : "否"}</p>
-                      <p>Test Account：{customer.testAccount ? "是" : "否"}</p>
-                      <p>币种：{customer.currencyCode || "--"}</p>
-                      <p>时区：{customer.timeZone || "--"}</p>
-                    </div>
-                  ) : (
-                    <div className="mt-4 rounded-lg border border-red-100 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                      <p>{customer.error?.message || "未知错误"}</p>
-                      {customer.error?.hint ? <p className="mt-2">{customer.error.hint}</p> : null}
-                    </div>
-                  )}
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border/70 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                    <th className="pb-3">账号</th>
+                    <th className="pb-3">状态</th>
+                    <th className="pb-3">类型</th>
+                    <th className="pb-3">币种 / 时区</th>
+                    <th className="pb-3">备注</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {diagnoseResult.customers.map((customer) => (
+                    <tr className="border-b border-border/40 align-top" key={customer.customerId}>
+                      <td className="py-4 pr-4">
+                        <p className="font-semibold text-foreground">
+                          {customer.descriptiveName || `Customer ${customer.customerId}`}
+                        </p>
+                        <p className="mt-1 font-mono tabular-nums text-xs text-muted-foreground">{customer.customerId}</p>
+                      </td>
+                      <td className="py-4 pr-4">
+                        <span
+                          className={cn(
+                            "rounded-full px-3 py-1 text-xs font-semibold",
+                            customer.ok ? "bg-emerald-50 text-emerald-700" : "bg-destructive/10 text-destructive"
+                          )}
+                        >
+                          {customer.ok ? "读取成功" : customer.error?.code || "失败"}
+                        </span>
+                      </td>
+                      <td className="py-4 pr-4 text-foreground">
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <span
+                            className={cn(
+                              "rounded-full px-3 py-1 font-semibold",
+                              customer.manager ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"
+                            )}
+                          >
+                            {customer.manager ? "Manager" : "Customer"}
+                          </span>
+                          {customer.testAccount ? (
+                            <span className="rounded-full bg-stone-200 px-3 py-1 font-semibold text-foreground">
+                              Test
+                            </span>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="py-4 pr-4 text-foreground">
+                        <p>{customer.currencyCode || "--"}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{customer.timeZone || "--"}</p>
+                      </td>
+                      <td className="py-4 text-sm text-muted-foreground">
+                        {customer.ok ? (
+                          customer.status || "--"
+                        ) : (
+                          <div className="max-w-md space-y-1">
+                            <p className="text-destructive">{customer.error?.message || "未知错误"}</p>
+                            {customer.error?.hint ? <p>{customer.error.hint}</p> : null}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         ) : null}
@@ -611,9 +654,9 @@ export function GoogleAdsManager() {
 
 function InfoCard(props: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-border bg-muted/30 p-4">
-      <p className="text-sm text-muted-foreground">{props.label}</p>
-      <p className="mt-3 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{props.value}</p>
+    <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
+      <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{props.label}</p>
+      <p className="mt-2 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{props.value}</p>
     </div>
   );
 }

@@ -266,33 +266,47 @@ export function DashboardClientPage({ username }: { username: string }) {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.9fr,1.1fr]">
-        <div className="space-y-4">
-          <div className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">行动</p>
-            <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">当前优先处理项</h3>
-            <div className="mt-4 grid gap-2">
-              {data.actions.map((item) => (
-                <ActionCard item={item} key={item.id} />
-              ))}
-            </div>
-          </div>
+        <div className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
+          <div className="grid gap-5 xl:grid-cols-2">
+            <section>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-foreground">优先处理</h3>
+                <span className="rounded-full bg-muted px-2.5 py-1 font-mono tabular-nums text-xs text-muted-foreground">
+                  {data.actions.length}
+                </span>
+              </div>
+              <div className="mt-3 grid gap-2">
+                {data.actions.length ? (
+                  data.actions.map((item) => <ActionCard item={item} key={item.id} />)
+                ) : (
+                  <EmptyState icon={CheckCircle2} title="暂无待处理动作" />
+                )}
+              </div>
+            </section>
 
-          <div className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">风险</p>
-            <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">需要留意的问题</h3>
-            <div className="mt-4 space-y-2">
-              {data.risks.map((item) => (
-                <RiskCard item={item} key={item.id} />
-              ))}
-            </div>
+            <section className="border-t border-border pt-5 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-foreground">风险提醒</h3>
+                <span className="rounded-full bg-muted px-2.5 py-1 font-mono tabular-nums text-xs text-muted-foreground">
+                  {data.risks.length}
+                </span>
+              </div>
+              <div className="mt-3 space-y-2">
+                {data.risks.length ? (
+                  data.risks.map((item) => <RiskCard item={item} key={item.id} />)
+                ) : (
+                  <EmptyState icon={CheckCircle2} title="暂无风险项" />
+                )}
+              </div>
+            </section>
           </div>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">执行记录</p>
-              <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">最近 5 条换链结果</h3>
+              <h3 className="text-sm font-semibold text-foreground">最近换链结果</h3>
+              <p className="mt-1 text-xs text-muted-foreground">最近 5 条执行记录</p>
             </div>
             <Link
               className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/40"

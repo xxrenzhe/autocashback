@@ -8,8 +8,7 @@ import {
   Link2,
   Radar,
   ShieldCheck,
-  WalletCards,
-  Workflow
+  WalletCards
 } from "lucide-react";
 
 import { BrandMark } from "@/components/brand-mark";
@@ -226,21 +225,10 @@ export default function MarketingHomePage() {
           })}
         </section>
 
-        <section className="grid gap-4 py-6 lg:grid-cols-[1.08fr,0.92fr]">
+        <section className="py-6" id="faq">
           <div className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
-            <div className="flex items-center gap-3">
-              <Workflow className="h-4 w-4 text-primary" />
-              <h2 className="text-base font-semibold tracking-tight text-foreground">为什么更接近日常运营</h2>
-            </div>
-            <div className="mt-4 space-y-3 text-sm leading-7 text-muted-foreground">
-              <p>如果团队仍在多个表格、聊天和临时文档之间切换，最容易出现链接漏改、佣金状态不同步和交接信息丢失。</p>
-              <p>AutoCashBack 的重点不是展示更多卡片，而是让账号、Offer、佣金和换链动作回到同一套固定工作流里。</p>
-            </div>
-          </div>
-
-          <div className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm" id="faq">
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">常见问题</p>
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 grid gap-3 lg:grid-cols-3">
               {faqItems.map((item) => (
                 <article className="rounded-lg border border-border bg-background px-4 py-3" key={item.question}>
                   <h3 className="text-sm font-semibold text-foreground">{item.question}</h3>
