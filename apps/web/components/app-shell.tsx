@@ -7,7 +7,6 @@ import {
   Boxes,
   ChevronLeft,
   ChevronRight,
-  Circle,
   LayoutDashboard,
   Link2,
   ListOrdered,
@@ -62,33 +61,16 @@ function NavSection({
   items,
   label,
   pathname,
-  collapsed,
-  variant = "default"
+  collapsed
 }: {
   items: NavItem[];
   label: string;
   pathname: string;
   collapsed: boolean;
-  variant?: "admin" | "default";
 }) {
-  const activeClassName =
-    variant === "admin"
-      ? "bg-violet-500/10 text-violet-700"
-      : "bg-primary/10 text-primary";
-  const iconActiveClassName = variant === "admin" ? "text-violet-700" : "text-primary";
-  const labelClassName =
-    variant === "admin"
-      ? "flex items-center gap-2 px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-violet-700"
-      : "px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider";
-
   return (
     <div>
-      {!collapsed ? (
-        <p className={labelClassName}>
-          {variant === "admin" ? <Shield className="h-3 w-3" /> : null}
-          {label}
-        </p>
-      ) : null}
+      {!collapsed ? <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p> : null}
       <nav className="space-y-1">
         {items.map((item) => {
           const Icon = item.icon;
@@ -99,16 +81,16 @@ function NavSection({
               key={item.href}
               href={item.href}
               className={cn(
-                "group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 collapsed ? "justify-center" : "gap-3",
-                active ? activeClassName : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                active ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
               )}
               title={collapsed ? item.label : undefined}
             >
               <Icon
                 className={cn(
                   "h-4 w-4 flex-shrink-0",
-                  active ? iconActiveClassName : "text-muted-foreground group-hover:text-foreground"
+                  active ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
                 )}
                 aria-hidden="true"
               />
@@ -136,6 +118,9 @@ export function AppShell({
   const displayName = user.username || user.email;
   const userInitial = displayName.slice(0, 1).toUpperCase();
   const roleLabel = roleLabels[user.role] ?? user.role;
+  const currentNavItem = [...userLinks, ...(user.role === "admin" ? adminLinks : [])].find((item) =>
+    isActivePath(pathname, item.href)
+  );
   useEffect(() => {
     setMobileNavOpen(false);
   }, [pathname]);
@@ -182,15 +167,15 @@ export function AppShell({
 
   const healthMeta = {
     healthy: {
-      className: "text-primary",
+      className: "text-emerald-700",
       label: "系统健康"
     },
     loading: {
-      className: "text-slate-300",
-      label: "正在检查系统状态"
+      className: "text-muted-foreground",
+      label: "检查中"
     },
     stale: {
-      className: "text-amber-500",
+      className: "text-amber-700",
       label: "调度心跳延迟"
     },
     unhealthy: {
@@ -200,7 +185,7 @@ export function AppShell({
   }[healthStatus];
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-background">
       <Toaster position="bottom-right" richColors />
       {/* Mobile Nav Overlay */}
       {mobileNavOpen ? (
@@ -252,13 +237,7 @@ export function AppShell({
             <NavSection collapsed={!sidebarOpen} items={userLinks} label="运营中心" pathname={pathname} />
 
             {user.role === "admin" ? (
-              <NavSection
-                collapsed={!sidebarOpen}
-                items={adminLinks}
-                label="系统管理"
-                pathname={pathname}
-                variant="admin"
-              />
+              <NavSection collapsed={!sidebarOpen} items={adminLinks} label="系统管理" pathname={pathname} />
             ) : null}
           </div>
 
@@ -266,7 +245,7 @@ export function AppShell({
             <Link
               href="/settings#account-security-settings"
               className={cn(
-                "mb-2 flex items-center rounded-md px-3 py-2 transition-colors hover:bg-muted",
+                "mb-2 flex items-center rounded-lg px-3 py-2 transition-colors hover:bg-muted/70",
                 sidebarOpen ? "justify-between" : "justify-center"
               )}
               title={!sidebarOpen ? "打开账号设置" : undefined}
@@ -286,7 +265,7 @@ export function AppShell({
 
             <button
               className={cn(
-                "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive",
+                "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive",
                 sidebarOpen ? "gap-3" : "justify-center"
               )}
               onClick={logout}
@@ -319,14 +298,13 @@ export function AppShell({
             >
               {sidebarOpen ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
             </button>
+            <div className="hidden min-w-0 lg:block">
+              <p className="truncate text-sm font-medium text-foreground">{currentNavItem?.label || "控制台"}</p>
+            </div>
           </div>
           <div className="flex items-center gap-3">
-            <span
-              aria-label={healthMeta.label}
-              className="inline-flex h-2.5 w-2.5 rounded-full"
-              title={healthMeta.label}
-            >
-              <Circle className={cn("h-2.5 w-2.5 fill-current", healthMeta.className)} />
+            <span className={cn("rounded-full bg-muted px-2.5 py-1 text-xs font-medium", healthMeta.className)} title={healthMeta.label}>
+              {healthMeta.label}
             </span>
           </div>
         </header>
