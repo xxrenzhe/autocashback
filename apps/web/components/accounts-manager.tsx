@@ -12,10 +12,8 @@ import {
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   CirclePlus,
-  CreditCard,
   RefreshCcw,
   Search,
-  Target,
   WalletCards
 } from "lucide-react";
 
@@ -25,7 +23,7 @@ import {
   type CashbackAccount,
   type OfferRecord
 } from "@autocashback/domain";
-import { EmptyState, PageHeader, StatCard, StatusBadge, TableSkeleton, cn } from "@autocashback/ui";
+import { EmptyState, StatusBadge, TableSkeleton, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { fetchJson } from "@/lib/api-error-handler";
@@ -60,6 +58,30 @@ const sortOptions: Array<{ value: AccountsConsoleSort; label: string }> = [
   { value: "platform", label: "按平台" },
   { value: "linked-offers", label: "按挂接 Offer 数" }
 ];
+
+function AccountMetric({
+  label,
+  value,
+  tone = "default"
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "warning" | "success";
+}) {
+  const toneClassName =
+    tone === "warning"
+      ? "border-amber-200 bg-amber-500/10 text-amber-700"
+      : tone === "success"
+        ? "border-emerald-200 bg-emerald-500/10 text-emerald-700"
+        : "border-border bg-card text-foreground";
+
+  return (
+    <div className={cn("rounded-xl border px-4 py-3", toneClassName)}>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+    </div>
+  );
+}
 
 export function AccountsManager() {
   const [accounts, setAccounts] = useState<CashbackAccount[]>([]);
@@ -300,139 +322,126 @@ export function AccountsManager() {
   );
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        actions={
-          <div className="flex flex-wrap gap-3">
-            <button
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
-              onClick={startCreateAccount}
-              type="button"
-            >
-              <CirclePlus className="h-4 w-4" />
-              新建账号
-            </button>
-            <button
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
-              disabled={refreshing}
-              onClick={() => void loadData({ background: true, preserveNotice: true })}
-              type="button"
-            >
-              <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
-              {refreshing ? "刷新中…" : "刷新列表"}
-            </button>
-          </div>
-        }
-        eyebrow="Accounts"
-        title={
-          <span className="flex flex-wrap items-center gap-3">
-            <span>返利账号控制台</span>
-            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              {allConsole.overview.totalAccounts} accounts
+    <div className="space-y-5">
+      <section className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">返利账号</h1>
+            <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+              {allConsole.overview.totalAccounts}
             </span>
-          </span>
-        }
-      />
+          </div>
+          <p className="text-sm text-muted-foreground">按平台、状态、提现方式和挂接规模筛选。</p>
+        </div>
 
-      <section className="grid gap-4 xl:grid-cols-4">
-        <StatCard icon={CreditCard} label="启用账号" tone="emerald" value={String(allConsole.overview.activeAccounts)} />
-        <StatCard
-          icon={CreditCard}
-          label="暂停账号"
-          tone={allConsole.overview.pausedAccounts > 0 ? "amber" : "emerald"}
-          value={String(allConsole.overview.pausedAccounts)}
-        />
-        <StatCard icon={Target} label="挂接 Offer" tone="slate" value={String(allConsole.overview.linkedOfferCount)} />
-        <StatCard icon={WalletCards} label="平台覆盖" tone="emerald" value={String(allConsole.overview.platformCount)} />
+        <div className="flex flex-wrap items-center gap-2">
+          {allConsole.overview.pausedAccounts > 0 ? (
+            <button
+              className="rounded-full bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-700"
+              onClick={() => setStatusFilter("paused")}
+              type="button"
+            >
+              已暂停 {allConsole.overview.pausedAccounts}
+            </button>
+          ) : null}
+          <button
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
+            disabled={refreshing}
+            onClick={() => void loadData({ background: true, preserveNotice: true })}
+            type="button"
+          >
+            <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
+            {refreshing ? "刷新中…" : "刷新"}
+          </button>
+          <button
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
+            onClick={startCreateAccount}
+            type="button"
+          >
+            <CirclePlus className="h-4 w-4" />
+            新建账号
+          </button>
+        </div>
       </section>
 
-      <section className="space-y-6">
-          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">筛选</p>
-                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按平台、状态和挂接规模筛选账号</h3>
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AccountMetric label="启用账号" tone="success" value={String(allConsole.overview.activeAccounts)} />
+        <AccountMetric
+          label="暂停账号"
+          tone={allConsole.overview.pausedAccounts > 0 ? "warning" : "success"}
+          value={String(allConsole.overview.pausedAccounts)}
+        />
+        <AccountMetric label="挂接 Offer" value={String(allConsole.overview.linkedOfferCount)} />
+        <AccountMetric label="平台覆盖" tone="success" value={String(allConsole.overview.platformCount)} />
+      </section>
+
+      <section className="overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div className="border-b border-border/70 px-5 py-4">
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))_auto]">
+            <label className="block text-sm font-medium text-foreground">
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
+                <Search className="h-4 w-4 text-muted-foreground/80" />
+                <input
+                  className="w-full bg-transparent text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground/80"
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="账号名、邮箱、备注、域名"
+                  value={searchQuery}
+                />
               </div>
-              {hasActiveFilters ? (
-                <button
-                  className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
-                  onClick={clearFilters}
-                  type="button"
-                >
-                  清空筛选
-                </button>
-              ) : null}
-            </div>
+            </label>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <label className="block text-sm font-medium text-foreground md:col-span-2 xl:col-span-1">
-                搜索账号
-                <div className="mt-2 flex items-center gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
-                  <Search className="h-4 w-4 text-muted-foreground/80" />
-                  <input
-                    className="w-full bg-transparent text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground/80"
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    placeholder="账号名、邮箱、备注、域名"
-                    value={searchQuery}
-                  />
-                </div>
-              </label>
+            <label className="block text-sm font-medium text-foreground">
+              <select
+                className="h-10 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
+                onChange={(event) =>
+                  setPlatformFilter(event.target.value as CashbackAccount["platformCode"] | "all")
+                }
+                value={platformFilter}
+              >
+                <option value="all">全部平台</option>
+                {PLATFORM_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-              <label className="block text-sm font-medium text-foreground">
-                平台
+            <label className="block text-sm font-medium text-foreground">
+              <select
+                className="h-10 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
+                onChange={(event) =>
+                  setStatusFilter(event.target.value as CashbackAccount["status"] | "all")
+                }
+                value={statusFilter}
+              >
+                <option value="all">全部状态</option>
+                <option value="active">启用中</option>
+                <option value="paused">已暂停</option>
+              </select>
+            </label>
+
+            <label className="block text-sm font-medium text-foreground">
+              <select
+                className="h-10 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
+                onChange={(event) =>
+                  setPayoutFilter(event.target.value as CashbackAccount["payoutMethod"] | "all")
+                }
+                value={payoutFilter}
+              >
+                <option value="all">全部提现方式</option>
+                {PAYOUT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="flex items-center gap-2 xl:justify-end">
+              <label className="block min-w-0 flex-1 text-sm font-medium text-foreground xl:max-w-[180px]">
                 <select
-                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
-                  onChange={(event) =>
-                    setPlatformFilter(event.target.value as CashbackAccount["platformCode"] | "all")
-                  }
-                  value={platformFilter}
-                >
-                  <option value="all">全部平台</option>
-                  {PLATFORM_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="block text-sm font-medium text-foreground">
-                状态
-                <select
-                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
-                  onChange={(event) =>
-                    setStatusFilter(event.target.value as CashbackAccount["status"] | "all")
-                  }
-                  value={statusFilter}
-                >
-                  <option value="all">全部状态</option>
-                  <option value="active">启用中</option>
-                  <option value="paused">已暂停</option>
-                </select>
-              </label>
-
-              <label className="block text-sm font-medium text-foreground">
-                提现方式
-                <select
-                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
-                  onChange={(event) =>
-                    setPayoutFilter(event.target.value as CashbackAccount["payoutMethod"] | "all")
-                  }
-                  value={payoutFilter}
-                >
-                  <option value="all">全部提现方式</option>
-                  {PAYOUT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="block text-sm font-medium text-foreground">
-                排序
-                <select
-                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
+                  className="h-10 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                   onChange={(event) => setSort(event.target.value as AccountsConsoleSort)}
                   value={sort}
                 >
@@ -443,19 +452,32 @@ export function AccountsManager() {
                   ))}
                 </select>
               </label>
+              {hasActiveFilters ? (
+                <button
+                  className="h-10 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground"
+                  onClick={clearFilters}
+                  type="button"
+                >
+                  清空
+                </button>
+              ) : null}
             </div>
-          </section>
+          </div>
+        </div>
 
-          <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
-            <div className="border-b border-border/70 p-5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">账号列表</p>
-              <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按平台、角色和挂接规模管理账号</h3>
-            </div>
+        <div className="flex flex-col gap-2 border-b border-border/70 bg-muted/20 px-5 py-3 text-sm lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
+            <span className="font-medium text-foreground">结果 {consoleData.rows.length}</span>
+            <span>挂接 Offer {allConsole.overview.linkedOfferCount}</span>
+            <span>平台覆盖 {allConsole.overview.platformCount}</span>
+          </div>
+          <p className="text-xs text-muted-foreground">账号创建与编辑仍使用右侧抽屉。</p>
+        </div>
 
-            {loading ? (
-              <TableSkeleton className="m-5" rows={6} />
-            ) : consoleData.rows.length ? (
-              <div className="overflow-x-auto p-5">
+        {loading ? (
+          <TableSkeleton className="m-5" rows={6} />
+        ) : consoleData.rows.length ? (
+          <div className="overflow-x-auto p-5">
                 <table className="min-w-full text-left text-sm">
                   <thead className="text-muted-foreground font-medium text-xs border-b border-border sticky top-0 bg-background/95 backdrop-blur z-10">
                     <tr>
@@ -538,54 +560,96 @@ export function AccountsManager() {
                     })}
                   </tbody>
                 </table>
+          </div>
+        ) : (
+          <EmptyState
+            action={
+              <div className="flex flex-wrap justify-center gap-3">
+                {hasActiveFilters ? (
+                  <button
+                    className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
+                    onClick={clearFilters}
+                    type="button"
+                  >
+                    清空筛选
+                  </button>
+                ) : null}
+                <button
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
+                  onClick={startCreateAccount}
+                  type="button"
+                >
+                  新建账号
+                </button>
               </div>
-            ) : (
-              <EmptyState
-                action={
-                  <div className="flex flex-wrap justify-center gap-3">
-                    {hasActiveFilters ? (
-                      <button
-                        className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
-                        onClick={clearFilters}
-                        type="button"
-                      >
-                        清空筛选
-                      </button>
-                    ) : null}
-                    <button
-                      className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
-                      onClick={startCreateAccount}
-                      type="button"
-                    >
-                      新建账号
-                    </button>
-                  </div>
-                }
-                icon={WalletCards}
-                title={hasActiveFilters ? "当前筛选条件下没有账号" : "还没有返利账号"}
-              />
-            )}
-          </section>
+            }
+            icon={WalletCards}
+            title={hasActiveFilters ? "当前筛选条件下没有账号" : "还没有返利账号"}
+          />
+        )}
+
         <SheetFrame
-            open={editorOpen}
-            onClose={resetForm}
-            eyebrow={editingId ? "编辑账号" : "新建账号"}
-            title={editingId ? "更新当前返利账号" : "补齐新的返利平台账号"}
-          >
-            <form className="space-y-4" onSubmit={submitForm}>
+          open={editorOpen}
+          onClose={resetForm}
+          eyebrow={editingId ? "编辑账号" : "新建账号"}
+          title={editingId ? "更新当前返利账号" : "补齐新的返利平台账号"}
+        >
+          <form className="space-y-4" onSubmit={submitForm}>
+            <label className="block text-sm font-medium text-foreground">
+              平台
+              <select
+                className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    platformCode: event.target.value as CashbackAccount["platformCode"]
+                  })
+                }
+                value={form.platformCode}
+              >
+                {PLATFORM_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block text-sm font-medium text-foreground">
+              账号名
+              <input
+                className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+                onChange={(event) => setForm({ ...form, accountName: event.target.value })}
+                placeholder="例如：TopCashback-US-Main"
+                value={form.accountName}
+              />
+            </label>
+
+            <label className="block text-sm font-medium text-foreground">
+              注册邮箱
+              <input
+                className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+                onChange={(event) => setForm({ ...form, registerEmail: event.target.value })}
+                placeholder="用于登录或收款确认的邮箱"
+                type="email"
+                value={form.registerEmail}
+              />
+            </label>
+
+            <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm font-medium text-foreground">
-                平台
+                提现方式
                 <select
                   className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
                   onChange={(event) =>
                     setForm({
                       ...form,
-                      platformCode: event.target.value as CashbackAccount["platformCode"]
+                      payoutMethod: event.target.value as CashbackAccount["payoutMethod"]
                     })
                   }
-                  value={form.platformCode}
+                  value={form.payoutMethod}
                 >
-                  {PLATFORM_OPTIONS.map((option) => (
+                  {PAYOUT_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -594,86 +658,44 @@ export function AccountsManager() {
               </label>
 
               <label className="block text-sm font-medium text-foreground">
-                账号名
-                <input
-                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
-                  onChange={(event) => setForm({ ...form, accountName: event.target.value })}
-                  placeholder="例如：TopCashback-US-Main"
-                  value={form.accountName}
-                />
-              </label>
-
-              <label className="block text-sm font-medium text-foreground">
-                注册邮箱
-                <input
-                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
-                  onChange={(event) => setForm({ ...form, registerEmail: event.target.value })}
-                  placeholder="用于登录或收款确认的邮箱"
-                  type="email"
-                  value={form.registerEmail}
-                />
-              </label>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-medium text-foreground">
-                  提现方式
-                  <select
-                    className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        payoutMethod: event.target.value as CashbackAccount["payoutMethod"]
-                      })
-                    }
-                    value={form.payoutMethod}
-                  >
-                    {PAYOUT_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="block text-sm font-medium text-foreground">
-                  状态
-                  <select
-                    className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        status: event.target.value as CashbackAccount["status"]
-                      })
-                    }
-                    value={form.status}
-                  >
-                    <option value="active">启用中</option>
-                    <option value="paused">已暂停</option>
-                  </select>
-                </label>
-              </div>
-
-              <label className="block text-sm font-medium text-foreground">
-                备注
-                <textarea
-                  className="mt-2 min-h-28 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
-                  onChange={(event) => setForm({ ...form, notes: event.target.value })}
-                  placeholder="记录收款规则、登录注意事项、账号负责人等"
-                  value={form.notes}
-                />
-              </label>
-
-              <div className="flex flex-wrap gap-3 pt-6">
-                <button
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 w-full"
-                  disabled={pending}
-                  type="submit"
+                状态
+                <select
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      status: event.target.value as CashbackAccount["status"]
+                    })
+                  }
+                  value={form.status}
                 >
-                  {pending ? "保存中…" : editingId ? "更新账号" : "创建账号"}
-                </button>
-              </div>
-            </form>
-          </SheetFrame>
+                  <option value="active">启用中</option>
+                  <option value="paused">已暂停</option>
+                </select>
+              </label>
+            </div>
+
+            <label className="block text-sm font-medium text-foreground">
+              备注
+              <textarea
+                className="mt-2 min-h-28 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+                onChange={(event) => setForm({ ...form, notes: event.target.value })}
+                placeholder="记录收款规则、登录注意事项、账号负责人等"
+                value={form.notes}
+              />
+            </label>
+
+            <div className="flex flex-wrap gap-3 pt-6">
+              <button
+                className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                disabled={pending}
+                type="submit"
+              >
+                {pending ? "保存中…" : editingId ? "更新账号" : "创建账号"}
+              </button>
+            </div>
+          </form>
+        </SheetFrame>
       </section>
     </div>
   );
