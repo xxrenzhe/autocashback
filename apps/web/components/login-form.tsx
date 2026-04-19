@@ -109,10 +109,10 @@ export function LoginForm(props: {
           {!pending ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : null}
         </button>
 
-        <div className="mt-6 flex flex-col items-center justify-center rounded-lg border bg-muted/30 p-4 text-center">
+        <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">还没有账号？</p>
           <button
-            className="mt-1 text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
+            className="mt-1 rounded-sm text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             onClick={props.onContactClick}
             type="button"
           >

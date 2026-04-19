@@ -86,25 +86,22 @@ export function LoginPageShell() {
             已有账号直接进入控制台；没有账号时，申请试用或联系管理员开通。
           </p>
 
-          <div className="mt-8 rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
-            <p className="text-sm font-semibold text-foreground">常用入口</p>
-            <div className="mt-4 grid gap-2">
-              {loginActions.map((item) => {
-                const Icon = item.icon;
+          <div className="mt-8 grid gap-2">
+            {loginActions.map((item) => {
+              const Icon = item.icon;
 
-                return (
-                  <div className="flex items-start gap-3 rounded-lg border border-border bg-background px-3 py-2.5" key={item.title}>
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                      <p className="mt-1 truncate text-xs text-muted-foreground">{item.text}</p>
-                    </div>
+              return (
+                <div className="flex items-start gap-3 rounded-lg border border-border bg-card px-3 py-2.5 text-card-foreground shadow-sm" key={item.title}>
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Icon className="h-4 w-4" />
                   </div>
-                );
-              })}
-            </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">{item.text}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
 

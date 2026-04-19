@@ -441,7 +441,7 @@ export function SettingsManager() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <section className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
@@ -450,7 +450,7 @@ export function SettingsManager() {
               {SETTINGS_TAB_ITEMS.find((tab) => tab.value === activeTab)?.label}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground">代理、Google Ads、脚本、平台备注与账户安全。</p>
+          <p className="text-sm text-muted-foreground">代理、Google Ads、脚本、平台备注、账户安全。</p>
         </div>
 
         <button
@@ -488,7 +488,7 @@ export function SettingsManager() {
       </section>
 
       <Tabs.Root className="space-y-3" onValueChange={handleTabValueChange} value={activeTab}>
-        <Tabs.List className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-2 shadow-sm">
+        <Tabs.List className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-2">
           {SETTINGS_TAB_ITEMS.map((tab) => (
             <Tabs.Trigger
               className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted/60 hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-white"
