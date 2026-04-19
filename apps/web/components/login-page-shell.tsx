@@ -3,27 +3,30 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { Coins, Link2, WalletCards } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 import { BrandMark } from "@/components/brand-mark";
 import { ContactQrDialog } from "@/components/contact-qr-dialog";
 import { LoginForm } from "@/components/login-form";
 
-const loginActions = [
+const loginSignals = [
+  "已开通账号可直接进入控制台",
+  "未开通时先申请试用或联系管理员",
+  "登录后继续账号、Offer 与换链操作"
+];
+
+const loginScopes = [
   {
-    icon: WalletCards,
-    title: "继续维护返利账号",
-    text: "处理账号状态、国家覆盖和平台备注。"
+    title: "账号",
+    text: "维护平台账号、国家覆盖和状态备注。"
   },
   {
-    icon: Coins,
-    title: "查看 Offer 与佣金进度",
-    text: "确认当天重点 Offer、阈值状态和变更。"
+    title: "Offer",
+    text: "查看佣金阈值、品牌状态和当天重点项。"
   },
   {
-    icon: Link2,
-    title: "执行换链与链接复核",
-    text: "把最新终链更新到系统，减少漏改。"
+    title: "链接",
+    text: "进入换链与复核流程，减少旧链和漏改。"
   }
 ];
 
@@ -73,30 +76,43 @@ export function LoginPageShell() {
 
       <div className="mx-auto grid min-h-[calc(100vh-6rem)] max-w-7xl items-start gap-8 px-5 pb-10 pt-10 lg:grid-cols-[0.96fr,1.04fr] lg:items-stretch lg:px-8 lg:pt-12">
         <section className="flex h-full max-w-2xl flex-col">
-          <h1 className="max-w-4xl text-5xl font-semibold leading-tight tracking-tight text-foreground lg:text-6xl">
-            登录后，
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">账号入口</p>
+          <h1 className="mt-5 max-w-4xl text-5xl font-semibold leading-tight tracking-tight text-foreground lg:text-6xl">
+            登录进入控制台，
             <span className="block text-primary">继续当天返利运营</span>
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground">
-            已有账号直接进入控制台；没有账号时，申请试用或联系管理员开通。
+            页面只保留登录与进入路径。已有账号直接进入后台，没有账号时先申请试用或联系管理员开通。
           </p>
 
-          <div className="mt-8 grid gap-2">
-            {loginActions.map((item) => {
-              const Icon = item.icon;
+          <div className="mt-7 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+            {loginSignals.map((item) => (
+              <p className="inline-flex items-start gap-2" key={item}>
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <span>{item}</span>
+              </p>
+            ))}
+          </div>
 
-              return (
-                <div className="flex items-start gap-3 rounded-lg border border-border bg-background/70 px-3 py-2.5 text-card-foreground" key={item.title}>
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{item.text}</p>
-                  </div>
+          <div className="mt-8 rounded-xl border border-border bg-background/70 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">登录后直接处理</p>
+                <p className="mt-1 text-xs text-muted-foreground">保持和后台主页一致的任务入口密度。</p>
+              </div>
+              <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+                3 areas
+              </span>
+            </div>
+
+            <dl className="mt-4 grid gap-3 sm:grid-cols-3">
+              {loginScopes.map((item) => (
+                <div className="border-l border-border pl-3" key={item.title}>
+                  <dt className="text-sm font-semibold text-foreground">{item.title}</dt>
+                  <dd className="mt-1 text-xs leading-6 text-muted-foreground">{item.text}</dd>
                 </div>
-              );
-            })}
+              ))}
+            </dl>
           </div>
         </section>
 

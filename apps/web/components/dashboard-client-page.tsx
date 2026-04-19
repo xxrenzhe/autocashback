@@ -127,30 +127,6 @@ function RunCard({ run }: { run: DashboardRecentRun }) {
   );
 }
 
-function DashboardMetric({
-  label,
-  value,
-  tone = "default"
-}: {
-  label: string;
-  value: string;
-  tone?: "default" | "success" | "warning";
-}) {
-  const toneClassName =
-    tone === "success"
-      ? "border-emerald-200 bg-emerald-500/10 text-emerald-700"
-      : tone === "warning"
-        ? "border-amber-200 bg-amber-500/10 text-amber-700"
-        : "border-border bg-card text-foreground";
-
-  return (
-    <div className={cn("rounded-xl border px-4 py-3", toneClassName)}>
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
-    </div>
-  );
-}
-
 function LoadingState() {
   return (
     <div className="space-y-4">
@@ -255,14 +231,33 @@ export function DashboardClientPage({ username }: { username: string }) {
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <DashboardMetric label="启用 Offer" tone="success" value={`${data.overview.activeOffers}`} />
-        <DashboardMetric label="换链任务" value={`${data.overview.activeTasks}`} />
-        <DashboardMetric
-          label="最近成功率"
-          tone={data.overview.successRate >= 80 ? "success" : "warning"}
-          value={`${data.overview.successRate}%`}
-        />
-        <DashboardMetric label="佣金预警" tone="warning" value={`${data.overview.warningOffers}`} />
+        <div className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm sm:col-span-2 xl:col-span-4">
+          <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div>
+              <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">启用 Offer</dt>
+              <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{data.overview.activeOffers}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">换链任务</dt>
+              <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{data.overview.activeTasks}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">最近成功率</dt>
+              <dd
+                className={cn(
+                  "mt-1 text-2xl font-semibold tracking-tight",
+                  data.overview.successRate >= 80 ? "text-emerald-700" : "text-amber-700"
+                )}
+              >
+                {data.overview.successRate}%
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">佣金预警</dt>
+              <dd className="mt-1 text-2xl font-semibold tracking-tight text-amber-700">{data.overview.warningOffers}</dd>
+            </div>
+          </dl>
+        </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.9fr,1.1fr]">

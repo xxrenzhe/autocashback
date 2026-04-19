@@ -36,12 +36,6 @@ export type ScriptTemplatePayload = {
   template: string;
 };
 
-export type ProxySettingsTabOverview = {
-  activeProxyCount: number;
-  configuredProxyCountries: number;
-  hasGlobalProxy: boolean;
-};
-
 export type GoogleAdsSettingsTabOverview = {
   googleAdsBaseConfigCount: number;
 };
@@ -55,7 +49,6 @@ export type ScriptSettingsTabOverview = {
 };
 
 export type ProxySettingsTabProps = {
-  overview: ProxySettingsTabOverview;
   proxyEntries: ProxySettingEntry[];
   proxyValidation: Record<number, ProxyValidationState>;
   onAddProxyEntry: () => void;

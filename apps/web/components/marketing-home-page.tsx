@@ -16,8 +16,7 @@ import { ContactQrDialog } from "@/components/contact-qr-dialog";
 
 const navLinks = [
   { href: "#workflow", label: "接入流程" },
-  { href: "#features", label: "核心模块" },
-  { href: "#faq", label: "常见问题" }
+  { href: "#features", label: "核心模块" }
 ];
 
 const heroSignals = [
@@ -62,21 +61,6 @@ const modules = [
     icon: Radar,
     title: "风险提醒",
     text: "把异常、预警和需要跟进的项提前暴露出来。"
-  }
-];
-
-const faqItems = [
-  {
-    question: "适合什么样的团队？",
-    answer: "适合需要同时维护多个返利账号、多个 Offer 和高频链接更新的返利团队。"
-  },
-  {
-    question: "能替代表格协作吗？",
-    answer: "可以，核心目标就是把分散在表格和聊天里的记录收回统一后台。"
-  },
-  {
-    question: "怎么开始使用？",
-    answer: "先申请试用或联系开通，账号创建后直接登录进入控制台。"
   }
 ];
 
@@ -151,7 +135,7 @@ export default function MarketingHomePage() {
               <span className="block text-primary">收回一个后台</span>
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground lg:text-lg lg:leading-8">
-              AutoCashBack 把账号、Offer、佣金状态和换链接动作收进同一工作台，让团队先看关键状态，再进入当天要处理的任务。
+              AutoCashBack 把账号、Offer、佣金状态和换链接动作收进同一工作台，让团队先看状态，再进入当天任务。
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -191,17 +175,18 @@ export default function MarketingHomePage() {
               </span>
             </div>
 
-            <div className="mt-4 grid gap-3">
+            <div className="mt-4">
               {workflowSteps.map((item, index) => (
-                <article className="rounded-lg border border-border bg-background px-4 py-3" key={item.title}>
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">
+                <article
+                  className="flex items-start gap-3 border-t border-border px-1 py-3 first:border-t-0 first:pt-0 last:pb-0"
+                  key={item.title}
+                >
+                  <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">
                       {index + 1}
-                    </span>
-                    <div>
-                      <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
-                      <p className="mt-1 text-sm leading-6 text-muted-foreground">{item.text}</p>
-                    </div>
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{item.text}</p>
                   </div>
                 </article>
               ))}
@@ -209,61 +194,34 @@ export default function MarketingHomePage() {
           </section>
         </section>
 
-        <section className="grid scroll-mt-28 gap-4 py-6 lg:grid-cols-4" id="features">
+        <section className="scroll-mt-28 py-6" id="features">
+          <div className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">核心模块</p>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">后台主要业务结构</h2>
+              </div>
+              <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+                4 modules
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-x-6 gap-y-4 lg:grid-cols-2">
           {modules.map((module) => {
             const Icon = module.icon;
 
             return (
-              <article className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm" key={module.title}>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <article className="flex items-start gap-3 border-t border-border pt-4 first:border-t-0 first:pt-0" key={module.title}>
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Icon className="h-4 w-4" />
                 </div>
-                <h3 className="mt-4 text-base font-semibold text-foreground">{module.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{module.text}</p>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-foreground">{module.title}</h3>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{module.text}</p>
+                </div>
               </article>
             );
           })}
-        </section>
-
-        <section className="py-6" id="faq">
-          <div className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">常见问题</p>
-            <div className="mt-4 grid gap-3 lg:grid-cols-3">
-              {faqItems.map((item) => (
-                <article className="rounded-lg border border-border bg-background px-4 py-3" key={item.question}>
-                  <h3 className="text-sm font-semibold text-foreground">{item.question}</h3>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{item.answer}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="py-6" id="cta">
-          <div className="flex flex-col gap-5 rounded-xl border bg-card px-5 py-6 text-card-foreground shadow-sm lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">快速开始</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-                先开通，再进入后台继续当天返利运营
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                适合希望把账号、Offer、佣金和链接更新统一管理起来的返利团队。
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <ContactButton
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500"
-                onClick={() => setIsContactDialogOpen(true)}
-              >
-                联系开通
-                <ArrowRight className="h-4 w-4" />
-              </ContactButton>
-              <Link
-                className="rounded-full border border-border bg-background px-6 py-3 text-sm font-semibold text-foreground transition hover:border-primary hover:text-primary"
-                href="/login"
-              >
-                进入后台
-              </Link>
             </div>
           </div>
         </section>
