@@ -19,7 +19,6 @@ import {
 import {
   EmptyState,
   MetricGroup,
-  ShortcutCard,
   StatCard,
   StatusBadge,
   cn,
@@ -157,9 +156,6 @@ export function AdminOperationsMonitor() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight text-foreground">业务运营控制台</h2>
-          <div className="mt-3 text-sm leading-6 text-muted-foreground">
-            先看队列并发、调度器状态和系统运行压力，再进入业务运营面板处理具体风险。
-          </div>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -174,100 +170,41 @@ export function AdminOperationsMonitor() {
         </div>
       </div>
 
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
-        <div className="grid gap-0 xl:grid-cols-[1.1fr,0.9fr]">
-          <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Admin Ops</p>
-            <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">把风险和负载看成同一个运营面</h3>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <Link href="/link-swap">
-                <ShortcutCard
-                  description="查看到点待执行、连续失败和终链缺失任务。"
-                  icon={Workflow}
-                  title="处理换链接任务"
-                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-                />
-              </Link>
-              <Link href="/click-farm">
-                <ShortcutCard
-                  description="优先恢复暂停任务，复查成功率下滑的补点击计划。"
-                  icon={Target}
-                  title="处理补点击任务"
-                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-                />
-              </Link>
-              <Link href="/settings#proxy-settings">
-                <ShortcutCard
-                  description="维护代理国家覆盖和失效线路，避免批量任务被拖慢。"
-                  icon={Globe2}
-                  title="维护代理池"
-                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-                />
-              </Link>
-              <Link href="/offers">
-                <ShortcutCard
-                  description="补齐终链和品牌信息，减少换链接任务空跑。"
-                  icon={ShieldCheck}
-                  title="复核 Offer 准备度"
-                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-                />
-              </Link>
-            </div>
-          </div>
-
-          <div className="bg-background px-6 py-7 sm:px-8">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Overview</p>
-            <h4 className="mt-3 text-xl font-semibold tracking-tight text-foreground">先看这四个总览指标</h4>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              用任务量、活跃量、风险数和代理可用率判断当前是否适合继续放量。
-            </p>
-
-            {loading ? (
-              <p className="mt-6 rounded-xl bg-muted/40 px-4 py-5 text-sm text-muted-foreground">正在加载业务监控...</p>
-            ) : (
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <StatCard
-                  icon={Workflow}
-                  label="受监控任务"
-                  note="换链接与补点击任务合计，便于快速评估总负载。"
-                  tone="slate"
-                  value={String(consoleData.overview.monitoredTasks)}
-                />
-                <StatCard
-                  icon={Target}
-                  label="当前活跃"
-                  note="启用或正在执行的任务量，反映现阶段系统压力。"
-                  tone={consoleData.overview.activeTasks > 0 ? "emerald" : "slate"}
-                  value={String(consoleData.overview.activeTasks)}
-                />
-                <StatCard
-                  icon={ShieldAlert}
-                  label="风险信号"
-                  note={`包含 ${consoleData.overview.suspiciousAuditCount} 条需要复核的安全或配置日志。`}
-                  tone={consoleData.overview.riskCount > 0 ? "red" : "emerald"}
-                  value={String(consoleData.overview.riskCount)}
-                />
-                <StatCard
-                  icon={Globe2}
-                  label="代理可用率"
-                  note="建议保持高于 90%，避免调度器可运行但任务实际落空。"
-                  tone={
-                    consoleData.overview.proxyCoverageRate === null
-                      ? "slate"
-                      : consoleData.overview.proxyCoverageRate >= 90
-                        ? "emerald"
-                        : consoleData.overview.proxyCoverageRate >= 70
-                          ? "amber"
-                          : "red"
-                  }
-                  value={formatPercent(consoleData.overview.proxyCoverageRate)}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
+      {loading ? (
+        <p className="rounded-xl border border-border bg-muted/40 px-4 py-5 text-sm text-muted-foreground">
+          正在加载业务监控...
+        </p>
+      ) : (
+        <section className="grid gap-4 xl:grid-cols-4">
+          <StatCard icon={Workflow} label="受监控任务" tone="slate" value={String(consoleData.overview.monitoredTasks)} />
+          <StatCard
+            icon={Target}
+            label="当前活跃"
+            tone={consoleData.overview.activeTasks > 0 ? "emerald" : "slate"}
+            value={String(consoleData.overview.activeTasks)}
+          />
+          <StatCard
+            icon={ShieldAlert}
+            label="风险信号"
+            tone={consoleData.overview.riskCount > 0 ? "red" : "emerald"}
+            value={String(consoleData.overview.riskCount)}
+          />
+          <StatCard
+            icon={Globe2}
+            label="代理可用率"
+            tone={
+              consoleData.overview.proxyCoverageRate === null
+                ? "slate"
+                : consoleData.overview.proxyCoverageRate >= 90
+                  ? "emerald"
+                  : consoleData.overview.proxyCoverageRate >= 70
+                    ? "amber"
+                    : "red"
+            }
+            value={formatPercent(consoleData.overview.proxyCoverageRate)}
+          />
+        </section>
+      )}
 
       {!loading ? (
         <>
@@ -275,9 +212,6 @@ export function AdminOperationsMonitor() {
             <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">Risks</p>
               <h4 className="mt-3 text-xl font-semibold tracking-tight text-foreground">先处理这些风险</h4>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                这些信号会直接影响换链接命中率、补点击成功率或账号安全。
-              </p>
 
               <div className="mt-5 space-y-4">
                 {consoleData.risks.length ? (
@@ -317,7 +251,7 @@ export function AdminOperationsMonitor() {
                 ) : (
                   <EmptyState
                     className="bg-primary/10/60"
-                    description="调度器、代理和最近审计日志都处于稳定区间，可以继续按计划推进任务。"
+                    description="暂无风险。"
                     title="当前没有明显风险"
                   />
                 )}
@@ -325,10 +259,7 @@ export function AdminOperationsMonitor() {
             </section>
 
             <div className="space-y-6">
-              <MetricGroup
-                description="重点关注待调度任务、24 小时成功率，以及仍缺终链的 Offer。"
-                title="换链接脉冲"
-              >
+              <MetricGroup title="换链接脉冲">
                 <div className="grid gap-3 sm:grid-cols-2">
                   {consoleData.urlSwapMetrics.map((metric) => {
                     const styles = getToneStyles(metric.tone);
@@ -350,9 +281,6 @@ export function AdminOperationsMonitor() {
               <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Proxy</p>
                 <h4 className="mt-3 text-xl font-semibold tracking-tight text-foreground">代理池覆盖</h4>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  代理池不仅影响换链接，也直接决定补点击任务的恢复速度和国家覆盖能力。
-                </p>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   {consoleData.proxyMetrics.map((metric) => {
@@ -400,9 +328,6 @@ export function AdminOperationsMonitor() {
             <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">Action</p>
               <h4 className="mt-3 text-xl font-semibold tracking-tight text-foreground">补点击观察名单</h4>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                先看成功率下滑、暂停或没有下次执行时间的任务，再决定是否恢复、暂停或重建。
-              </p>
 
               <div className="mt-5 space-y-4">
                 {consoleData.watchTasks.length ? (
@@ -462,9 +387,6 @@ export function AdminOperationsMonitor() {
               <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Coverage</p>
                 <h4 className="mt-3 text-xl font-semibold tracking-tight text-foreground">账号代理覆盖</h4>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  优先补足没有可用代理的账号，其次处理只有部分线路可用的账号。
-                </p>
 
                 <div className="mt-5 space-y-4">
                   {consoleData.proxyUsers.length ? (
@@ -512,9 +434,6 @@ export function AdminOperationsMonitor() {
               <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Audit</p>
                 <h4 className="mt-3 text-xl font-semibold tracking-tight text-foreground">最近安全与配置操作</h4>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  优先检查未授权访问、敏感数据读取和代理相关配置变更。
-                </p>
 
                 <div className="mt-5 space-y-4">
                   {consoleData.auditHighlights.length ? (
@@ -562,10 +481,7 @@ export function AdminOperationsMonitor() {
             </div>
           </div>
 
-          <MetricGroup
-            description="补点击任务的活跃量、暂停量和整体成功率决定了是否适合继续放量。"
-            title="补点击负载"
-          >
+          <MetricGroup title="补点击负载">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {consoleData.clickFarmMetrics.map((metric) => {
                 const styles = getToneStyles(metric.tone);

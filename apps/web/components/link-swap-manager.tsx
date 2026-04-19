@@ -459,41 +459,11 @@ export function LinkSwapManager() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-5">
-        <StatCard
-          icon={Link2}
-          label="总任务"
-          note="当前用户下所有换链任务数量。"
-          tone="slate"
-          value={`${consoleData.stats.totalTasks}`}
-        />
-        <StatCard
-          icon={Play}
-          label="运行中"
-          note="当前处于可调度状态的任务。"
-          tone="emerald"
-          value={`${consoleData.stats.runningTasks}`}
-        />
-        <StatCard
-          icon={Pause}
-          label="已暂停"
-          note="已停用或暂不调度的任务。"
-          tone="slate"
-          value={`${consoleData.stats.pausedTasks}`}
-        />
-        <StatCard
-          icon={ShieldAlert}
-          label="预警/异常"
-          note="存在连续失败或状态异常的任务。"
-          tone="amber"
-          value={`${consoleData.stats.warningTasks}`}
-        />
-        <StatCard
-          icon={CheckCircle2}
-          label="最近成功率"
-          note="基于最近执行记录计算的成功比例。"
-          tone="emerald"
-          value={`${consoleData.stats.recentSuccessRate}%`}
-        />
+        <StatCard icon={Link2} label="总任务" tone="slate" value={`${consoleData.stats.totalTasks}`} />
+        <StatCard icon={Play} label="运行中" tone="emerald" value={`${consoleData.stats.runningTasks}`} />
+        <StatCard icon={Pause} label="已暂停" tone="slate" value={`${consoleData.stats.pausedTasks}`} />
+        <StatCard icon={ShieldAlert} label="预警/异常" tone="amber" value={`${consoleData.stats.warningTasks}`} />
+        <StatCard icon={CheckCircle2} label="最近成功率" tone="emerald" value={`${consoleData.stats.recentSuccessRate}%`} />
       </section>
 
       {feedback ? (

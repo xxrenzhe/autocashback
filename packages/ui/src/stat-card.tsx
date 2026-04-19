@@ -14,7 +14,7 @@ export function StatCard({
   className?: string;
   icon?: ComponentType<{ className?: string }>;
   label: string;
-  note: string;
+  note?: string;
   tone?: Tone;
   value: string;
 }) {
@@ -33,7 +33,7 @@ export function StatCard({
         ) : null}
       </div>
       <p className={cn("mt-5 font-mono tabular-nums text-4xl font-semibold", styles.value)}>{value}</p>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p>
+      {note ? <p className="mt-3 text-sm leading-6 text-muted-foreground">{note}</p> : null}
     </div>
   );
 }

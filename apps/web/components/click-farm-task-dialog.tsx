@@ -205,7 +205,6 @@ export function ClickFarmTaskDialog(props: ClickFarmTaskDialogProps) {
 
   return (
     <ModalFrame
-      description="补点击任务会按目标国家时区和小时分布执行请求，缺少代理时会自动暂停，恢复后可继续运行。"
       onClose={onClose}
       open={open}
       title={offer ? `${offer.brandName} 的补点击任务` : "补点击任务"}

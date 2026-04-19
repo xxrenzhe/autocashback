@@ -200,7 +200,6 @@ export function AdminUsersManager() {
   const [copied, setCopied] = useState(false);
   const [createForm, setCreateForm] = useState(initialCreateForm);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
-  const [alertsUser, setAlertsUser] = useState<AdminUser | null>(null);
   const [editForm, setEditForm] = useState({
     email: "",
     role: "user" as "admin" | "user"
@@ -485,7 +484,6 @@ export function AdminUsersManager() {
   }
 
   async function handleLoadSecurityAlerts(user: AdminUser) {
-    setAlertsUser(user);
     setAlertsOpen(true);
     setAlertsLoading(true);
     setSecurityAlerts([]);
@@ -692,19 +690,6 @@ export function AdminUsersManager() {
           </div>
         </div>
 
-        {overview.pageDisabledCount > 0 ? (
-          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-            <p>当前页有 {overview.pageDisabledCount} 个已停用账号。删除前请先确认不再使用。</p>
-            <button
-              className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-4 py-2 font-semibold text-foreground transition hover:border-emerald-200 hover:text-primary"
-              onClick={() => setStatusFilter("disabled")}
-              type="button"
-            >
-              查看停用账号
-            </button>
-          </div>
-        ) : null}
-
         {loading ? (
           <TableSkeleton className="mt-6" rows={Math.min(8, pagination.limit)} />
         ) : emptyState ? (
@@ -774,19 +759,15 @@ export function AdminUsersManager() {
                       </div>
                     </td>
                     <td className="p-4 pr-4">
-                      <div className="space-y-1 text-sm text-foreground">
-                        <p>
-                          {user.activeSessionCount > 0
-                            ? `${user.activeSessionCount} 个活跃会话`
-                            : "暂无活跃会话"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {!user.isActive
-                            ? "账号已停用，现有会话会被系统回收。"
-                            : user.activeSessionCount > 0
-                              ? "账号当前仍处于登录态。"
-                              : "可用于判断是否已完成交接。"}
-                        </p>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+                          {user.activeSessionCount > 0 ? `${user.activeSessionCount} 个会话` : "无会话"}
+                        </span>
+                        {!user.isActive ? (
+                          <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
+                            已停用
+                          </span>
+                        ) : null}
                       </div>
                     </td>
                     <td className="p-4 pr-4 text-foreground">{formatDateTime(user.lastLoginAt)}</td>
@@ -879,11 +860,7 @@ export function AdminUsersManager() {
           </div>
         )}
 
-        <div className="mt-6 flex flex-col gap-3 border-t border-border/60 pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <p>搜索、角色和状态视角会实时生效，列表默认按创建时间倒序排列。</p>
-            <p>停用会立即回收现有会话；解除锁定会同步清空失败记录；安全告警会按多 IP、多会话和失败登录自动汇总。</p>
-          </div>
+        <div className="mt-6 flex justify-end gap-2 border-t border-border/60 pt-4">
           <div className="flex gap-2">
             <button
               className="rounded-lg border border-border bg-background px-4 py-2 font-medium disabled:opacity-40"

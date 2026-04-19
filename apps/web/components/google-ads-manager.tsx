@@ -244,25 +244,25 @@ export function GoogleAdsManager() {
     {
       key: "base",
       label: "基础配置",
-      note: "保存 Client / Token / MCC",
+      note: "Client / Token / MCC",
       complete: hasStoredConfig
     },
     {
       key: "oauth",
       label: "OAuth 授权",
-      note: "授权 Google Ads 访问",
+      note: "获取 Refresh Token",
       complete: Boolean(credentials?.hasRefreshToken)
     },
     {
       key: "verify",
       label: "配置验证",
-      note: "执行验证并刷新凭证状态",
+      note: "验证凭证",
       complete: Boolean(credentials?.lastVerifiedAt)
     },
     {
       key: "sync",
       label: "账号同步",
-      note: "拉取可访问客户号列表",
+      note: "同步账号",
       complete: accounts.length > 0
     }
   ] as const;
@@ -316,34 +316,14 @@ export function GoogleAdsManager() {
         <StatCard
           icon={ShieldCheck}
           label="连接状态"
-          note={
-            overview.fullyConnected
-              ? "基础配置和 OAuth 都已完成。"
-              : overview.needsOAuth
-                ? "基础配置已齐，下一步需要 OAuth。"
-                : "仍需补齐 Google Ads 基础配置。"
-          }
           tone={overview.fullyConnected ? "emerald" : "amber"}
           value={overview.fullyConnected ? "ready" : overview.needsOAuth ? "oauth" : "setup"}
         />
-        <StatCard
-          icon={Building2}
-          label="可访问账号"
-          note="当前同步到本地的 Google Ads 账号总数。"
-          tone="slate"
-          value={`${overview.accountCount}`}
-        />
-        <StatCard
-          icon={ShieldCheck}
-          label="Manager 账号"
-          note="可访问账号中的 MCC / Manager 数量。"
-          tone="slate"
-          value={`${overview.managerCount}`}
-        />
+        <StatCard icon={Building2} label="可访问账号" tone="slate" value={`${overview.accountCount}`} />
+        <StatCard icon={ShieldCheck} label="Manager 账号" tone="slate" value={`${overview.managerCount}`} />
         <StatCard
           icon={CheckCircle2}
           label="测试账号"
-          note="标记为测试环境的账号数量。"
           tone={overview.testAccountCount > 0 ? "amber" : "emerald"}
           value={`${overview.testAccountCount}`}
         />
@@ -353,9 +333,6 @@ export function GoogleAdsManager() {
         <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-primary">OAuth 状态</p>
           <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">Google Ads 连接</h3>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            查看当前账号的 Google Ads 连接状态，并完成授权、验证和可访问账号同步。
-          </p>
           <ol className="mt-5 grid gap-3 sm:grid-cols-2">
             {oauthSteps.map((step, index) => {
               const isCurrent = currentOauthStep === -1 ? index === oauthSteps.length - 1 : index === currentOauthStep;
@@ -402,15 +379,13 @@ export function GoogleAdsManager() {
 
             {!hasStoredConfig ? (
               <div className="rounded-xl border border-amber-200 bg-amber-500/10 p-5 text-sm leading-6 text-amber-800">
-                还没有完成 Google Ads API 基础配置。请先前往设置页保存 `Client ID / Client Secret / Developer Token / Login Customer ID`，
-                然后发起 OAuth 授权。
+                先到设置页补齐 Client ID、Client Secret、Developer Token 和 Login Customer ID。
               </div>
             ) : null}
 
             {needsOAuth ? (
               <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-5 text-sm leading-6 text-destructive">
-                基础配置已保存，但当前账号还没有可用的 Refresh Token。这个状态下无法同步账号，也无法让换链接任务调用
-                Google Ads API。
+                当前还没有 Refresh Token，无法同步账号或执行 Google Ads API 换链。
               </div>
             ) : null}
           </div>
@@ -508,7 +483,7 @@ export function GoogleAdsManager() {
                 </tbody>
               </table>
             ) : (
-              <EmptyState description="先完成设置和 OAuth 授权。" icon={Building2} title="暂无可访问账号" />
+              <EmptyState description="先完成连接。" icon={Building2} title="暂无可访问账号" />
             )}
           </div>
         </div>

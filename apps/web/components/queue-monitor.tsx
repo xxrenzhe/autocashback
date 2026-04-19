@@ -501,28 +501,19 @@ export function QueueMonitor() {
         <StatCard
           icon={Zap}
           label="待执行任务"
-          note="当前统一队列里尚未开始处理的任务数。"
           tone={consoleData.overview.pendingTasks > 0 ? "amber" : "emerald"}
           value={String(consoleData.overview.pendingTasks)}
         />
-        <StatCard
-          icon={Workflow}
-          label="运行中任务"
-          note="当前已被 worker 或调度器接手的任务数。"
-          tone="emerald"
-          value={String(consoleData.overview.runningTasks)}
-        />
+        <StatCard icon={Workflow} label="运行中任务" tone="emerald" value={String(consoleData.overview.runningTasks)} />
         <StatCard
           icon={AlertTriangle}
           label="失败任务"
-          note="建议优先查看错误信息和最近更新时间。"
           tone={consoleData.overview.failedTasks > 0 ? "red" : "emerald"}
           value={String(consoleData.overview.failedTasks)}
         />
         <StatCard
           icon={Wrench}
           label="健康调度器"
-          note="当前心跳和状态都正常的调度器数量。"
           tone={consoleData.overview.activeSchedulerCount === 2 ? "emerald" : "amber"}
           value={`${consoleData.overview.activeSchedulerCount}/2`}
         />
@@ -534,7 +525,7 @@ export function QueueMonitor() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">筛选</p>
-                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">先筛出积压、失败或高优任务</h3>
+                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">筛选队列</h3>
               </div>
               {(searchQuery || statusFilter !== "all" || typeFilter !== "all" || sort !== "recent") && (
                 <button
@@ -618,7 +609,7 @@ export function QueueMonitor() {
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-primary">任务列表</p>
-                  <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按时间、优先级和错误状态查看队列</h3>
+                  <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">队列任务</h3>
                 </div>
                 <div className="rounded-full border border-border bg-muted/40 px-3 py-1.5 text-xs font-medium text-muted-foreground">
                   已显示 {visibleRows.length} / {consoleData.rows.length} 条
@@ -693,11 +684,7 @@ export function QueueMonitor() {
                 ) : null}
               </div>
             ) : (
-              <EmptyState
-                description="放宽筛选后重试。"
-                icon={Workflow}
-                title="当前筛选条件下没有队列任务"
-              />
+              <EmptyState description="调整筛选后重试。" icon={Workflow} title="当前筛选条件下没有队列任务" />
             )}
           </section>
         </div>

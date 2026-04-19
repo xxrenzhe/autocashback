@@ -447,25 +447,21 @@ export function OffersManager() {
           <>
             <StatCard
               label="Offer 总数"
-              note="当前账号下正在维护的全部 Offer。"
               tone="slate"
               value={String(allConsole.overview.totalOffers)}
             />
             <StatCard
               label="阈值预警"
-              note="佣金已达到或超过上限，需要确认是否停投。"
               tone={allConsole.overview.warningOffers > 0 ? "amber" : "emerald"}
               value={String(allConsole.overview.warningOffers)}
             />
             <StatCard
               label="待解析 Suffix"
-              note="尚未拿到最新 suffix 的 Offer，建议优先检查换链链路。"
               tone={allConsole.overview.unresolvedSuffixCount > 0 ? "amber" : "emerald"}
               value={String(allConsole.overview.unresolvedSuffixCount)}
             />
             <StatCard
               label="覆盖国家"
-              note="当前 Offer 覆盖的投放国家数量。"
               tone="emerald"
               value={String(allConsole.overview.coveredCountryCount)}
             />

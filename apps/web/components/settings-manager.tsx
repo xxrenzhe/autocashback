@@ -423,44 +423,30 @@ export function SettingsManager() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        description="保留配置摘要、分组页签和设置内容，去掉捷径卡片与重复提示。"
-        eyebrow="Settings"
-        title="系统配置控制台"
-      />
+      <PageHeader eyebrow="Settings" title="系统配置控制台" />
 
       <section className="grid gap-4 xl:grid-cols-4">
         <StatCard
           icon={Globe2}
           label="活跃代理"
-          note={`已覆盖 ${overview.configuredProxyCountries} 个国家/区域${overview.hasGlobalProxy ? "，含 GLOBAL 兜底" : "，未含 GLOBAL 兜底"}`}
           tone={overview.hasGlobalProxy ? "emerald" : "amber"}
           value={`${overview.activeProxyCount}`}
         />
         <StatCard
           icon={ShieldCheck}
           label="Google Ads 基础项"
-          note={
-            overview.googleAdsFullyConnected
-              ? "基础参数和 OAuth 都已完成。"
-              : overview.googleAdsNeedsOAuth
-                ? "基础参数已齐，下一步需要 OAuth 授权。"
-                : "仍有基础参数缺失。"
-          }
           tone={overview.googleAdsFullyConnected ? "emerald" : "amber"}
           value={`${overview.googleAdsBaseConfigCount}/4`}
         />
         <StatCard
           icon={NotebookPen}
           label="平台备注"
-          note="建议三类平台都维护处理规范，方便账号和 Offer 协作。"
           tone={overview.noteCount >= 2 ? "emerald" : "slate"}
           value={`${overview.noteCount}/3`}
         />
         <StatCard
           icon={Link2}
           label="脚本状态"
-          note={overview.scriptReady ? "脚本模板和当前 Token 已可直接复制使用。" : "脚本模板或 Token 尚未准备好。"}
           tone={overview.scriptReady ? "emerald" : "amber"}
           value={overview.scriptReady ? "ready" : "pending"}
         />

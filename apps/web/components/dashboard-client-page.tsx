@@ -219,35 +219,18 @@ export function DashboardClientPage({ username }: { username: string }) {
             {refreshing ? "刷新中" : "刷新"}
           </button>
         }
-        description="保留总览、风险和最近执行，减少首屏解释层级。"
         title={`${username}，今日概览`}
       />
 
       <section className="grid gap-4 xl:grid-cols-4">
-        <StatCard
-          label="启用中 Offer"
-          note="已经进入运营或告警状态的 Offer 数量。"
-          tone="emerald"
-          value={`${data.overview.activeOffers}`}
-        />
-        <StatCard
-          label="启用中换链任务"
-          note="由调度器持续执行的自动换链任务数量。"
-          tone="slate"
-          value={`${data.overview.activeTasks}`}
-        />
+        <StatCard label="启用中 Offer" tone="emerald" value={`${data.overview.activeOffers}`} />
+        <StatCard label="启用中换链任务" tone="slate" value={`${data.overview.activeTasks}`} />
         <StatCard
           label="最近成功率"
-          note="最近换链执行记录里的成功比例。"
           tone={data.overview.successRate >= 80 ? "emerald" : "amber"}
           value={`${data.overview.successRate}%`}
         />
-        <StatCard
-          label="佣金预警"
-          note="已达到或接近佣金阈值，需要人工复核的 Offer 数量。"
-          tone="amber"
-          value={`${data.overview.warningOffers}`}
-        />
+        <StatCard label="佣金预警" tone="amber" value={`${data.overview.warningOffers}`} />
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[0.95fr,1.05fr]">
@@ -293,7 +276,7 @@ export function DashboardClientPage({ username }: { username: string }) {
               data.recentRuns.map((run) => <RunCard key={run.id} run={run} />)
             ) : (
               <EmptyState
-                description="创建 Offer 并启用换链任务后，这里会按时间顺序显示最新结果。"
+                description="暂无执行记录。"
                 icon={Boxes}
                 title="还没有换链执行记录"
               />

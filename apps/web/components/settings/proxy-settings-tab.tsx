@@ -5,7 +5,6 @@ import { EmptyState } from "@autocashback/ui";
 import type { ProxySettingsTabProps } from "@/components/settings/types";
 
 export function ProxySettingsTab({
-  overview,
   proxyEntries,
   proxyValidation,
   onAddProxyEntry,
@@ -27,17 +26,6 @@ export function ProxySettingsTab({
         >
           新增代理
         </button>
-      </div>
-
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">
-        按 AutoCashBack 的代理配置方式维护。每条代理绑定一个国家代码，调度器会优先选择与 Offer 国家匹配的代理，未命中时回退到
-        `GLOBAL`。
-      </p>
-
-      <div className="mt-5 grid gap-3 rounded-xl border border-border bg-muted/40 p-5 text-sm text-muted-foreground lg:grid-cols-3">
-        <p>活跃代理：{overview.activeProxyCount}</p>
-        <p>覆盖国家/区域：{overview.configuredProxyCountries}</p>
-        <p>GLOBAL 兜底：{overview.hasGlobalProxy ? "已配置" : "未配置"}</p>
       </div>
 
       <div className="mt-5 space-y-4">
@@ -123,7 +111,7 @@ export function ProxySettingsTab({
         ) : (
           <EmptyState
             className="text-left"
-            description="建议至少录入一个 GLOBAL 代理，确保终链解析任务可执行。"
+            description="先添加代理。"
             icon={Globe2}
             title="还没有代理配置"
           />

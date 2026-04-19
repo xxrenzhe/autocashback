@@ -338,7 +338,6 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
 
   return (
     <ModalFrame
-      description="为单个 Offer 配置换链接执行方式。脚本模式沿用现有 MCC Script；Google Ads API 模式会由平台直接更新指定 Campaign 的 Final URL Suffix。"
       onClose={onClose}
       open={open}
       title={offer ? `${offer.brandName} 的换链接任务` : "换链接任务"}

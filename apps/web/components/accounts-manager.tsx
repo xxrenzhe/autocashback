@@ -335,34 +335,15 @@ export function AccountsManager() {
       />
 
       <section className="grid gap-4 xl:grid-cols-4">
-        <StatCard
-          icon={CreditCard}
-          label="启用账号"
-          note="当前可正常挂接 Offer 的返利平台账号。"
-          tone="emerald"
-          value={String(allConsole.overview.activeAccounts)}
-        />
+        <StatCard icon={CreditCard} label="启用账号" tone="emerald" value={String(allConsole.overview.activeAccounts)} />
         <StatCard
           icon={CreditCard}
           label="暂停账号"
-          note="已暂停的账号建议确认是否仍有 Offer 依赖。"
           tone={allConsole.overview.pausedAccounts > 0 ? "amber" : "emerald"}
           value={String(allConsole.overview.pausedAccounts)}
         />
-        <StatCard
-          icon={Target}
-          label="挂接 Offer"
-          note="所有账号下已绑定的 Offer 总数。"
-          tone="slate"
-          value={String(allConsole.overview.linkedOfferCount)}
-        />
-        <StatCard
-          icon={WalletCards}
-          label="平台覆盖"
-          note="当前已经启用的返利平台类型数量。"
-          tone="emerald"
-          value={String(allConsole.overview.platformCount)}
-        />
+        <StatCard icon={Target} label="挂接 Offer" tone="slate" value={String(allConsole.overview.linkedOfferCount)} />
+        <StatCard icon={WalletCards} label="平台覆盖" tone="emerald" value={String(allConsole.overview.platformCount)} />
       </section>
 
       <section className="space-y-6">

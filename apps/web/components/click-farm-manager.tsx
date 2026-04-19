@@ -272,31 +272,17 @@ export function ClickFarmManager() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-4">
-        <StatCard
-          icon={Zap}
-          label="运行中任务"
-          note="当前处于等待开始或运行中的补点击任务。"
-          tone="emerald"
-          value={String(allConsole.overview.activeTasks)}
-        />
+        <StatCard icon={Zap} label="运行中任务" tone="emerald" value={String(allConsole.overview.activeTasks)} />
         <StatCard
           icon={AlertTriangle}
           label="暂停 / 异常"
-          note="包含暂停、缺少下次调度或成功率偏低的任务。"
           tone={allConsole.overview.warningTasks > 0 ? "amber" : "emerald"}
           value={String(allConsole.overview.warningTasks)}
         />
-        <StatCard
-          icon={Workflow}
-          label="累计点击"
-          note="当前账号下所有补点击任务累计点击次数。"
-          tone="slate"
-          value={String(allConsole.overview.totalClicks)}
-        />
+        <StatCard icon={Workflow} label="累计点击" tone="slate" value={String(allConsole.overview.totalClicks)} />
         <StatCard
           icon={Target}
           label="平均成功率"
-          note="按已有点击样本汇总的整体成功率。"
           tone={allConsole.overview.averageSuccessRate >= 80 ? "emerald" : "amber"}
           value={`${allConsole.overview.averageSuccessRate.toFixed(1)}%`}
         />
