@@ -226,7 +226,6 @@ export function AdminUsersManager() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
   const [createForm, setCreateForm] = useState(initialCreateForm);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [alertsUser, setAlertsUser] = useState<AdminUser | null>(null);
@@ -385,7 +384,7 @@ export function AdminUsersManager() {
 
   async function handleDeleteUser(user: AdminUser) {
     if (user.isActive) {
-      setError("删除前请先停用该账号");
+      toast.error("删除前请先停用该账号");
       return;
     }
 
@@ -896,7 +895,6 @@ export function AdminUsersManager() {
         </div>
 
         {message ? <p className="mt-4 text-sm text-emerald-700">{message}</p> : null}
-        {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
 
         {loading ? (
           <TableSkeleton className="mt-6" rows={Math.min(8, pagination.limit)} />

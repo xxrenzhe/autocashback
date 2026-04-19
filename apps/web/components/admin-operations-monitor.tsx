@@ -26,6 +26,7 @@ import {
   cn,
   getToneStyles
 } from "@autocashback/ui";
+import { toast } from "sonner";
 
 import { fetchJson } from "@/lib/api-error-handler";
 import {
@@ -74,7 +75,6 @@ export function AdminOperationsMonitor() {
   const [clickFarmTasks, setClickFarmTasks] = useState<AdminClickFarmTaskRow[]>([]);
   const [proxyHealth, setProxyHealth] = useState<AdminProxyHealth | null>(null);
   const [auditLogs, setAuditLogs] = useState<AdminAuditLogRecord[]>([]);
-  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -131,7 +131,7 @@ export function AdminOperationsMonitor() {
       ].find((item) => !item.success);
 
       if (firstError && !firstError.success) {
-        setMessage(firstError.userMessage);
+        toast.error(firstError.userMessage || "加载业务监控失败");
         return;
       }
 
@@ -141,9 +141,8 @@ export function AdminOperationsMonitor() {
       setClickFarmTasks(clickFarmTasksResult.success ? clickFarmTasksResult.data.data.tasks || [] : []);
       setProxyHealth(proxyHealthResult.success ? proxyHealthResult.data.data : null);
       setAuditLogs(auditLogsResult.success ? auditLogsResult.data.logs || [] : []);
-      setMessage("");
     } catch (error: unknown) {
-      setMessage(error instanceof Error ? error.message : "加载业务监控失败");
+      toast.error(error instanceof Error ? error.message : "加载业务监控失败");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -176,12 +175,6 @@ export function AdminOperationsMonitor() {
           <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">Admin Ops</p>
             <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">把风险和负载看成同一个运营面</h3>
-
-            {message ? (
-              <p className="mt-4 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {message}
-              </p>
-            ) : null}
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <Link href="/link-swap">

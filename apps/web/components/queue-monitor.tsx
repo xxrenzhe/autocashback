@@ -150,8 +150,6 @@ export function QueueMonitor() {
   const [sort, setSort] = useState<QueueConsoleSort>("recent");
   const [visibleTaskCount, setVisibleTaskCount] = useState(TASKS_PAGE_SIZE);
   const [message, setMessage] = useState("");
-  const [schedulerError, setSchedulerError] = useState("");
-  const [configError, setConfigError] = useState("");
   const [manualScheduling, setManualScheduling] = useState<"all" | "click-farm" | "url-swap" | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const currentConfigSnapshot = useMemo(
@@ -226,11 +224,12 @@ export function QueueMonitor() {
       setTasks(tasksResult.data.tasks || []);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "加载队列数据失败";
-      if (options?.notifyOnError) {
-        setMessage("");
+      const shouldNotify = options?.notifyOnError ?? !options?.background;
+      if (shouldNotify) {
         toast.error(errorMessage);
-      } else {
-        setMessage(errorMessage);
+      }
+      if (!options?.preserveMessage) {
+        setMessage("");
       }
     } finally {
       setLoading(false);
@@ -251,9 +250,10 @@ export function QueueMonitor() {
       }
 
       setSchedulerStatus(schedulerResult.data.data || null);
-      setSchedulerError("");
     } catch (error: unknown) {
-      setSchedulerError(error instanceof Error ? error.message : "加载调度器状态失败");
+      if (!options?.silent) {
+        toast.error(error instanceof Error ? error.message : "加载调度器状态失败");
+      }
     } finally {
       setSchedulerLoading(false);
     }
@@ -273,9 +273,8 @@ export function QueueMonitor() {
         note: result.data.note || ""
       });
       setSavedConfigSnapshot(JSON.stringify(result.data.config));
-      setConfigError("");
     } catch (error: unknown) {
-      setConfigError(error instanceof Error ? error.message : "加载队列配置失败");
+      toast.error(error instanceof Error ? error.message : "加载队列配置失败");
     } finally {
       setConfigLoading(false);
     }
@@ -288,7 +287,6 @@ export function QueueMonitor() {
 
     try {
       setConfigSaving(true);
-      setConfigError("");
       const result = await fetchJson<{
         config: QueueSystemConfig;
         message?: string;
@@ -311,7 +309,6 @@ export function QueueMonitor() {
       toast.success(result.data.message || "队列配置已保存。");
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "保存队列配置失败";
-      setConfigError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setConfigSaving(false);
@@ -408,12 +405,9 @@ export function QueueMonitor() {
             }
           : current
       );
-      setConfigError("");
       toast.success("已恢复到上次保存的配置。");
     } catch {
-      const errorMessage = "恢复配置失败，请刷新页面后重试";
-      setConfigError(errorMessage);
-      toast.error(errorMessage);
+      toast.error("恢复配置失败，请刷新页面后重试");
     }
   }
 
@@ -493,7 +487,6 @@ export function QueueMonitor() {
                 </button>
               </div>
             }
-            description="把补点击、换链和调度器状态放在一个面板里看。先判断健康度，再补投待调度任务或调整并发配置。"
             eyebrow="Queue"
             title={
               <span className="flex flex-wrap items-center gap-3">
@@ -835,8 +828,11 @@ export function QueueMonitor() {
                 </div>
               </>
             ) : null}
-
-            {configError ? <p className="mt-4 text-sm text-destructive">{configError}</p> : null}
+            {!configLoading && !config ? (
+              <p className="mt-4 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                暂未加载到队列配置，请刷新页面后重试。
+              </p>
+            ) : null}
           </section>
 
           <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
@@ -931,8 +927,6 @@ export function QueueMonitor() {
                 {schedulerLoading ? "正在加载调度器状态..." : "暂未获取到调度器状态。"}
               </p>
             )}
-
-            {schedulerError ? <p className="mt-4 text-sm text-destructive">{schedulerError}</p> : null}
           </section>
 
           <MetricGroup
