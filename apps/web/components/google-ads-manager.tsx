@@ -4,13 +4,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   Building2,
-  CheckCircle2,
   RefreshCcw,
-  ShieldCheck,
 } from "lucide-react";
 
 import type { GoogleAdsAccountRecord, GoogleAdsCredentialStatus } from "@autocashback/domain";
-import { EmptyState, PageHeader, StatCard, TableSkeleton, cn } from "@autocashback/ui";
+import { EmptyState, TableSkeleton, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { fetchJson } from "@/lib/api-error-handler";
@@ -106,6 +104,30 @@ function getGoogleAdsStatusMessage(code: string): { tone: MessageTone; text: str
         text: `Google Ads 授权失败：${code}`
       };
   }
+}
+
+function AdsMetric({
+  label,
+  value,
+  tone = "default"
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "warning" | "success";
+}) {
+  const toneClassName =
+    tone === "warning"
+      ? "border-amber-200 bg-amber-500/10 text-amber-700"
+      : tone === "success"
+        ? "border-emerald-200 bg-emerald-500/10 text-emerald-700"
+        : "border-border bg-card text-foreground";
+
+  return (
+    <div className={cn("rounded-xl border px-4 py-3", toneClassName)}>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+    </div>
+  );
 }
 
 export function GoogleAdsManager() {
@@ -295,45 +317,66 @@ export function GoogleAdsManager() {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        actions={
+    <div className="space-y-5">
+      <section className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Google Ads</h1>
+            <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+              {overview.fullyConnected ? "ready" : overview.needsOAuth ? "oauth" : "setup"}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">连接 OAuth、同步可访问账号并诊断 MCC 权限。</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
+            href="/settings"
+          >
+            设置
+          </Link>
           <button
-            className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-60"
             disabled={syncing}
             onClick={() => verifyAndSync(true)}
             type="button"
           >
-            <RefreshCcw className={cn("h-3.5 w-3.5", syncing ? "animate-spin" : "")} />
+            <RefreshCcw className={cn("h-4 w-4", syncing ? "animate-spin" : "")} />
             {syncing ? "同步中" : "快速同步"}
           </button>
-        }
-        eyebrow="Google Ads"
-        title="账号连接控制台"
-      />
+        </div>
+      </section>
 
-      <section className="grid gap-4 xl:grid-cols-4">
-        <StatCard
-          icon={ShieldCheck}
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AdsMetric
           label="连接状态"
-          tone={overview.fullyConnected ? "emerald" : "amber"}
+          tone={overview.fullyConnected ? "success" : "warning"}
           value={overview.fullyConnected ? "ready" : overview.needsOAuth ? "oauth" : "setup"}
         />
-        <StatCard icon={Building2} label="可访问账号" tone="slate" value={`${overview.accountCount}`} />
-        <StatCard icon={ShieldCheck} label="Manager 账号" tone="slate" value={`${overview.managerCount}`} />
-        <StatCard
-          icon={CheckCircle2}
+        <AdsMetric label="可访问账号" value={`${overview.accountCount}`} />
+        <AdsMetric label="Manager 账号" value={`${overview.managerCount}`} />
+        <AdsMetric
           label="测试账号"
-          tone={overview.testAccountCount > 0 ? "amber" : "emerald"}
+          tone={overview.testAccountCount > 0 ? "warning" : "success"}
           value={`${overview.testAccountCount}`}
         />
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[0.9fr,1.1fr]">
-        <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-primary">OAuth 状态</p>
-          <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">Google Ads 连接</h3>
-          <ol className="mt-5 grid gap-3 sm:grid-cols-2">
+      <section className="overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div className="grid gap-0 xl:grid-cols-[0.9fr,1.1fr]">
+          <div className="border-b border-border/70 p-5 xl:border-b-0 xl:border-r">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">OAuth 状态</p>
+                <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">连接进度</h2>
+              </div>
+              <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+                {currentOauthStep === -1 ? "已完成" : `Step ${currentOauthStep + 1}`}
+              </span>
+            </div>
+
+            <ol className="mt-5 grid gap-3 sm:grid-cols-2">
             {oauthSteps.map((step, index) => {
               const isCurrent = currentOauthStep === -1 ? index === oauthSteps.length - 1 : index === currentOauthStep;
               return (
@@ -369,34 +412,26 @@ export function GoogleAdsManager() {
             })}
           </ol>
 
-          <div className="mt-5 grid gap-3">
-            <div className="rounded-xl border border-border bg-muted/40 p-5 text-sm text-foreground">
+            <div className="mt-5 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
               <p>基础配置：{credentials?.hasCredentials ? "已保存" : "未完成"}</p>
-              <p className="mt-2">Refresh Token：{credentials?.hasRefreshToken ? "已获取" : "未授权"}</p>
-              <p className="mt-2">最近验证：{credentials?.lastVerifiedAt || "尚未验证"}</p>
-              <p className="mt-2">Token 过期：{credentials?.tokenExpiresAt || "未获取"}</p>
+              <p>Refresh Token：{credentials?.hasRefreshToken ? "已获取" : "未授权"}</p>
+              <p>最近验证：{credentials?.lastVerifiedAt || "尚未验证"}</p>
+              <p>Token 过期：{credentials?.tokenExpiresAt || "未获取"}</p>
             </div>
 
             {!hasStoredConfig ? (
-              <div className="rounded-xl border border-amber-200 bg-amber-500/10 p-5 text-sm leading-6 text-amber-800">
+              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-500/10 px-4 py-3 text-sm text-amber-800">
                 先到设置页补齐 Client ID、Client Secret、Developer Token 和 Login Customer ID。
               </div>
             ) : null}
 
             {needsOAuth ? (
-              <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-5 text-sm leading-6 text-destructive">
+              <div className="mt-4 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                 当前还没有 Refresh Token，无法同步账号或执行 Google Ads API 换链。
               </div>
             ) : null}
-          </div>
 
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Link
-              className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
-              href="/settings"
-            >
-              前往设置
-            </Link>
+            <div className="mt-5 flex flex-wrap gap-3">
             <button
               className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
               disabled={!canConnect}
@@ -416,20 +451,20 @@ export function GoogleAdsManager() {
               {syncing ? "同步中..." : "验证并同步账号"}
             </button>
           </div>
-        </div>
+          </div>
 
-        <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-          <div className="flex items-center justify-between gap-4">
+          <div className="p-5">
+            <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">账号映射</p>
-              <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">可访问 Google Ads 账号</h3>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">账号映射</p>
+                <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">可访问账号</h2>
             </div>
             <span className="rounded-full bg-muted px-3 py-2 font-mono tabular-nums text-xs text-muted-foreground">
               {accounts.length} accounts
             </span>
           </div>
 
-          <div className="mt-5 overflow-x-auto">
+            <div className="mt-5 overflow-x-auto">
             {loading ? (
               <TableSkeleton rows={5} />
             ) : accounts.length ? (
@@ -486,10 +521,11 @@ export function GoogleAdsManager() {
               <EmptyState icon={Building2} title="暂无可访问账号" />
             )}
           </div>
+          </div>
         </div>
       </section>
 
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
+      <section className="rounded-xl border bg-card p-5 text-card-foreground shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">诊断工具</p>
