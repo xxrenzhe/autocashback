@@ -9,15 +9,12 @@ import {
   type FormEvent,
   useCallback
 } from "react";
-import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
-  ArrowRight,
   CirclePlus,
   CreditCard,
   RefreshCcw,
   Search,
-  Settings2,
   Target,
   WalletCards
 } from "lucide-react";
@@ -28,7 +25,7 @@ import {
   type CashbackAccount,
   type OfferRecord
 } from "@autocashback/domain";
-import { EmptyState, PageHeader, ShortcutCard, StatCard, StatusBadge, TableSkeleton, cn } from "@autocashback/ui";
+import { EmptyState, PageHeader, StatCard, StatusBadge, TableSkeleton, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { fetchJson } from "@/lib/api-error-handler";
@@ -313,69 +310,39 @@ export function AccountsManager() {
 
   return (
     <div className="space-y-6">
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
-        <div className="border-b border-border/70 p-5">
-          <PageHeader
-            actions={
-              <div className="flex flex-wrap gap-3">
-                <button
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
-                  onClick={startCreateAccount}
-                  type="button"
-                >
-                  <CirclePlus className="h-4 w-4" />
-                  新建账号
-                </button>
-                <button
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
-                  disabled={refreshing}
-                  onClick={() => void loadData({ background: true, preserveNotice: true })}
-                  type="button"
-                >
-                  <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
-                  {refreshing ? "刷新中…" : "刷新列表"}
-                </button>
-              </div>
-            }
-            eyebrow="Accounts"
-            title={
-              <span className="flex flex-wrap items-center gap-3">
-                <span>返利账号控制台</span>
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                  {allConsole.overview.totalAccounts} accounts
-                </span>
-              </span>
-            }
-          />
-        </div>
-
-        <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
-          <Link href="/offers">
-            <ShortcutCard
-              description="账号创建后通常下一步就是挂接 Offer，方便后续进入换链或补点击流程。"
-              icon={Target}
-              title="Offer 管理"
-              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-            />
-          </Link>
-          <Link href="/settings">
-            <ShortcutCard
-              description="提现方式、平台备注和代理策略需要协同维护，避免后续任务执行出错。"
-              icon={Settings2}
-              title="系统设置"
-              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-            />
-          </Link>
-          <Link href="/google-ads">
-            <ShortcutCard
-              description="Google Ads 已连接后，可以更快完成账号与投放侧的联动排查。"
-              icon={WalletCards}
-              title="Google Ads"
-              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-            />
-          </Link>
-        </div>
-      </section>
+      <PageHeader
+        actions={
+          <div className="flex flex-wrap gap-3">
+            <button
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
+              onClick={startCreateAccount}
+              type="button"
+            >
+              <CirclePlus className="h-4 w-4" />
+              新建账号
+            </button>
+            <button
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
+              disabled={refreshing}
+              onClick={() => void loadData({ background: true, preserveNotice: true })}
+              type="button"
+            >
+              <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
+              {refreshing ? "刷新中…" : "刷新列表"}
+            </button>
+          </div>
+        }
+        description="保留筛选、统计和账号表格，把首屏压缩到可直接操作。"
+        eyebrow="Accounts"
+        title={
+          <span className="flex flex-wrap items-center gap-3">
+            <span>返利账号控制台</span>
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              {allConsole.overview.totalAccounts} accounts
+            </span>
+          </span>
+        }
+      />
 
       <section className="grid gap-4 xl:grid-cols-4">
         <StatCard
@@ -413,11 +380,8 @@ export function AccountsManager() {
           <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">筛选与查看</p>
-                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">先看账号覆盖，再决定补齐哪一类账号</h3>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  支持按平台、状态、提现方式和挂接规模快速筛选，方便你优先处理关键账号。
-                </p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">筛选</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按平台、状态和挂接规模筛选账号</h3>
               </div>
               {hasActiveFilters ? (
                 <button

@@ -3,18 +3,14 @@
 import * as Tabs from "@radix-ui/react-tabs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ArrowRight,
   Globe2,
-  KeyRound,
-  LockKeyhole,
   Link2,
   NotebookPen,
   ShieldCheck
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 
 import type { ProxySettingEntry } from "@autocashback/domain";
-import { PageHeader, ShortcutCard, StatCard } from "@autocashback/ui";
+import { PageHeader, StatCard } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { AccountSecuritySettingsTab } from "@/components/settings/account-security-settings-tab";
@@ -37,46 +33,6 @@ import type {
 } from "@/components/settings/types";
 import { fetchJson } from "@/lib/api-error-handler";
 import { buildSettingsOverview } from "@/lib/settings-overview";
-
-type HeroShortcut = {
-  tab: SettingsTabValue;
-  title: string;
-  description: string;
-  icon: LucideIcon;
-};
-
-const heroShortcuts: HeroShortcut[] = [
-  {
-    tab: "proxy",
-    title: "代理与国家覆盖",
-    description: "确认目标国家代理是否齐备，避免换链和诊断任务失败。",
-    icon: Globe2
-  },
-  {
-    tab: "google-ads",
-    title: "Google Ads 授权",
-    description: "基础参数齐全后再做 OAuth 授权和账号同步。",
-    icon: ShieldCheck
-  },
-  {
-    tab: "script",
-    title: "脚本与 Token",
-    description: "统一维护 MCC 脚本模板和当前有效 Script Token。",
-    icon: KeyRound
-  },
-  {
-    tab: "account-security",
-    title: "账号安全",
-    description: "统一管理密码更新和活跃会话撤销。",
-    icon: LockKeyhole
-  },
-  {
-    tab: "platform-notes",
-    title: "平台接入备注",
-    description: "沉淀返利平台处理规范，减少账号和 Offer 操作分歧。",
-    icon: NotebookPen
-  }
-];
 
 const emptyProxyEntry: ProxySettingEntry = {
   label: "",
@@ -467,68 +423,11 @@ export function SettingsManager() {
 
   return (
     <div className="space-y-6">
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
-        <div className="grid gap-0 xl:grid-cols-[1.1fr,0.9fr]">
-          <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
-            <PageHeader
-              eyebrow="Settings"
-              title="系统配置控制台"
-            />
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {heroShortcuts.map((shortcut) => (
-                <button
-                  className="w-full text-left"
-                  key={shortcut.tab}
-                  onClick={() => selectTab(shortcut.tab)}
-                  type="button"
-                >
-                  <ShortcutCard
-                    description={shortcut.description}
-                    icon={shortcut.icon}
-                    title={shortcut.title}
-                    trailing={
-                      <ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />
-                    }
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="border-t border-border/70 bg-background/80 px-6 py-7 xl:border-l xl:border-t-0">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">配置摘要</p>
-            <div className="mt-5 grid gap-3">
-              <div className="rounded-xl border border-border bg-muted/40 p-4">
-                <p className="text-sm font-semibold text-foreground">当前最需要关注</p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {overview.googleAdsNeedsOAuth
-                    ? "Google Ads 基础参数已齐，但还未完成 OAuth 授权。"
-                    : !overview.hasGlobalProxy
-                      ? "建议至少保留一个 GLOBAL 代理作为兜底。"
-                      : !overview.scriptReady
-                        ? "脚本 Token 或模板尚未就绪。"
-                        : "主要配置已齐，可以继续维护明细。"}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border bg-muted/40 p-4">
-                <p className="text-sm font-semibold text-foreground">保存建议</p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  先调整代理和 Google Ads，再统一点击底部“保存设置”，避免备注或脚本说明与实际配置脱节。
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border bg-muted/40 p-4">
-                <p className="text-sm font-semibold text-foreground">安全提醒</p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  修改 Google Ads 基础参数后，旧授权状态会失效，需要重新获取 Refresh Token 并同步账号。
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHeader
+        description="保留配置摘要、分组页签和设置内容，去掉捷径卡片与重复提示。"
+        eyebrow="Settings"
+        title="系统配置控制台"
+      />
 
       <section className="grid gap-4 xl:grid-cols-4">
         <StatCard

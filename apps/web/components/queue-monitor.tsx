@@ -3,14 +3,10 @@
 import { formatDateTime } from "@/lib/format";
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import {
   AlertTriangle,
-  ArrowRight,
   RefreshCcw,
   Search,
-  Settings2,
-  Target,
   Workflow,
   Wrench,
   Zap
@@ -23,7 +19,7 @@ import type {
   QueueTaskStatus,
   QueueTaskType
 } from "@autocashback/domain";
-import { EmptyState, MetricGroup, PageHeader, ShortcutCard, StatCard, StatusBadge, TableSkeleton, cn } from "@autocashback/ui";
+import { EmptyState, MetricGroup, PageHeader, StatCard, StatusBadge, TableSkeleton, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 import { AdminOperationsMonitor } from "@/components/admin-operations-monitor";
 import { fetchJson } from "@/lib/api-error-handler";
@@ -456,81 +452,51 @@ export function QueueMonitor() {
 
   return (
     <div className="space-y-6">
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
-        <div className="border-b border-border/70 p-5">
-          <PageHeader
-            actions={
-              <div className="flex flex-wrap gap-3">
-                <button
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
-                  disabled={refreshing}
-                  onClick={() =>
-                    void loadQueueData({
-                      background: true,
-                      preserveMessage: true,
-                      notifyOnError: true
-                    })
-                  }
-                  type="button"
-                >
-                  <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
-                  {refreshing ? "刷新中…" : "刷新队列"}
-                </button>
-                <button
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                  disabled={manualScheduling !== null}
-                  onClick={() => void triggerManualScheduling("all")}
-                  type="button"
-                >
-                  <Zap className="h-4 w-4" />
-                  {manualScheduling === "all" ? "补投中..." : "补投全部待调度任务"}
-                </button>
-              </div>
-            }
-            eyebrow="Queue"
-            title={
-              <span className="flex flex-wrap items-center gap-3">
-                <span>统一队列控制台</span>
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                  {stats.total} tasks
-                </span>
-              </span>
-            }
-          />
-          {message ? (
-            <div className="mt-4 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
-              {message}
-            </div>
-          ) : null}
+      <PageHeader
+        actions={
+          <div className="flex flex-wrap gap-3">
+            <button
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
+              disabled={refreshing}
+              onClick={() =>
+                void loadQueueData({
+                  background: true,
+                  preserveMessage: true,
+                  notifyOnError: true
+                })
+              }
+              type="button"
+            >
+              <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
+              {refreshing ? "刷新中…" : "刷新队列"}
+            </button>
+            <button
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              disabled={manualScheduling !== null}
+              onClick={() => void triggerManualScheduling("all")}
+              type="button"
+            >
+              <Zap className="h-4 w-4" />
+              {manualScheduling === "all" ? "补投中..." : "补投全部待调度任务"}
+            </button>
+          </div>
+        }
+        description="首屏收敛到队列状态、筛选和任务列表，减少跳转提示卡片。"
+        eyebrow="Queue"
+        title={
+          <span className="flex flex-wrap items-center gap-3">
+            <span>统一队列控制台</span>
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              {stats.total} tasks
+            </span>
+          </span>
+        }
+      />
+      {message ? (
+        <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
+          {message}
         </div>
-
-        <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
-          <Link href="/click-farm">
-            <ShortcutCard
-              description="补点击任务积压时，直接回到业务页确认任务本身是否设置合理。"
-              icon={Target}
-              title="补点击任务"
-              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-            />
-          </Link>
-          <Link href="/link-swap">
-            <ShortcutCard
-              description="换链任务和队列互相影响，调度异常时建议同步排查换链页。"
-              icon={Workflow}
-              title="换链管理"
-              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-            />
-          </Link>
-          <Link href="/settings">
-            <ShortcutCard
-              description="代理和脚本配置异常会直接影响队列健康度，必要时从设置页回查。"
-              icon={Settings2}
-              title="系统设置"
-              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-            />
-          </Link>
-        </div>
-      </section>
+      ) : null}
 
       <section className="grid gap-4 xl:grid-cols-4">
         <StatCard
@@ -568,11 +534,8 @@ export function QueueMonitor() {
           <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">筛选与查看</p>
-                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">先筛出积压或失败任务</h3>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  支持按类型、状态、搜索关键字和排序快速缩小范围，方便先排查最影响系统吞吐的任务。
-                </p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">筛选</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">先筛出积压、失败或高优任务</h3>
               </div>
               {(searchQuery || statusFilter !== "all" || typeFilter !== "all" || sort !== "recent") && (
                 <button

@@ -7,20 +7,18 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
-  ArrowRight,
   CirclePlus,
   Pause,
   Play,
   RefreshCcw,
   Search,
-  Settings2,
   Target,
   Workflow,
   Zap
 } from "lucide-react";
 
 import type { ClickFarmTask, OfferRecord } from "@autocashback/domain";
-import { EmptyState, PageHeader, ShortcutCard, StatCard, StatusBadge, TableSkeleton, cn } from "@autocashback/ui";
+import { EmptyState, PageHeader, StatCard, StatusBadge, TableSkeleton, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { ClickFarmTaskDialog } from "@/components/click-farm-task-dialog";
@@ -232,70 +230,40 @@ export function ClickFarmManager() {
 
   return (
     <div className="space-y-6">
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
-        <div className="border-b border-border/70 p-5">
-          <PageHeader
-            actions={
-              <div className="flex flex-wrap gap-3">
-                <button
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                  disabled={!selectedOffer}
-                  onClick={() => selectedOffer && openDialogForOffer(selectedOffer)}
-                  type="button"
-                >
-                  <CirclePlus className="h-4 w-4" />
-                  新建 / 编辑任务
-                </button>
-                <button
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
-                  disabled={refreshing}
-                  onClick={() => void loadAll({ background: true, preserveNotice: true })}
-                  type="button"
-                >
-                  <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
-                  {refreshing ? "刷新中…" : "刷新列表"}
-                </button>
-              </div>
-            }
-            eyebrow="Click Farm"
-            title={
-              <span className="flex flex-wrap items-center gap-3">
-                <span>补点击任务控制台</span>
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                  {allConsole.overview.totalTasks} tasks
-                </span>
-              </span>
-            }
-          />
-        </div>
-
-        <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
-          <Link href="/offers">
-            <ShortcutCard
-              description="从 Offer 维度进入最适合创建补点击任务，也方便同步检查佣金与换链状态。"
-              icon={Target}
-              title="Offer 管理"
-              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-            />
-          </Link>
-          <Link href="/queue">
-            <ShortcutCard
-              description="查看调度器与统一队列状态，确认补点击任务是否正常入队。"
-              icon={Workflow}
-              title="队列监控"
-              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-            />
-          </Link>
-          <Link href="/settings">
-            <ShortcutCard
-              description="代理不足时任务会自动暂停，先去设置页确认代理可用性。"
-              icon={Settings2}
-              title="代理与设置"
-              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-            />
-          </Link>
-        </div>
-      </section>
+      <PageHeader
+        actions={
+          <div className="flex flex-wrap gap-3">
+            <button
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              disabled={!selectedOffer}
+              onClick={() => selectedOffer && openDialogForOffer(selectedOffer)}
+              type="button"
+            >
+              <CirclePlus className="h-4 w-4" />
+              新建 / 编辑任务
+            </button>
+            <button
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
+              disabled={refreshing}
+              onClick={() => void loadAll({ background: true, preserveNotice: true })}
+              type="button"
+            >
+              <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
+              {refreshing ? "刷新中…" : "刷新列表"}
+            </button>
+          </div>
+        }
+        description="保留关键统计、筛选和任务表格，首屏不再堆叠额外跳转卡片。"
+        eyebrow="Click Farm"
+        title={
+          <span className="flex flex-wrap items-center gap-3">
+            <span>补点击任务控制台</span>
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              {allConsole.overview.totalTasks} tasks
+            </span>
+          </span>
+        }
+      />
 
       <section className="grid gap-4 xl:grid-cols-4">
         <StatCard
@@ -333,11 +301,8 @@ export function ClickFarmManager() {
           <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">筛选与查看</p>
-                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">先看节奏，再决定是否调整任务</h3>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  支持按状态、国家、成功率与任务规模快速定位需要处理的补点击任务。
-                </p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">筛选</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按状态、国家和任务规模筛选补点击任务</h3>
               </div>
               <div className="flex flex-wrap gap-2">
                 {allConsole.overview.warningTasks > 0 ? (

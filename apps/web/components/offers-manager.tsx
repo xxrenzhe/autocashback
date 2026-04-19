@@ -10,18 +10,16 @@ import {
   type FormEvent,
   useCallback
 } from "react";
+import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { SheetFrame } from "./sheet-frame";
-import Link from "next/link";
 import {
   AlertTriangle,
-  ArrowRight,
   CirclePlus,
   Link2,
   MoreHorizontal,
   RefreshCcw,
   Search,
-  Target,
   WalletCards
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -34,7 +32,6 @@ import {
 import {
   EmptyState,
   PageHeader,
-  ShortcutCard,
   StatCard,
   StatSkeleton,
   StatusBadge,
@@ -426,6 +423,7 @@ export function OffersManager() {
   return (
     <div className="space-y-6">
       <PageHeader
+        description="保留统计、筛选和 Offer 表格，去掉额外的导航卡片和说明层。"
         actions={
           <>
             <button
@@ -448,35 +446,6 @@ export function OffersManager() {
           </>
         }
       />
-
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
-        <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
-          <Link href="/accounts">
-            <ShortcutCard
-              description="维护返利平台账号、邮箱和平台归属，确保 Offer 可以正确绑定。"
-              icon={WalletCards}
-              title="账号管理"
-              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-            />
-          </Link>
-          <Link href="/link-swap">
-            <ShortcutCard
-              description="检查换链任务执行状态、suffix 历史和脚本接入是否正常。"
-              icon={Link2}
-              title="换链管理"
-              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-            />
-          </Link>
-          <Link href="/google-ads">
-            <ShortcutCard
-              description="确认 Google Ads 授权、客户号和账户映射是否齐备。"
-              icon={Target}
-              title="Google Ads"
-              trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-            />
-          </Link>
-        </div>
-      </section>
 
       <section className="grid gap-4 xl:grid-cols-4">
         {loading ? (
@@ -521,11 +490,8 @@ export function OffersManager() {
           <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">筛选与行动</p>
-                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">先聚焦需要处理的 Offer</h3>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  支持按平台、状态、国家、suffix 完整度与佣金排序快速定位问题。
-                </p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">筛选</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按平台、状态、国家和 suffix 完整度筛选 Offer</h3>
               </div>
               <div className="flex flex-wrap gap-2">
                 {allConsole.overview.warningOffers > 0 ? (

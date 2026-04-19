@@ -9,7 +9,6 @@ import {
   ArrowRight,
   Boxes,
   CheckCircle2,
-  Clock3,
   Link2,
   RefreshCcw,
   Settings,
@@ -220,68 +219,9 @@ export function DashboardClientPage({ username }: { username: string }) {
             {refreshing ? "刷新中" : "刷新"}
           </button>
         }
-        title={`${username}，先看今天的总览`}
+        description="保留总览、风险和最近执行，减少首屏解释层级。"
+        title={`${username}，今日概览`}
       />
-
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
-        <div className="grid gap-0 xl:grid-cols-[1.15fr,0.85fr]">
-          <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Dashboard</p>
-            <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">今天先关注系统节奏，再决定进入哪个模块</h2>
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-emerald-200/80 bg-white/80 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">上次执行</p>
-                <p className="mt-3 text-sm font-semibold text-foreground">{formatDateTime(data.overview.latestRunAt)}</p>
-              </div>
-              <div className="rounded-xl border border-emerald-200/80 bg-white/80 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">最近成功率</p>
-                <p className="mt-3 text-sm font-semibold text-foreground">{data.overview.successRate}%</p>
-              </div>
-              <div className="rounded-xl border border-emerald-200/80 bg-white/80 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">待处理风险</p>
-                <p className="mt-3 text-sm font-semibold text-foreground">{data.risks.length} 项</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-border/70 bg-background/80 px-6 py-7 xl:border-l xl:border-t-0">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">运行脉搏</p>
-              <p className="mt-3 text-sm font-semibold text-foreground">把右侧视作今日的操作提示板</p>
-            </div>
-
-            <div className="mt-5 grid gap-3">
-              <div className="rounded-xl border border-border bg-muted/40 p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-sm font-semibold text-foreground">最近解析时间</p>
-                  <Clock3 className="h-4 w-4 text-muted-foreground/80" />
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">{formatDateTime(data.overview.latestRunAt)}</p>
-              </div>
-
-              <div className="rounded-xl border border-border bg-muted/40 p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-sm font-semibold text-foreground">最近解析表现</p>
-                  <Target className="h-4 w-4 text-muted-foreground/80" />
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  成功 {data.overview.recentSuccessfulRuns} 次，失败 {data.overview.recentFailedRuns} 次。
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border bg-muted/40 p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-sm font-semibold text-foreground">待处理动作</p>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground/80" />
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  当前还有 {data.actions.length} 项建议动作，优先处理最上方的高影响操作。
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <section className="grid gap-4 xl:grid-cols-4">
         <StatCard

@@ -1,19 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowRight,
   Building2,
   CheckCircle2,
-  KeyRound,
   RefreshCcw,
   ShieldCheck,
-  TestTube2
 } from "lucide-react";
 
 import type { GoogleAdsAccountRecord, GoogleAdsCredentialStatus } from "@autocashback/domain";
-import { EmptyState, PageHeader, ShortcutCard, StatCard, TableSkeleton, cn } from "@autocashback/ui";
+import { EmptyState, PageHeader, StatCard, TableSkeleton, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { fetchJson } from "@/lib/api-error-handler";
@@ -299,108 +296,22 @@ export function GoogleAdsManager() {
 
   return (
     <div className="space-y-6">
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
-        <div className="grid gap-0 xl:grid-cols-[1.05fr,0.95fr]">
-          <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
-            <PageHeader
-              actions={
-                <button
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-60"
-                  disabled={syncing}
-                  onClick={() => verifyAndSync(true)}
-                  type="button"
-                >
-                  <RefreshCcw className={cn("h-3.5 w-3.5", syncing ? "animate-spin" : "")} />
-                  {syncing ? "同步中" : "快速同步"}
-                </button>
-              }
-              eyebrow="Google Ads"
-              title="账号连接控制台"
-            />
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <Link href="/settings#google-ads-settings">
-                <ShortcutCard
-                  description="去设置页维护 Client ID、Developer Token 和 Login Customer ID。"
-                  icon={ShieldCheck}
-                  title="补齐基础配置"
-                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-                />
-              </Link>
-              <button
-                className="block text-left disabled:opacity-60"
-                disabled={!canConnect}
-                onClick={() => {
-                  window.location.href = "/api/auth/google-ads/authorize";
-                }}
-                type="button"
-              >
-                <ShortcutCard
-                  className="h-full"
-                  description="基础参数完整后再授权，避免无效回调和重复操作。"
-                  icon={KeyRound}
-                  title="发起 OAuth 授权"
-                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-                />
-              </button>
-
-              <button
-                className="block text-left disabled:opacity-60"
-                disabled={!credentials?.hasRefreshToken || syncing}
-                onClick={() => verifyAndSync(true)}
-                type="button"
-              >
-                <ShortcutCard
-                  className="h-full"
-                  description="刷新可访问 Customer 列表，确认 MCC 和广告账号映射。"
-                  icon={Building2}
-                  title="同步账号"
-                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-                />
-              </button>
-
-              <button
-                className="block text-left disabled:opacity-60"
-                disabled={!credentials?.hasRefreshToken || diagnosing}
-                onClick={diagnoseCredentials}
-                type="button"
-              >
-                <ShortcutCard
-                  className="h-full"
-                  description="快速定位 MCC 权限、Developer Token 和测试账号问题。"
-                  icon={TestTube2}
-                  title="执行诊断"
-                  trailing={<ArrowRight className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-                />
-              </button>
-            </div>
-          </div>
-
-          <div className="border-t border-border/70 bg-background/80 px-6 py-7 xl:border-l xl:border-t-0">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">连接状态</p>
-            <div className="mt-5 grid gap-3">
-              <div className="rounded-xl border border-border bg-muted/40 p-4">
-                <p className="text-sm font-semibold text-foreground">当前最需要关注</p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {!overview.hasBaseConfig
-                    ? "还没有完成 Google Ads 基础配置。"
-                    : overview.needsOAuth
-                      ? "基础配置已齐，但还没有可用的 Refresh Token。"
-                      : "Google Ads 连接已可用，可继续同步账号或执行诊断。"}
-                </p>
-              </div>
-              <div className="rounded-xl border border-border bg-muted/40 p-4">
-                <p className="text-sm font-semibold text-foreground">最近验证</p>
-                <p className="mt-2 text-sm text-muted-foreground">{credentials?.lastVerifiedAt || "尚未验证"}</p>
-              </div>
-              <div className="rounded-xl border border-border bg-muted/40 p-4">
-                <p className="text-sm font-semibold text-foreground">Refresh Token</p>
-                <p className="mt-2 text-sm text-muted-foreground">{credentials?.hasRefreshToken ? "已获取" : "未授权"}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHeader
+        actions={
+          <button
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-60"
+            disabled={syncing}
+            onClick={() => verifyAndSync(true)}
+            type="button"
+          >
+            <RefreshCcw className={cn("h-3.5 w-3.5", syncing ? "animate-spin" : "")} />
+            {syncing ? "同步中" : "快速同步"}
+          </button>
+        }
+        description="聚焦连接状态、OAuth 配置和账号列表，移除重复说明卡片。"
+        eyebrow="Google Ads"
+        title="账号连接控制台"
+      />
 
       <section className="grid gap-4 xl:grid-cols-4">
         <StatCard

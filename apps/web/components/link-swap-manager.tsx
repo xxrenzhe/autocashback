@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -11,7 +10,6 @@ import {
   CheckCircle2,
   Clock3,
   Copy,
-  ExternalLink,
   History,
   Link2,
   MoreHorizontal,
@@ -19,7 +17,6 @@ import {
   PencilLine,
   Play,
   RefreshCcw,
-  Settings2,
   ShieldAlert,
   Target
 } from "lucide-react";
@@ -30,7 +27,6 @@ import {
   CardSkeleton,
   EmptyState,
   PageHeader,
-  ShortcutCard,
   StatCard,
   StatSkeleton,
   StatusBadge,
@@ -421,97 +417,47 @@ export function LinkSwapManager() {
             {refreshing ? "刷新中" : "刷新"}
           </button>
         }
+        description="保留任务统计、筛选、执行历史和脚本操作，去掉多余的入口卡片与说明块。"
       />
 
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
-        <div className="grid gap-0 xl:grid-cols-[1.15fr,0.85fr]">
-          <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">联动入口</p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <Link href="/offers">
-                <ShortcutCard
-                  description="先补齐品牌、国家和 campaignLabel，再回到这里管理任务。"
-                  icon={Target}
-                  title="查看 Offer"
-                  trailing={<ExternalLink className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-                />
-              </Link>
-
-              <Link href="/google-ads">
-                <ShortcutCard
-                  description="API 模式依赖 Customer ID、Campaign ID 和授权状态。"
-                  icon={Link2}
-                  title="Google Ads 配置"
-                  trailing={<ExternalLink className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-                />
-              </Link>
-
-              <Link href="/settings">
-                <ShortcutCard
-                  description="异常任务优先检查目标国家代理和脚本运行环境。"
-                  icon={Settings2}
-                  title="代理与系统设置"
-                  trailing={<ExternalLink className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-                />
-              </Link>
-
-              <button
-                className="text-left"
-                onClick={() => {
-                  setHistoryTask(null);
-                  setHistoryRecords(runs.slice(0, 20));
-                  setHistoryLoading(false);
-                  setHistoryOpen(true);
-                }}
-                type="button"
-              >
-                <ShortcutCard
-                  description="从任务行打开历史弹窗，快速定位失败原因和最近 suffix。"
-                  icon={History}
-                  title="查看执行历史"
-                  trailing={<ExternalLink className="h-4 w-4 text-muted-foreground/80 transition group-hover:text-primary" />}
-                />
-              </button>
-            </div>
+      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">Script Token</p>
+            <p className="mt-2 break-all font-mono tabular-nums text-sm text-muted-foreground">
+              {script.token || "尚未生成"}
+            </p>
           </div>
-
-          <div className="border-t border-border/70 bg-background/80 px-6 py-7 xl:border-l xl:border-t-0">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">脚本对接</p>
-            <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">MCC 执行说明</h3>
-            <ol className="mt-4 space-y-2.5 text-sm leading-7 text-muted-foreground">
-              <li>1. 先在对应 Offer 中确认 campaignLabel、目标国家和最终推广链接配置正确。</li>
-              <li>2. Script 模式直接复制下面的模板，粘贴到 Google Ads Scripts 或 MCC 环境。</li>
-              <li>3. Google Ads API 模式由平台直接更新目标 Campaign，需要先完成授权和 ID 配置。</li>
-              <li>4. 每次更换 Token 后，旧脚本立即失效，请重新复制最新模板。</li>
-            </ol>
-
-            <div className="mt-4 rounded-xl border border-border bg-muted/40 p-4">
-              <div className="space-y-1">
-                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Script Token</p>
-                <p className="break-all font-mono tabular-nums text-sm text-foreground">{script.token || "尚未生成"}</p>
-              </div>
-              <div className="mt-3 border-t border-border/70 pt-3">
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
-                    disabled={rotatingToken}
-                    onClick={() => void rotateToken()}
-                    type="button"
-                  >
-                    {rotatingToken ? "更换中..." : "更换 Token"}
-                  </button>
-                  <button
-                    className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                    disabled={!script.template || rotatingToken}
-                    onClick={() => void copyScriptTemplate()}
-                    type="button"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                    复制最新脚本
-                  </button>
-                </div>
-              </div>
-            </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
+              disabled={rotatingToken}
+              onClick={() => void rotateToken()}
+              type="button"
+            >
+              {rotatingToken ? "更换中..." : "更换 Token"}
+            </button>
+            <button
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+              disabled={!script.template || rotatingToken}
+              onClick={() => void copyScriptTemplate()}
+              type="button"
+            >
+              <Copy className="h-3.5 w-3.5" />
+              复制最新脚本
+            </button>
+            <button
+              className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
+              onClick={() => {
+                setHistoryTask(null);
+                setHistoryRecords(runs.slice(0, 20));
+                setHistoryLoading(false);
+                setHistoryOpen(true);
+              }}
+              type="button"
+            >
+              查看执行历史
+            </button>
           </div>
         </div>
       </section>
