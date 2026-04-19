@@ -7,6 +7,8 @@ import {
   ArrowUp,
   ArrowUpDown,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   History,
   KeyRound,
@@ -21,7 +23,6 @@ import {
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   EmptyState,
-  PageHeader,
   StatusBadge,
   TableSkeleton,
   type StatusBadgeVariant,
@@ -484,6 +485,7 @@ export function AdminUsersManager() {
   }
 
   async function handleLoadSecurityAlerts(user: AdminUser) {
+    setSelectedUser(user);
     setAlertsOpen(true);
     setAlertsLoading(true);
     setSecurityAlerts([]);
@@ -540,96 +542,75 @@ export function AdminUsersManager() {
     return { recent, older };
   }, [securityAlerts]);
 
-  const overview = useMemo(() => {
-    const pageSessionUsersCount = users.filter((user) => user.activeSessionCount > 0).length;
-    const pageLockedCount = users.filter((user) => isUserLocked(user)).length;
-    const pageDisabledCount = users.filter((user) => !user.isActive).length;
-    const pageRiskCount = users.filter((user) => !user.isActive || isUserLocked(user) || user.failedLoginCount > 0).length;
+  const summary = useMemo(() => {
+    const lockedCount = users.filter((user) => isUserLocked(user)).length;
+    const disabledCount = users.filter((user) => !user.isActive).length;
+    const activeSessionUsersCount = users.filter((user) => user.activeSessionCount > 0).length;
+    const riskCount = users.filter(
+      (user) => !user.isActive || isUserLocked(user) || user.failedLoginCount > 0
+    ).length;
 
     return {
-      totalUsers: pagination.total,
-      pageSessionUsersCount,
-      pageLockedCount,
-      pageDisabledCount,
-      pageRiskCount
+      lockedCount,
+      disabledCount,
+      activeSessionUsersCount,
+      riskCount
     };
-  }, [pagination.total, users]);
+  }, [users]);
+
+  const hasFilters = Boolean(searchQuery.trim()) || roleFilter !== "all" || statusFilter !== "all";
+  const visibleStart = pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
+  const visibleEnd = Math.min(pagination.page * pagination.limit, pagination.total);
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="用户管理"
-        actions={
-          <>
-            <button
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground transition hover:border-emerald-200 hover:text-primary disabled:opacity-60"
-              disabled={loading}
-              onClick={() => void loadUsers({ page: pagination.page })}
-              type="button"
-            >
-              <RefreshCcw className={cnIcon(loading)} />
-              刷新列表
-            </button>
-            <button
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
-              onClick={() => setCreateOpen(true)}
-              type="button"
-            >
-              <Plus className="h-4 w-4" />
-              新建用户
-            </button>
-          </>
-        }
-      />
+    <div className="space-y-8 p-8">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h1 className="page-title">用户管理</h1>
+          <p className="page-subtitle">管理系统用户、访问状态与登录风险。</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground transition hover:border-foreground/20 hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={loading}
+            onClick={() => void loadUsers({ page: pagination.page })}
+            type="button"
+          >
+            <RefreshCcw className={cnIcon(loading)} />
+            刷新列表
+          </button>
+          <button
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:opacity-95"
+            onClick={() => setCreateOpen(true)}
+            type="button"
+          >
+            <Plus className="h-4 w-4" />
+            新建用户
+          </button>
+        </div>
+      </div>
 
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+      <section className="overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-sm">
+        <div className="border-b border-border px-6 py-5">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
             <div>
-              <p className="text-sm font-semibold text-foreground">账号列表</p>
+              <p className="text-base font-semibold text-foreground">账号列表</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                风险 {summary.riskCount} 个，锁定 {summary.lockedCount} 个，停用 {summary.disabledCount} 个，活跃会话 {summary.activeSessionUsersCount} 个
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              共 {pagination.total} 个用户，当前第 {pagination.page} / {pagination.totalPages} 页
-            </p>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <span>共 {pagination.total} 个用户</span>
+              <span>第 {pagination.page} / {Math.max(1, pagination.totalPages)} 页</span>
+            </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <OverviewFilterCard
-              label="总用户数"
-              onClick={() => setStatusFilter("all")}
-              selected={statusFilter === "all"}
-              tone="slate"
-              value={String(overview.totalUsers)}
-            />
-            <OverviewFilterCard
-              label="活跃会话"
-              onClick={() => setStatusFilter("active-session")}
-              selected={statusFilter === "active-session"}
-              tone={overview.pageSessionUsersCount > 0 ? "emerald" : "slate"}
-              value={String(overview.pageSessionUsersCount)}
-            />
-            <OverviewFilterCard
-              label="锁定账号"
-              onClick={() => setStatusFilter("locked")}
-              selected={statusFilter === "locked"}
-              tone={overview.pageLockedCount > 0 ? "amber" : "slate"}
-              value={String(overview.pageLockedCount)}
-            />
-            <OverviewFilterCard
-              label="风险账号"
-              onClick={() => setStatusFilter("risk")}
-              selected={statusFilter === "risk"}
-              tone={overview.pageRiskCount > 0 ? "amber" : "slate"}
-              value={String(overview.pageRiskCount)}
-            />
-          </div>
-
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+          <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center">
               <label className="relative flex-1">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/80" />
                 <input
-                  className="w-full rounded-lg border border-border bg-muted/40 py-3 pl-11 pr-4 text-sm text-foreground"
+                  className="w-full rounded-lg border border-border bg-background py-2.5 pl-11 pr-4 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="搜索用户名或邮箱"
                   value={searchQuery}
@@ -637,217 +618,256 @@ export function AdminUsersManager() {
               </label>
 
               <select
-                className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground"
+                className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                 onChange={(event) => setRoleFilter(event.target.value as "all" | "admin" | "user")}
                 value={roleFilter}
               >
-                <option value="all">全部角色</option>
+                <option value="all">所有角色</option>
                 <option value="admin">管理员</option>
                 <option value="user">普通用户</option>
               </select>
 
               <select
-                className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground"
+                className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+                value={statusFilter}
+              >
+                {STATUS_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                 onChange={(event) => void loadUsers({ page: 1, limit: Number(event.target.value || 10) })}
                 value={pagination.limit}
               >
                 <option value="10">10 / 页</option>
                 <option value="20">20 / 页</option>
                 <option value="50">50 / 页</option>
+                <option value="100">100 / 页</option>
               </select>
-
-              {(searchQuery || roleFilter !== "all" || statusFilter !== "all") ? (
-                <button
-                  className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground transition hover:border-emerald-200 hover:text-primary"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setRoleFilter("all");
-                    setStatusFilter("all");
-                  }}
-                  type="button"
-                >
-                  清空筛选
-                </button>
-              ) : null}
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {STATUS_FILTER_OPTIONS.map((option) => (
-                <button
-                  className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
-                    statusFilter === option.value
-                      ? "border-emerald-300 bg-primary/10 text-primary shadow-[0_10px_30px_rgba(5,150,105,0.08)]"
-                      : "border-border bg-background text-foreground hover:border-emerald-200 hover:text-primary"
-                  }`}
-                  key={option.value}
-                  onClick={() => setStatusFilter(option.value)}
-                  type="button"
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            {hasFilters ? (
+              <button
+                className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition hover:border-foreground/20 hover:bg-muted/60"
+                onClick={() => {
+                  setSearchQuery("");
+                  setRoleFilter("all");
+                  setStatusFilter("all");
+                  void loadUsers({
+                    page: 1,
+                    limit: pagination.limit,
+                    roleFilter: "all",
+                    statusFilter: "all",
+                    searchQuery: ""
+                  });
+                }}
+                type="button"
+              >
+                清空筛选
+              </button>
+            ) : null}
           </div>
         </div>
 
         {loading ? (
-          <TableSkeleton className="mt-6" rows={Math.min(8, pagination.limit)} />
+          <TableSkeleton className="m-6" rows={Math.min(8, pagination.limit)} />
         ) : emptyState ? (
-          <EmptyState className="mt-6" icon={Search} title="当前筛选条件下没有用户" />
+          <EmptyState className="m-6" icon={Search} title="当前筛选条件下没有用户" />
         ) : (
-          <div className="mt-6 overflow-x-auto rounded-xl border border-border">
-            <table className="min-w-[1160px] w-full text-left text-sm">
-              <thead className="bg-muted/40 text-muted-foreground sticky top-0 z-10 bg-background/95 backdrop-blur">
-                <tr className="border-b border-border/70">
-                  <SortableHeader field="username" label="用户" onSort={handleSort} renderIcon={renderSortIcon} />
-                  <SortableHeader field="role" label="角色" onSort={handleSort} renderIcon={renderSortIcon} />
-                  <SortableHeader field="status" label="状态与风险" onSort={handleSort} renderIcon={renderSortIcon} />
-                  <th className="pb-3 pr-4">会话</th>
-                  <SortableHeader field="lastLoginAt" label="上次活动" onSort={handleSort} renderIcon={renderSortIcon} />
-                  <SortableHeader field="createdAt" label="创建时间" onSort={handleSort} renderIcon={renderSortIcon} />
-                  <th className="pb-3 text-right">操作</th>
+          <div className="overflow-x-auto">
+            <table className="w-max min-w-[1120px] table-fixed text-sm [&_th]:h-11 [&_th]:px-3 [&_td]:px-3 [&_td]:py-3">
+              <thead className="border-b border-border bg-muted/30">
+                <tr>
+                  <th
+                    className="hidden w-[78px] whitespace-nowrap text-left font-medium text-muted-foreground sm:table-cell"
+                    aria-sort={sortField === "id" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                  >
+                    <button className="inline-flex items-center gap-1 whitespace-nowrap" onClick={() => handleSort("id")} type="button">
+                      用户 ID
+                      {renderSortIcon("id")}
+                    </button>
+                  </th>
+                  <th
+                    className="w-[240px] whitespace-nowrap text-left font-medium text-muted-foreground"
+                    aria-sort={sortField === "username" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                  >
+                    <button className="inline-flex items-center gap-1 whitespace-nowrap" onClick={() => handleSort("username")} type="button">
+                      用户
+                      {renderSortIcon("username")}
+                    </button>
+                  </th>
+                  <th
+                    className="hidden w-[110px] whitespace-nowrap text-left font-medium text-muted-foreground lg:table-cell"
+                    aria-sort={sortField === "role" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                  >
+                    <button className="inline-flex items-center gap-1 whitespace-nowrap" onClick={() => handleSort("role")} type="button">
+                      角色
+                      {renderSortIcon("role")}
+                    </button>
+                  </th>
+                  <th
+                    className="w-[200px] whitespace-nowrap text-left font-medium text-muted-foreground"
+                    aria-sort={sortField === "status" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                  >
+                    <button className="inline-flex items-center gap-1 whitespace-nowrap" onClick={() => handleSort("status")} type="button">
+                      状态
+                      {renderSortIcon("status")}
+                    </button>
+                  </th>
+                  <th className="w-[140px] whitespace-nowrap text-left font-medium text-muted-foreground">会话</th>
+                  <th
+                    className="hidden w-[180px] whitespace-nowrap text-left font-medium text-muted-foreground xl:table-cell"
+                    aria-sort={sortField === "lastLoginAt" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                  >
+                    <button className="inline-flex items-center gap-1 whitespace-nowrap" onClick={() => handleSort("lastLoginAt")} type="button">
+                      上次登录
+                      {renderSortIcon("lastLoginAt")}
+                    </button>
+                  </th>
+                  <th
+                    className="hidden w-[180px] whitespace-nowrap text-left font-medium text-muted-foreground xl:table-cell"
+                    aria-sort={sortField === "createdAt" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                  >
+                    <button className="inline-flex items-center gap-1 whitespace-nowrap" onClick={() => handleSort("createdAt")} type="button">
+                      创建时间
+                      {renderSortIcon("createdAt")}
+                    </button>
+                  </th>
+                  <th className="w-[120px] whitespace-nowrap text-center font-medium text-muted-foreground">操作</th>
                 </tr>
               </thead>
-              <tbody className="bg-background">
+              <tbody>
                 {users.map((user) => {
                   const userStatusBadge = getUserStatusBadge(user);
 
                   return (
-                  <tr className={getUserRowClassName(user)} key={user.id}>
-                    <td className="p-4 pr-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">
-                          {user.username.slice(0, 2).toUpperCase()}
+                    <tr className={getUserRowClassName(user)} key={user.id}>
+                      <td className="hidden font-mono text-xs text-muted-foreground sm:table-cell">{user.id}</td>
+                      <td>
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                            {user.username.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="truncate font-medium text-foreground">{user.username}</div>
+                            <div className="truncate text-xs text-muted-foreground">{user.email || "未设置邮箱"}</div>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="truncate font-medium text-foreground">{user.username}</p>
-                          <p className="truncate text-xs text-muted-foreground">{user.email || "未设置邮箱"}</p>
-                          <p className="mt-1 text-xs text-muted-foreground/80">ID {user.id}</p>
+                      </td>
+                      <td className="hidden lg:table-cell">
+                        <span
+                          className={cn(
+                            "inline-flex h-6 items-center rounded-full px-2.5 text-xs font-medium",
+                            user.role === "admin" ? "bg-amber-100 text-amber-700" : "bg-muted text-foreground"
+                          )}
+                        >
+                          {user.role === "admin" ? "管理员" : "普通用户"}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <StatusBadge className="h-6 items-center px-2.5 text-[11px]" label={userStatusBadge.label} variant={userStatusBadge.variant} />
+                            {user.failedLoginCount > 0 ? (
+                              <span className="inline-flex h-6 items-center rounded-full bg-amber-500/10 px-2.5 text-[11px] font-medium text-amber-700">
+                                失败 {user.failedLoginCount}
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="hidden text-[11px] leading-4 text-muted-foreground 2xl:block">{getUserRiskSummary(user)}</p>
                         </div>
-                      </div>
-                    </td>
-                    <td className="p-4 pr-4">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                          user.role === "admin"
-                            ? "bg-amber-500/10 text-amber-600"
-                            : "bg-slate-100 text-foreground"
-                        }`}
-                      >
-                        {user.role === "admin" ? "管理员" : "普通用户"}
-                      </span>
-                    </td>
-                    <td className="p-4 pr-4">
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap gap-2">
-                          <StatusBadge
-                            label={userStatusBadge.label}
-                            variant={userStatusBadge.variant}
-                          />
-                          {user.failedLoginCount > 0 ? (
-                            <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
-                              失败 {user.failedLoginCount} 次
+                      </td>
+                      <td>
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className="inline-flex h-6 items-center rounded-full bg-muted px-2.5 text-[11px] font-medium text-muted-foreground">
+                            {user.activeSessionCount > 0 ? `${user.activeSessionCount} 个会话` : "无会话"}
+                          </span>
+                          {!user.isActive ? (
+                            <span className="inline-flex h-6 items-center rounded-full bg-destructive/10 px-2.5 text-[11px] font-medium text-destructive">
+                              已停用
                             </span>
                           ) : null}
                         </div>
-                        <p className="text-xs leading-5 text-muted-foreground">{getUserRiskSummary(user)}</p>
-                      </div>
-                    </td>
-                    <td className="p-4 pr-4">
-                      <div className="flex flex-wrap gap-2">
-                        <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-                          {user.activeSessionCount > 0 ? `${user.activeSessionCount} 个会话` : "无会话"}
-                        </span>
-                        {!user.isActive ? (
-                          <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
-                            已停用
-                          </span>
-                        ) : null}
-                      </div>
-                    </td>
-                    <td className="p-4 pr-4 text-foreground">{formatDateTime(user.lastLoginAt)}</td>
-                    <td className="p-4 pr-4 text-foreground">{formatDateTime(user.createdAt)}</td>
-                    <td className="p-4">
-                      <div className="flex flex-wrap justify-end gap-2">
-                        <ActionButton
-                          disabled={actionLoading !== null}
-                          icon={PencilLine}
-                          label="编辑"
-                          onClick={() => openEditModal(user)}
-                        />
-                        <ActionButton
-                          disabled={actionLoading !== null}
-                          icon={History}
-                          label="登录记录"
-                          onClick={() => void handleLoadLoginHistory(user)}
-                        />
-                        <DropdownMenu.Root>
-                          <DropdownMenu.Trigger asChild>
-                            <button
-                              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                              disabled={actionLoading !== null}
-                              type="button"
-                            >
-                              <MoreHorizontal className="h-3.5 w-3.5" />
-                              更多
-                            </button>
-                          </DropdownMenu.Trigger>
-                          <DropdownMenu.Portal>
-                            <DropdownMenu.Content
-                              align="end"
-                              className="z-50 min-w-[190px] rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
-                              sideOffset={6}
-                            >
-                              <DropdownMenu.Item
-                                className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-none hover:bg-muted focus:bg-muted"
-                                onSelect={() => void handleLoadSecurityAlerts(user)}
+                      </td>
+                      <td className="hidden text-sm text-foreground xl:table-cell">{formatDateTime(user.lastLoginAt)}</td>
+                      <td className="hidden text-sm text-foreground xl:table-cell">{formatDateTime(user.createdAt)}</td>
+                      <td>
+                        <div className="flex items-center justify-center gap-1">
+                          <IconActionButton className="hidden lg:inline-flex" disabled={actionLoading !== null} icon={PencilLine} label="编辑" onClick={() => openEditModal(user)} />
+                          <IconActionButton className="hidden lg:inline-flex" disabled={actionLoading !== null} icon={KeyRound} label="重置密码" onClick={() => void handleResetPassword(user)} />
+                          <DropdownMenu.Root>
+                            <DropdownMenu.Trigger asChild>
+                              <button
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                disabled={actionLoading !== null}
+                                title="更多操作"
+                                type="button"
                               >
-                                <ShieldAlert className="h-4 w-4" />
-                                安全告警
-                              </DropdownMenu.Item>
-                              <DropdownMenu.Item
-                                className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-none hover:bg-muted focus:bg-muted"
-                                onSelect={() => void handleResetPassword(user)}
+                                <MoreHorizontal className="h-4 w-4" />
+                              </button>
+                            </DropdownMenu.Trigger>
+                            <DropdownMenu.Portal>
+                              <DropdownMenu.Content
+                                align="end"
+                                className="z-50 w-72 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+                                sideOffset={8}
                               >
-                                <KeyRound className="h-4 w-4" />
-                                重置密码
-                              </DropdownMenu.Item>
-                              {(isUserLocked(user) || user.failedLoginCount > 0) ? (
-                                <DropdownMenu.Item
-                                  className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-amber-700 outline-none hover:bg-amber-50 focus:bg-amber-50"
-                                  onSelect={() => void handleUnlockUser(user)}
-                                >
-                                  <RefreshCcw className="h-4 w-4" />
-                                  {isUserLocked(user) ? "解除锁定" : "清空失败"}
+                                <DropdownMenu.Item className={dropdownItemClassName} onSelect={() => void handleLoadLoginHistory(user)}>
+                                  <MenuItemContent description="查看最近登录历史和失败记录" icon={History} title="查看登录记录" />
                                 </DropdownMenu.Item>
-                              ) : null}
-                              <DropdownMenu.Item
-                                className={cn(
-                                  "flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-none",
-                                  user.isActive
-                                    ? "text-amber-700 hover:bg-amber-50 focus:bg-amber-50"
-                                    : "text-primary hover:bg-emerald-50 focus:bg-emerald-50"
-                                )}
-                                onSelect={() => void handleToggleUserState(user)}
-                              >
-                                {user.isActive ? <ShieldAlert className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-                                {user.isActive ? "停用账号" : "启用账号"}
-                              </DropdownMenu.Item>
-                              <DropdownMenu.Separator className="my-1 h-px bg-border" />
-                              <DropdownMenu.Item
-                                className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive outline-none hover:bg-destructive/10 focus:bg-destructive/10 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"
-                                disabled={user.isActive}
-                                onSelect={() => void handleDeleteUser(user)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                删除用户
-                              </DropdownMenu.Item>
-                            </DropdownMenu.Content>
-                          </DropdownMenu.Portal>
-                        </DropdownMenu.Root>
-                      </div>
-                    </td>
-                  </tr>
+                                <DropdownMenu.Item className={dropdownItemClassName} onSelect={() => void handleLoadSecurityAlerts(user)}>
+                                  <MenuItemContent description="查看账户共享和异常使用风险" icon={ShieldAlert} iconClassName="text-amber-600" title="查看安全告警" />
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item className={dropdownItemClassName} onSelect={() => void handleResetPassword(user)}>
+                                  <MenuItemContent description="生成新密码并清空现有会话" icon={KeyRound} title="重置密码" />
+                                </DropdownMenu.Item>
+                                {isUserLocked(user) || user.failedLoginCount > 0 ? (
+                                  <DropdownMenu.Item className={cn(dropdownItemClassName, "text-amber-700 focus:bg-amber-50")} onSelect={() => void handleUnlockUser(user)}>
+                                    <MenuItemContent
+                                      description={isUserLocked(user) ? "解除当前登录锁定状态" : "清空失败登录计数"}
+                                      icon={RefreshCcw}
+                                      iconClassName="text-amber-600"
+                                      title={isUserLocked(user) ? "立即解锁账户" : "清空失败记录"}
+                                    />
+                                  </DropdownMenu.Item>
+                                ) : null}
+                                <DropdownMenu.Item
+                                  className={cn(
+                                    dropdownItemClassName,
+                                    user.isActive ? "text-amber-700 focus:bg-amber-50" : "text-primary focus:bg-emerald-50"
+                                  )}
+                                  onSelect={() => void handleToggleUserState(user)}
+                                >
+                                  <MenuItemContent
+                                    description={user.isActive ? "禁用后该用户无法继续登录系统" : "恢复该用户的登录能力"}
+                                    icon={user.isActive ? ShieldAlert : Check}
+                                    iconClassName={user.isActive ? "text-amber-600" : "text-primary"}
+                                    title={user.isActive ? "停用账户" : "启用账户"}
+                                  />
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Separator className="my-1 h-px bg-border" />
+                                <DropdownMenu.Item
+                                  className={cn(dropdownItemClassName, "text-destructive focus:bg-destructive/10")}
+                                  disabled={user.isActive}
+                                  onSelect={() => void handleDeleteUser(user)}
+                                >
+                                  <MenuItemContent
+                                    description={user.isActive ? "需先停用该用户后才可删除" : "永久删除用户及其关联数据"}
+                                    icon={Trash2}
+                                    title="删除用户"
+                                  />
+                                </DropdownMenu.Item>
+                              </DropdownMenu.Content>
+                            </DropdownMenu.Portal>
+                          </DropdownMenu.Root>
+                        </div>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
@@ -855,69 +875,85 @@ export function AdminUsersManager() {
           </div>
         )}
 
-        <div className="mt-6 flex justify-end gap-2 border-t border-border/60 pt-4">
-          <div className="flex gap-2">
-            <button
-              className="rounded-lg border border-border bg-background px-4 py-2 font-medium disabled:opacity-40"
-              disabled={pagination.page <= 1 || loading}
-              onClick={() => void loadUsers({ page: pagination.page - 1 })}
-              type="button"
-            >
-              上一页
-            </button>
-            <button
-              className="rounded-lg border border-border bg-background px-4 py-2 font-medium disabled:opacity-40"
-              disabled={pagination.page >= pagination.totalPages || loading}
-              onClick={() => void loadUsers({ page: pagination.page + 1 })}
-              type="button"
-            >
-              下一页
-            </button>
+        {pagination.total > 0 ? (
+          <div className="flex flex-col gap-4 border-t border-border px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <span>
+                显示 {visibleStart} - {visibleEnd} 条，共 {pagination.total} 条
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={pagination.page <= 1 || loading}
+                onClick={() => void loadUsers({ page: pagination.page - 1 })}
+                type="button"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                上一页
+              </button>
+              <div className="min-w-[92px] text-center text-sm text-muted-foreground">
+                第 {pagination.page} / {Math.max(1, pagination.totalPages)} 页
+              </div>
+              <button
+                className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={pagination.page >= pagination.totalPages || loading}
+                onClick={() => void loadUsers({ page: pagination.page + 1 })}
+                type="button"
+              >
+                下一页
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
-        </div>
+        ) : null}
       </section>
 
       <ModalFrame
+        description="创建新的系统账号，可选择角色并指定初始密码。"
         eyebrow="用户管理"
         onClose={() => setCreateOpen(false)}
         open={createOpen}
         title="新建用户"
       >
         <form className="space-y-5" onSubmit={handleCreateUser}>
-          <div className="grid gap-4 md:grid-cols-[1fr,auto]">
-            <label className="block text-sm text-foreground">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-foreground">
               用户名
+              <span className="ml-1 text-destructive">*</span>
+            </label>
+            <div className="grid gap-3 md:grid-cols-[1fr,auto]">
               <input
-                className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                 onChange={(event) => setCreateForm((current) => ({ ...current, username: event.target.value }))}
                 placeholder="请输入用户名"
                 value={createForm.username}
               />
-            </label>
-            <button
-              className="mt-7 rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground"
-              onClick={generateUsername}
-              type="button"
-            >
-              自动生成
-            </button>
+              <button
+                className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/60"
+                onClick={generateUsername}
+                type="button"
+              >
+                自动生成
+              </button>
+            </div>
           </div>
 
-          <label className="block text-sm text-foreground">
-            邮箱
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-foreground">邮箱</label>
             <input
-              className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               onChange={(event) => setCreateForm((current) => ({ ...current, email: event.target.value }))}
-              placeholder="请输入邮箱"
+              placeholder="user@example.com"
               value={createForm.email}
             />
-          </label>
+          </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="block text-sm text-foreground">
-              角色
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-foreground">角色</label>
               <select
-                className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                 onChange={(event) =>
                   setCreateForm((current) => ({
                     ...current,
@@ -929,33 +965,29 @@ export function AdminUsersManager() {
                 <option value="user">普通用户</option>
                 <option value="admin">管理员</option>
               </select>
-            </label>
+            </div>
 
-            <label className="block text-sm text-foreground">
-              初始密码
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-foreground">初始密码</label>
               <input
-                className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                 onChange={(event) => setCreateForm((current) => ({ ...current, password: event.target.value }))}
                 placeholder="留空则自动生成"
                 type="password"
                 value={createForm.password}
               />
-            </label>
+            </div>
           </div>
 
           <div className="flex justify-end gap-3">
             <button
-              className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
+              className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted/60"
               onClick={() => setCreateOpen(false)}
               type="button"
             >
               取消
             </button>
-            <button
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-              disabled={submitting}
-              type="submit"
-            >
+            <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-50" disabled={submitting} type="submit">
               {submitting ? "创建中..." : "创建用户"}
             </button>
           </div>
@@ -963,25 +995,26 @@ export function AdminUsersManager() {
       </ModalFrame>
 
       <ModalFrame
+        description="仅支持修改邮箱和角色，用户名保持不变。"
         eyebrow="用户管理"
         onClose={() => setEditOpen(false)}
         open={editOpen}
         title={selectedUser ? `编辑 ${selectedUser.username}` : "编辑用户"}
       >
         <form className="space-y-5" onSubmit={handleEditUser}>
-          <label className="block text-sm text-foreground">
-            邮箱
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-foreground">邮箱</label>
             <input
-              className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               onChange={(event) => setEditForm((current) => ({ ...current, email: event.target.value }))}
               value={editForm.email}
             />
-          </label>
+          </div>
 
-          <label className="block text-sm text-foreground">
-            角色
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-foreground">角色</label>
             <select
-              className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               onChange={(event) =>
                 setEditForm((current) => ({
                   ...current,
@@ -993,21 +1026,17 @@ export function AdminUsersManager() {
               <option value="user">普通用户</option>
               <option value="admin">管理员</option>
             </select>
-          </label>
+          </div>
 
           <div className="flex justify-end gap-3">
             <button
-              className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
+              className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted/60"
               onClick={() => setEditOpen(false)}
               type="button"
             >
               取消
             </button>
-            <button
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-              disabled={submitting}
-              type="submit"
-            >
+            <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-50" disabled={submitting} type="submit">
               {submitting ? "保存中…" : "保存修改"}
             </button>
           </div>
@@ -1015,6 +1044,7 @@ export function AdminUsersManager() {
       </ModalFrame>
 
       <ModalFrame
+        description="请将新的登录凭证发送给用户，首次登录需尽快修改密码。"
         eyebrow="用户管理"
         onClose={() => setResetPasswordOpen(false)}
         open={resetPasswordOpen}
@@ -1022,16 +1052,18 @@ export function AdminUsersManager() {
       >
         {resetPasswordData ? (
           <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-muted/40 p-5">
-              <p className="text-sm text-muted-foreground">用户名</p>
-              <p className="mt-1 font-medium text-foreground">{resetPasswordData.username}</p>
-              <p className="mt-4 text-sm text-muted-foreground">密码</p>
-              <p className="mt-1 font-mono tabular-nums text-base text-foreground">{resetPasswordData.password}</p>
+            <div className="rounded-xl border border-border bg-muted/40 p-5 font-mono text-sm">
+              <p>访问地址: {typeof window !== "undefined" ? window.location.origin : "--"}</p>
+              <p className="mt-2">用户名: {resetPasswordData.username}</p>
+              <p className="mt-2">
+                密码: <span className="text-base font-semibold text-primary">{resetPasswordData.password}</span>
+              </p>
+              <p className="mt-3 font-sans text-xs text-muted-foreground">首次登录需要修改密码。</p>
             </div>
 
             <div className="flex justify-end gap-3">
               <button
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted/60"
                 onClick={() => void copyPassword()}
                 type="button"
               >
@@ -1044,6 +1076,11 @@ export function AdminUsersManager() {
       </ModalFrame>
 
       <ModalFrame
+        description={
+          selectedUser
+            ? `${selectedUser.username} (${selectedUser.email || "无邮箱"}) 的最近登录历史`
+            : "查看最近登录历史"
+        }
         eyebrow="用户管理"
         onClose={() => {
           setHistoryOpen(false);
@@ -1060,7 +1097,7 @@ export function AdminUsersManager() {
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/80" />
                 <input
-                  className="w-full rounded-lg border border-border bg-muted/40 py-2 pl-9 pr-3 text-sm text-foreground"
+                  className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                   onChange={(event) => setHistoryIpQuery(event.target.value)}
                   placeholder="按 IP 搜索登录记录"
                   value={historyIpQuery}
@@ -1080,9 +1117,7 @@ export function AdminUsersManager() {
                               ? "bg-stone-200 text-foreground"
                               : record.status === "locked"
                                 ? "bg-destructive/10 text-destructive"
-                                : record.status === "failed"
-                                  ? "bg-amber-500/10 text-amber-600"
-                              : "bg-amber-500/10 text-amber-600"
+                                : "bg-amber-500/10 text-amber-600"
                         }`}
                       >
                         {getLoginHistoryStatusLabel(record)}
@@ -1104,9 +1139,7 @@ export function AdminUsersManager() {
                     <p>{record.expiresAt ? `过期时间：${formatDateTime(record.expiresAt)}` : `事件类型：${getLoginHistoryEventLabel(record.eventType)}`}</p>
                     <p>IP：{record.ipAddress || "--"}</p>
                     <p className="sm:col-span-2">设备：{record.userAgent || "--"}</p>
-                    {record.failureReason ? (
-                      <p className="sm:col-span-2">原因：{record.failureReason}</p>
-                    ) : null}
+                    {record.failureReason ? <p className="sm:col-span-2">原因：{record.failureReason}</p> : null}
                   </div>
                 </div>
               ))
@@ -1120,6 +1153,11 @@ export function AdminUsersManager() {
       </ModalFrame>
 
       <ModalFrame
+        description={
+          selectedUser
+            ? `${selectedUser.username} (${selectedUser.email || "无邮箱"}) 的账户安全告警`
+            : "查看账户安全告警"
+        }
         eyebrow="用户管理"
         onClose={() => setAlertsOpen(false)}
         open={alertsOpen}
@@ -1146,9 +1184,7 @@ export function AdminUsersManager() {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className={getAlertSeverityBadgeClass(alert.severity)}>
-                            {getAlertSeverityLabel(alert.severity)}
-                          </span>
+                          <span className={getAlertSeverityBadgeClass(alert.severity)}>{getAlertSeverityLabel(alert.severity)}</span>
                           <span className="text-xs text-muted-foreground">{formatDateTime(alert.createdAt)}</span>
                         </div>
                         <p className="mt-3 text-sm font-semibold text-foreground">{alert.title}</p>
@@ -1191,9 +1227,7 @@ export function AdminUsersManager() {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className={getAlertSeverityBadgeClass(alert.severity)}>
-                            {getAlertSeverityLabel(alert.severity)}
-                          </span>
+                          <span className={getAlertSeverityBadgeClass(alert.severity)}>{getAlertSeverityLabel(alert.severity)}</span>
                           <span className="text-xs text-muted-foreground">{formatDateTime(alert.createdAt)}</span>
                         </div>
                         <p className="mt-3 text-sm font-semibold text-foreground">{alert.title}</p>
@@ -1227,28 +1261,30 @@ export function AdminUsersManager() {
   );
 }
 
-function SortableHeader(props: {
-  field: SortField;
-  label: string;
-  onSort: (field: SortField) => void;
-  renderIcon: (field: SortField) => React.ReactNode;
-}) {
-  return (
-    <th className="pb-3 pr-4">
-      <button
-        className="inline-flex items-center gap-1 font-medium"
-        onClick={() => props.onSort(props.field)}
-        type="button"
-      >
-        {props.label}
-        {props.renderIcon(props.field)}
-      </button>
-    </th>
-  );
-}
-
 function cnIcon(loading: boolean) {
   return loading ? "h-4 w-4 animate-spin" : "h-4 w-4";
+}
+
+const dropdownItemClassName =
+  "flex cursor-pointer items-start gap-2 rounded-lg px-3 py-2 text-sm outline-none transition hover:bg-muted focus:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50";
+
+function MenuItemContent(props: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  iconClassName?: string;
+}) {
+  const Icon = props.icon;
+
+  return (
+    <>
+      <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", props.iconClassName)} />
+      <div className="space-y-0.5">
+        <div className="font-medium">{props.title}</div>
+        <div className="text-xs leading-4 text-muted-foreground">{props.description}</div>
+      </div>
+    </>
+  );
 }
 
 function isUserLocked(user: Pick<AdminUser, "lockedUntil">) {
@@ -1394,71 +1430,27 @@ function getAlertCategoryLabel(category: SecurityAlert["category"]) {
   }
 }
 
-function OverviewFilterCard(props: {
-  label: string;
-  value: string;
-  tone: "emerald" | "amber" | "slate";
-  selected?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      className={cn(
-        "rounded-xl border p-4 text-left transition",
-        props.selected
-          ? "border-emerald-300 bg-primary/5 shadow-[0_12px_30px_rgba(5,150,105,0.08)]"
-          : "border-border bg-muted/30 hover:border-emerald-200 hover:bg-background"
-      )}
-      onClick={props.onClick}
-      type="button"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-foreground">{props.label}</p>
-        </div>
-        <span
-          className={cn(
-            "rounded-full px-3 py-1 text-xs font-semibold",
-            props.tone === "emerald"
-              ? "bg-primary/10 text-primary"
-              : props.tone === "amber"
-                ? "bg-amber-500/10 text-amber-600"
-                : "bg-muted text-foreground"
-          )}
-        >
-          {props.value}
-        </span>
-      </div>
-    </button>
-  );
-}
-
-function ActionButton(props: {
+function IconActionButton(props: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   onClick: () => void;
   disabled?: boolean;
-  tone?: "default" | "emerald" | "amber" | "danger";
+  className?: string;
 }) {
   const Icon = props.icon;
-  const toneClass =
-    props.tone === "danger"
-      ? "border-destructive/20 bg-destructive/10 text-destructive disabled:border-red-100 disabled:bg-destructive/10/60"
-      : props.tone === "emerald"
-        ? "border-emerald-200 bg-emerald-50 text-emerald-700 disabled:border-emerald-100 disabled:bg-emerald-50/60"
-        : props.tone === "amber"
-          ? "border-amber-200 bg-amber-500/10 text-amber-600 disabled:border-amber-100 disabled:bg-amber-500/60"
-          : "border-border bg-background text-foreground";
 
   return (
     <button
-      className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${toneClass}`}
+      className={cn(
+        "inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
+        props.className
+      )}
       disabled={props.disabled}
       onClick={props.onClick}
+      title={props.label}
       type="button"
     >
-      <Icon className="h-3.5 w-3.5" />
-      {props.label}
+      <Icon className="h-4 w-4" />
     </button>
   );
 }
