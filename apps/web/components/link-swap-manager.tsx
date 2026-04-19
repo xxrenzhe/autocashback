@@ -6,7 +6,6 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
-  CheckCircle2,
   Copy,
   History,
   Link2,
@@ -15,18 +14,14 @@ import {
   PencilLine,
   Play,
   RefreshCcw,
-  ShieldAlert,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 import type { LinkSwapRunRecord, LinkSwapTaskRecord, OfferRecord } from "@autocashback/domain";
 import {
-  CardSkeleton,
   EmptyState,
-  PageHeader,
-  StatCard,
-  StatSkeleton,
   StatusBadge,
+  TableSkeleton,
   cn,
   getStatusBadgeMeta
 } from "@autocashback/ui";
@@ -178,6 +173,30 @@ function statusVariant(status: LinkSwapConsoleStatus) {
     default:
       return "idle" as const;
   }
+}
+
+function SwapMetric({
+  label,
+  value,
+  tone = "default"
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "warning" | "success";
+}) {
+  const toneClassName =
+    tone === "warning"
+      ? "border-amber-200 bg-amber-500/10 text-amber-700"
+      : tone === "success"
+        ? "border-emerald-200 bg-emerald-500/10 text-emerald-700"
+        : "border-border bg-card text-foreground";
+
+  return (
+    <div className={cn("rounded-xl border px-4 py-3", toneClassName)}>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+    </div>
+  );
 }
 
 export function LinkSwapManager() {
@@ -385,25 +404,49 @@ export function LinkSwapManager() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <PageHeader />
-        <section className="grid gap-4 xl:grid-cols-5">
+      <div className="space-y-5">
+        <section className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="space-y-2">
+            <div className="h-8 w-40 rounded-lg bg-muted" />
+            <div className="h-4 w-72 rounded bg-muted" />
+          </div>
+          <div className="h-10 w-24 rounded-lg bg-muted" />
+        </section>
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {Array.from({ length: 5 }).map((_, index) => (
-            <StatSkeleton key={index} />
+            <div className="h-24 rounded-xl border border-border bg-muted/40" key={index} />
           ))}
         </section>
-        <section className="grid gap-5 xl:grid-cols-[1.2fr,0.8fr]">
-          <CardSkeleton className="min-h-80" />
-          <CardSkeleton className="min-h-80" />
+        <section className="rounded-xl border bg-card">
+          <TableSkeleton className="m-5" rows={6} />
         </section>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        actions={
+    <div className="space-y-5">
+      <section className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">换链任务</h1>
+            <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+              {consoleData.stats.totalTasks}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">按状态、模式、执行时间和失败次数筛选。</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {consoleData.stats.warningTasks > 0 ? (
+            <button
+              className="rounded-full bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-700"
+              onClick={() => setStatusFilter("warning")}
+              type="button"
+            >
+              预警 / 异常 {consoleData.stats.warningTasks}
+            </button>
+          ) : null}
           <button
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-60"
             disabled={refreshing}
@@ -413,84 +456,83 @@ export function LinkSwapManager() {
             <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
             {refreshing ? "刷新中" : "刷新"}
           </button>
-        }
-      />
-
-      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">Script Token</p>
-            <p className="mt-2 break-all font-mono tabular-nums text-sm text-muted-foreground">
-              {script.token || "尚未生成"}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
-              disabled={rotatingToken}
-              onClick={() => void rotateToken()}
-              type="button"
-            >
-              {rotatingToken ? "更换中..." : "更换 Token"}
-            </button>
-            <button
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
-              disabled={!script.template || rotatingToken}
-              onClick={() => void copyScriptTemplate()}
-              type="button"
-            >
-              <Copy className="h-3.5 w-3.5" />
-              复制最新脚本
-            </button>
-            <button
-              className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
-              onClick={() => {
-                setHistoryTask(null);
-                setHistoryRecords(runs.slice(0, 20));
-                setHistoryLoading(false);
-                setHistoryOpen(true);
-              }}
-              type="button"
-            >
-              查看执行历史
-            </button>
-          </div>
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-5">
-        <StatCard icon={Link2} label="总任务" tone="slate" value={`${consoleData.stats.totalTasks}`} />
-        <StatCard icon={Play} label="运行中" tone="emerald" value={`${consoleData.stats.runningTasks}`} />
-        <StatCard icon={Pause} label="已暂停" tone="slate" value={`${consoleData.stats.pausedTasks}`} />
-        <StatCard icon={ShieldAlert} label="预警/异常" tone="amber" value={`${consoleData.stats.warningTasks}`} />
-        <StatCard icon={CheckCircle2} label="最近成功率" tone="emerald" value={`${consoleData.stats.recentSuccessRate}%`} />
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <SwapMetric label="总任务" value={`${consoleData.stats.totalTasks}`} />
+        <SwapMetric label="运行中" tone="success" value={`${consoleData.stats.runningTasks}`} />
+        <SwapMetric label="已暂停" value={`${consoleData.stats.pausedTasks}`} />
+        <SwapMetric
+          label="预警 / 异常"
+          tone={consoleData.stats.warningTasks > 0 ? "warning" : "success"}
+          value={`${consoleData.stats.warningTasks}`}
+        />
+        <SwapMetric label="最近成功率" tone="success" value={`${consoleData.stats.recentSuccessRate}%`} />
       </section>
 
-      {feedback ? (
-        <section
-          className={cn(
-            "rounded-xl border px-5 py-4 text-sm",
-            feedback.tone === "success"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border-destructive/20 bg-destructive/10 text-red-800"
-          )}
-        >
-          {feedback.text}
-        </section>
-      ) : null}
-
-      <section className="space-y-6">
-        <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
+      <section className="overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div className="border-b border-border/70 px-5 py-4">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">任务列表</p>
-              <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按状态筛选和处理任务</h3>
+            <div className="min-w-0">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Script Token</p>
+              <p className="mt-2 break-all font-mono tabular-nums text-sm text-foreground">
+                {script.token || "尚未生成"}
+              </p>
             </div>
-            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr),auto,auto] xl:min-w-[560px]">
+            <div className="flex flex-wrap gap-2">
+              <button
+                className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
+                disabled={rotatingToken}
+                onClick={() => void rotateToken()}
+                type="button"
+              >
+                {rotatingToken ? "更换中..." : "更换 Token"}
+              </button>
+              <button
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                disabled={!script.template || rotatingToken}
+                onClick={() => void copyScriptTemplate()}
+                type="button"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                复制最新脚本
+              </button>
+              <button
+                className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
+                onClick={() => {
+                  setHistoryTask(null);
+                  setHistoryRecords(runs.slice(0, 20));
+                  setHistoryLoading(false);
+                  setHistoryOpen(true);
+                }}
+                type="button"
+              >
+                查看执行历史
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {feedback ? (
+          <div
+            className={cn(
+              "border-b border-border/70 px-5 py-3 text-sm",
+              feedback.tone === "success"
+                ? "bg-emerald-50 text-emerald-800"
+                : "bg-destructive/10 text-red-800"
+            )}
+          >
+            {feedback.text}
+          </div>
+        ) : null}
+
+        <div className="border-b border-border/70 px-5 py-4">
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1.6fr)_repeat(2,minmax(0,1fr))_auto]">
               <label className="relative block">
                 <span className="sr-only">搜索任务</span>
                 <input
-                  className="w-full rounded-lg border border-border bg-muted/40 py-3 pl-4 pr-4 text-sm text-foreground"
+                  className="h-10 w-full rounded-lg border border-border bg-muted/40 px-3 text-sm text-foreground"
                   onChange={(event) =>
                     startTransition(() => {
                       setSearchQuery(event.target.value);
@@ -502,7 +544,7 @@ export function LinkSwapManager() {
               </label>
 
               <select
-                className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground"
+                className="h-10 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground"
                 onChange={(event) =>
                   startTransition(() => {
                     setStatusFilter(event.target.value as "all" | LinkSwapConsoleStatus);
@@ -518,7 +560,7 @@ export function LinkSwapManager() {
               </select>
 
               <select
-                className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground"
+                className="h-10 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground"
                 onChange={(event) =>
                   startTransition(() => {
                     setModeFilter(event.target.value as "all" | LinkSwapTaskRecord["mode"]);
@@ -532,10 +574,33 @@ export function LinkSwapManager() {
                   </option>
                 ))}
               </select>
+
+              {(searchQuery || statusFilter !== "all" || modeFilter !== "all") ? (
+                <button
+                  className="h-10 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setStatusFilter("all");
+                    setModeFilter("all");
+                  }}
+                  type="button"
+                >
+                  清空
+                </button>
+              ) : null}
             </div>
           </div>
 
-          <div className="mt-6 overflow-x-auto">
+        <div className="flex flex-col gap-2 border-b border-border/70 bg-muted/20 px-5 py-3 text-sm lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
+            <span className="font-medium text-foreground">结果 {filteredRows.length}</span>
+            <span>当前页 {paginatedRows.length}</span>
+            <span>最近成功率 {consoleData.stats.recentSuccessRate}%</span>
+          </div>
+          <p className="text-xs text-muted-foreground">任务创建和编辑仍使用原有弹窗。</p>
+        </div>
+
+          <div className="overflow-x-auto p-5">
             <table className="min-w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border/70">
@@ -754,7 +819,6 @@ export function LinkSwapManager() {
               </button>
             </div>
           </div>
-        </div>
       </section>
 
       <LinkSwapTaskDialog
