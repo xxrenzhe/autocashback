@@ -3,12 +3,10 @@
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  AlertTriangle,
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
   CheckCircle2,
-  Clock3,
   Copy,
   History,
   Link2,
@@ -18,7 +16,6 @@ import {
   Play,
   RefreshCcw,
   ShieldAlert,
-  Target
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
@@ -417,7 +414,6 @@ export function LinkSwapManager() {
             {refreshing ? "刷新中" : "刷新"}
           </button>
         }
-        description="保留任务统计、筛选、执行历史和脚本操作，去掉多余的入口卡片与说明块。"
       />
 
       <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
@@ -513,7 +509,7 @@ export function LinkSwapManager() {
         </section>
       ) : null}
 
-      <section className="grid gap-5 xl:grid-cols-[1.2fr,0.8fr]">
+      <section className="space-y-6">
         <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div>
@@ -744,11 +740,7 @@ export function LinkSwapManager() {
                   <tr>
                     <td className="py-6" colSpan={8}>
                       <EmptyState
-                        description={
-                          consoleData.rows.length === 0
-                            ? "创建 Offer 后会自动生成对应任务。"
-                            : "可以调整关键词、状态或模式筛选后重试。"
-                        }
+                        description={consoleData.rows.length === 0 ? "创建 Offer 后会生成任务。" : "调整筛选后重试。"}
                         icon={Link2}
                         title={consoleData.rows.length === 0 ? "当前还没有换链任务" : "当前筛选条件下没有匹配任务"}
                       />
@@ -794,97 +786,6 @@ export function LinkSwapManager() {
             </div>
           </div>
         </div>
-
-        <div className="space-y-6">
-          <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">重点提醒</p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">当前优先处理项</h3>
-            <div className="mt-5 space-y-3">
-              <div className="rounded-xl border border-border bg-muted/40 p-4">
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
-                    <AlertTriangle className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">先处理预警和异常</p>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      当前有 {consoleData.stats.warningTasks} 个任务进入预警或异常状态，优先检查代理、Offer 链接和 Google Ads 参数。
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-border bg-muted/40 p-4">
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Clock3 className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">控制执行节奏</p>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      如果某个 Offer 近期波动明显，优先调整任务间隔和持续天数，而不是频繁手动触发。
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-border bg-muted/40 p-4">
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 text-foreground">
-                    <Target className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">API 模式单独复核</p>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      当前有 {consoleData.stats.apiModeTasks} 个任务使用 Google Ads API 模式，这些任务需要同时校验授权和目标 Campaign ID。
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">最近执行</p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">最近 6 条结果</h3>
-            <div className="mt-5 space-y-3">
-              {runs.length ? (
-                runs.slice(0, 6).map((run) => {
-                  const offer = offers.find((item) => item.id === run.offerId) || null;
-                  return (
-                    <div className="rounded-xl border border-border bg-muted/40 p-4" key={run.id}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-foreground">
-                            {offer?.brandName || `Offer #${run.offerId}`}
-                          </p>
-                          <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(run.createdAt)}</p>
-                        </div>
-                        <span
-                          className={cn(
-                            "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
-                            run.status === "success" ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
-                          )}
-                        >
-                          {run.status === "success" ? "成功" : "失败"}
-                        </span>
-                      </div>
-                      <p className="mt-3 break-all text-xs text-muted-foreground">
-                        {run.resolvedSuffix || run.errorMessage || "本次执行未返回 suffix"}
-                      </p>
-                    </div>
-                  );
-                })
-              ) : (
-                <EmptyState
-                  description="任务执行后会自动记录在这里。"
-                  icon={History}
-                  title="还没有换链执行记录"
-                />
-              )}
-            </div>
-          </div>
-        </div>
       </section>
 
       <LinkSwapTaskDialog
@@ -895,11 +796,6 @@ export function LinkSwapManager() {
       />
 
       <ModalFrame
-        description={
-          historyTask
-            ? `查看 ${historyTask.offer?.brandName || `Offer #${historyTask.task.offerId}`} 的最近执行结果。`
-            : "查看最近执行结果。"
-        }
         eyebrow="执行历史"
         onClose={() => {
           setHistoryOpen(false);
@@ -940,7 +836,7 @@ export function LinkSwapManager() {
           </div>
         ) : (
           <EmptyState
-            description="任务执行后会在这里展示运行结果和回写状态。"
+            description="暂无执行记录。"
             icon={History}
             title="当前任务还没有执行历史"
           />

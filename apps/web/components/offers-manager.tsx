@@ -14,9 +14,7 @@ import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { SheetFrame } from "./sheet-frame";
 import {
-  AlertTriangle,
   CirclePlus,
-  Link2,
   MoreHorizontal,
   RefreshCcw,
   Search,
@@ -194,15 +192,6 @@ export function OffersManager() {
         sort
       }),
     [accounts, countryFilter, deferredSearchQuery, offers, platformFilter, resolutionFilter, sort, statusFilter]
-  );
-
-  const warningRows = useMemo(
-    () => allConsole.rows.filter((row) => row.thresholdReached).slice(0, 3),
-    [allConsole.rows]
-  );
-  const unresolvedRows = useMemo(
-    () => allConsole.rows.filter((row) => !row.hasResolvedSuffix).slice(0, 3),
-    [allConsole.rows]
   );
 
   const hasActiveFilters = Boolean(
@@ -423,7 +412,6 @@ export function OffersManager() {
   return (
     <div className="space-y-6">
       <PageHeader
-        description="保留统计、筛选和 Offer 表格，去掉额外的导航卡片和说明层。"
         actions={
           <>
             <button
@@ -485,8 +473,7 @@ export function OffersManager() {
         )}
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr),420px]">
-        <div className="space-y-6">
+      <section className="space-y-6">
           <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
@@ -839,23 +826,19 @@ export function OffersManager() {
                 className="m-6"
                 description={
                   hasActiveFilters
-                    ? "可以放宽筛选条件，或者直接新建新的 Offer。"
-                    : "先创建 Offer 并绑定返利账号，后续才能继续补点击或换链。"
+                    ? "放宽筛选或新建 Offer。"
+                    : "创建 Offer 后再配置任务。"
                 }
                 icon={WalletCards}
                 title={hasActiveFilters ? "当前筛选条件下没有 Offer" : "还没有 Offer"}
               />
             )}
           </section>
-        </div>
-
-        <div className="space-y-6">
-          <SheetFrame
+        <SheetFrame
             open={editorOpen}
             onClose={resetForm}
             eyebrow={editingId ? "编辑 Offer" : "新建 Offer"}
             title={editingId ? "更新当前 Offer" : "补齐新的投放条目"}
-            description="这里维护单个 Offer 的链接、归属平台、绑定账号和佣金阈值。保存后可以继续配置补点击或换链任务。"
           >
             <form className="space-y-4" onSubmit={handleSubmit}>
               <label className="block text-sm font-medium text-foreground">
@@ -999,62 +982,6 @@ export function OffersManager() {
               </div>
             </form>
           </SheetFrame>
-          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">重点提醒</p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">优先处理这些 Offer</h3>
-
-            <div className="mt-5 space-y-4">
-              {warningRows.map((row) => (
-                <button
-                  className="w-full rounded-xl border border-border bg-background p-4 text-left transition hover:bg-muted/40"
-                  key={`warning-${row.offer.id}`}
-                  onClick={() => handleEdit(row.offer)}
-                  type="button"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
-                      <AlertTriangle className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{row.offer.brandName}</p>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        佣金已达到 {row.offer.manualRecordedCommissionUsd.toFixed(2)} /{" "}
-                        {row.offer.commissionCapUsd.toFixed(2)} USD，建议确认是否停投。
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-
-              {unresolvedRows.map((row) => (
-                <button
-                  className="w-full rounded-xl border border-border bg-background p-4 text-left transition hover:bg-muted/40"
-                  key={`unresolved-${row.offer.id}`}
-                  onClick={() => void openLinkSwapTask(row.offer)}
-                  type="button"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 text-foreground">
-                      <Link2 className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{row.offer.brandName}</p>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        还没有解析到最新 suffix，可以直接打开换链任务继续处理。
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-
-              {!warningRows.length && !unresolvedRows.length ? (
-                <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
-                  当前没有明显的 Offer 风险项，适合继续新增条目或补齐账号映射。
-                </div>
-              ) : null}
-            </div>
-          </section>
-        </div>
       </section>
 
       <ClickFarmTaskDialog

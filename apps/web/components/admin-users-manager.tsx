@@ -134,32 +134,26 @@ const initialCreateForm = {
 const STATUS_FILTER_OPTIONS: Array<{
   value: StatusFilter;
   label: string;
-  description: string;
 }> = [
   {
     value: "all",
-    label: "全部账号",
-    description: "查看当前筛选条件下的完整用户池。"
+    label: "全部账号"
   },
   {
     value: "risk",
-    label: "风险账号",
-    description: "聚焦停用、锁定或出现失败登录记录的账号。"
+    label: "风险账号"
   },
   {
     value: "locked",
-    label: "已锁定",
-    description: "优先处理连续失败登录后被系统锁定的账号。"
+    label: "已锁定"
   },
   {
     value: "disabled",
-    label: "已停用",
-    description: "查看已收回登录能力、待恢复或待删除的账号。"
+    label: "已停用"
   },
   {
     value: "active-session",
-    label: "活跃会话",
-    description: "聚焦当前仍在登录态、需要交接或回收会话的账号。"
+    label: "活跃会话"
   }
 ];
 
@@ -566,7 +560,6 @@ export function AdminUsersManager() {
   return (
     <div className="space-y-6">
       <PageHeader
-        description="维护后台账号、登录状态和安全风险，重点操作直接在列表中完成。"
         title="用户管理"
         actions={
           <>
@@ -596,9 +589,6 @@ export function AdminUsersManager() {
           <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div>
               <p className="text-sm font-semibold text-foreground">账号列表</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                参考 autobb 的简洁结构，保留筛选、统计和表格操作，让视线直接落到列表。
-              </p>
             </div>
             <p className="text-sm text-muted-foreground">
               共 {pagination.total} 个用户，当前第 {pagination.page} / {pagination.totalPages} 页
@@ -607,7 +597,6 @@ export function AdminUsersManager() {
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <OverviewFilterCard
-              description="当前筛选条件下的全部用户。"
               label="总用户数"
               onClick={() => setStatusFilter("all")}
               selected={statusFilter === "all"}
@@ -615,7 +604,6 @@ export function AdminUsersManager() {
               value={String(overview.totalUsers)}
             />
             <OverviewFilterCard
-              description="仍处于登录态，适合巡检交接和共享风险。"
               label="活跃会话"
               onClick={() => setStatusFilter("active-session")}
               selected={statusFilter === "active-session"}
@@ -623,7 +611,6 @@ export function AdminUsersManager() {
               value={String(overview.pageSessionUsersCount)}
             />
             <OverviewFilterCard
-              description="连续失败登录后被系统临时锁定。"
               label="锁定账号"
               onClick={() => setStatusFilter("locked")}
               selected={statusFilter === "locked"}
@@ -631,7 +618,6 @@ export function AdminUsersManager() {
               value={String(overview.pageLockedCount)}
             />
             <OverviewFilterCard
-              description="停用、锁定或存在失败登录记录。"
               label="风险账号"
               onClick={() => setStatusFilter("risk")}
               selected={statusFilter === "risk"}
@@ -690,7 +676,7 @@ export function AdminUsersManager() {
             <div className="flex flex-wrap gap-2">
               {STATUS_FILTER_OPTIONS.map((option) => (
                 <button
-                  className={`rounded-lg border px-3 py-2 text-left transition ${
+                  className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
                     statusFilter === option.value
                       ? "border-emerald-300 bg-primary/10 text-primary shadow-[0_10px_30px_rgba(5,150,105,0.08)]"
                       : "border-border bg-background text-foreground hover:border-emerald-200 hover:text-primary"
@@ -699,8 +685,7 @@ export function AdminUsersManager() {
                   onClick={() => setStatusFilter(option.value)}
                   type="button"
                 >
-                  <p className="text-sm font-semibold">{option.label}</p>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">{option.description}</p>
+                  {option.label}
                 </button>
               ))}
             </div>
@@ -709,7 +694,7 @@ export function AdminUsersManager() {
 
         {overview.pageDisabledCount > 0 ? (
           <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-            <p>当前页有 {overview.pageDisabledCount} 个已停用账号。删除前请保持停用状态，避免误删仍在使用中的账号。</p>
+            <p>当前页有 {overview.pageDisabledCount} 个已停用账号。删除前请先确认不再使用。</p>
             <button
               className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-4 py-2 font-semibold text-foreground transition hover:border-emerald-200 hover:text-primary"
               onClick={() => setStatusFilter("disabled")}
@@ -725,7 +710,7 @@ export function AdminUsersManager() {
         ) : emptyState ? (
           <EmptyState
             className="mt-6"
-            description="可以调整搜索、角色或状态筛选，或直接创建新用户。"
+            description="调整筛选或直接创建用户。"
             icon={Search}
             title="当前筛选条件下没有用户"
           />
@@ -921,7 +906,6 @@ export function AdminUsersManager() {
       </section>
 
       <ModalFrame
-        description="创建新的后台用户，并在完成后复制登录信息。"
         eyebrow="用户管理"
         onClose={() => setCreateOpen(false)}
         open={createOpen}
@@ -1007,7 +991,6 @@ export function AdminUsersManager() {
       </ModalFrame>
 
       <ModalFrame
-        description="更新用户邮箱和角色。"
         eyebrow="用户管理"
         onClose={() => setEditOpen(false)}
         open={editOpen}
@@ -1060,7 +1043,6 @@ export function AdminUsersManager() {
       </ModalFrame>
 
       <ModalFrame
-        description="请立即复制并安全发送给对应用户。"
         eyebrow="用户管理"
         onClose={() => setResetPasswordOpen(false)}
         open={resetPasswordOpen}
@@ -1090,7 +1072,6 @@ export function AdminUsersManager() {
       </ModalFrame>
 
       <ModalFrame
-        description={selectedUser ? `查看 ${selectedUser.username} 最近的登录会话记录。` : undefined}
         eyebrow="用户管理"
         onClose={() => {
           setHistoryOpen(false);
@@ -1159,13 +1140,13 @@ export function AdminUsersManager() {
               ))
             ) : loginHistory.length ? (
               <EmptyState
-                description="尝试输入更短的 IP 片段，或清空搜索查看全部记录。"
+                description="换个 IP 关键字试试。"
                 icon={Search}
                 title="没有匹配该 IP 的登录记录"
               />
             ) : (
               <EmptyState
-                description="最近没有可展示的登录会话或审计事件。"
+                description="暂无登录记录。"
                 icon={History}
                 title="暂无登录记录"
               />
@@ -1175,7 +1156,6 @@ export function AdminUsersManager() {
       </ModalFrame>
 
       <ModalFrame
-        description={alertsUser ? `查看 ${alertsUser.username} 当前的登录与会话风险。` : undefined}
         eyebrow="用户管理"
         onClose={() => setAlertsOpen(false)}
         open={alertsOpen}
@@ -1277,7 +1257,7 @@ export function AdminUsersManager() {
           </div>
         ) : (
           <EmptyState
-            description="最近没有检测到高失败登录、多地点活跃会话或异常分散的登录来源。"
+            description="最近没有安全告警。"
             icon={ShieldAlert}
             title="暂无安全告警"
           />
@@ -1457,7 +1437,6 @@ function getAlertCategoryLabel(category: SecurityAlert["category"]) {
 function OverviewFilterCard(props: {
   label: string;
   value: string;
-  description: string;
   tone: "emerald" | "amber" | "slate";
   selected?: boolean;
   onClick: () => void;
@@ -1474,9 +1453,8 @@ function OverviewFilterCard(props: {
       type="button"
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground">{props.label}</p>
-          <p className="mt-2 text-xs leading-5 text-muted-foreground">{props.description}</p>
         </div>
         <span
           className={cn(

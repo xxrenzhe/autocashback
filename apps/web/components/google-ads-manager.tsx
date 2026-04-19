@@ -308,7 +308,6 @@ export function GoogleAdsManager() {
             {syncing ? "同步中" : "快速同步"}
           </button>
         }
-        description="聚焦连接状态、OAuth 配置和账号列表，移除重复说明卡片。"
         eyebrow="Google Ads"
         title="账号连接控制台"
       />
@@ -509,11 +508,7 @@ export function GoogleAdsManager() {
                 </tbody>
               </table>
             ) : (
-              <EmptyState
-                description="先在设置页保存 Google Ads 基础配置，再完成 OAuth 授权。"
-                icon={Building2}
-                title="暂无可访问账号"
-              />
+              <EmptyState description="先完成设置和 OAuth 授权。" icon={Building2} title="暂无可访问账号" />
             )}
           </div>
         </div>
@@ -524,9 +519,6 @@ export function GoogleAdsManager() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">诊断工具</p>
             <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">Google Ads OAuth / MCC 诊断</h3>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              诊断结果会帮助你确认可访问客户号、账号类型和常见权限问题，同时不会在浏览器中暴露敏感凭证。
-            </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <input

@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
-  CirclePlus,
   Pause,
   Play,
   RefreshCcw,
@@ -119,23 +118,6 @@ export function ClickFarmManager() {
     [countryFilter, deferredSearchQuery, offers, sort, statusFilter, tasks]
   );
 
-  const pausedRows = useMemo(
-    () => allConsole.rows.filter((row) => row.isPaused).slice(0, 3),
-    [allConsole.rows]
-  );
-  const weakRows = useMemo(
-    () =>
-      allConsole.rows
-        .filter(
-          (row) =>
-            row.successRate !== null &&
-            row.task.totalClicks >= 20 &&
-            row.successRate < 0.8
-        )
-        .slice(0, 3),
-    [allConsole.rows]
-  );
-
   async function loadAll(options?: { background?: boolean; preserveNotice?: boolean }) {
     if (options?.background) {
       setRefreshing(true);
@@ -232,28 +214,16 @@ export function ClickFarmManager() {
     <div className="space-y-6">
       <PageHeader
         actions={
-          <div className="flex flex-wrap gap-3">
-            <button
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-              disabled={!selectedOffer}
-              onClick={() => selectedOffer && openDialogForOffer(selectedOffer)}
-              type="button"
-            >
-              <CirclePlus className="h-4 w-4" />
-              新建 / 编辑任务
-            </button>
-            <button
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
-              disabled={refreshing}
-              onClick={() => void loadAll({ background: true, preserveNotice: true })}
-              type="button"
-            >
-              <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
-              {refreshing ? "刷新中…" : "刷新列表"}
-            </button>
-          </div>
+          <button
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
+            disabled={refreshing}
+            onClick={() => void loadAll({ background: true, preserveNotice: true })}
+            type="button"
+          >
+            <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
+            {refreshing ? "刷新中…" : "刷新列表"}
+          </button>
         }
-        description="保留关键统计、筛选和任务表格，首屏不再堆叠额外跳转卡片。"
         eyebrow="Click Farm"
         title={
           <span className="flex flex-wrap items-center gap-3">
@@ -264,6 +234,42 @@ export function ClickFarmManager() {
           </span>
         }
       />
+
+      <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-4">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr),auto] xl:min-w-[560px] xl:flex-1">
+            <select
+              className="w-full rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground"
+              onChange={(event) =>
+                setSelectedOfferId(event.target.value ? Number(event.target.value) : null)
+              }
+              value={selectedOfferId || ""}
+            >
+              <option value="">选择 Offer</option>
+              {offers.map((offer) => (
+                <option key={offer.id} value={offer.id}>
+                  {offer.brandName} · {offer.targetCountry}
+                </option>
+              ))}
+            </select>
+
+            <button
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              disabled={!selectedOffer}
+              onClick={() => selectedOffer && openDialogForOffer(selectedOffer)}
+              type="button"
+            >
+              新建 / 编辑任务
+            </button>
+          </div>
+
+          <p className="text-sm text-muted-foreground">
+            {selectedOffer
+              ? `${selectedOffer.brandName} · ${selectedOffer.targetCountry} · ${selectedOffer.campaignLabel || "未设置 Campaign Label"}`
+              : "选择 Offer 后再创建任务。"}
+          </p>
+        </div>
+      </section>
 
       <section className="grid gap-4 xl:grid-cols-4">
         <StatCard
@@ -296,8 +302,7 @@ export function ClickFarmManager() {
         />
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr),420px]">
-        <div className="space-y-6">
+      <section className="space-y-6">
           <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
@@ -582,7 +587,7 @@ export function ClickFarmManager() {
                     ) : null}
                   </div>
                 }
-                description="先从 Offer 里选择一个条目，再创建对应的补点击任务。"
+                description="先选 Offer 再创建任务。"
                 icon={Zap}
                 title={
                   searchQuery || statusFilter !== "all" || countryFilter !== "all"
@@ -592,132 +597,6 @@ export function ClickFarmManager() {
               />
             )}
           </section>
-        </div>
-
-        <div className="space-y-6">
-          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">创建入口</p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">从 Offer 发起任务</h3>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              每个 Offer 最多维护一个当前补点击任务。重新保存会更新现有任务，不会重复创建。
-            </p>
-
-            <div className="mt-6 space-y-4">
-              <label className="block text-sm font-medium text-foreground">
-                选择 Offer
-                <select
-                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
-                  onChange={(event) =>
-                    setSelectedOfferId(event.target.value ? Number(event.target.value) : null)
-                  }
-                  value={selectedOfferId || ""}
-                >
-                  <option value="">请选择 Offer</option>
-                  {offers.map((offer) => (
-                    <option key={offer.id} value={offer.id}>
-                      {offer.brandName} · {offer.targetCountry}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              {selectedOffer ? (
-                <div className="rounded-xl border border-border bg-muted/40 p-4">
-                  <p className="text-sm font-semibold text-foreground">{selectedOffer.brandName}</p>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {selectedOffer.targetCountry} · {selectedOffer.campaignLabel || "未设置 Campaign Label"}
-                  </p>
-                  <p className="mt-3 break-all text-xs leading-5 text-muted-foreground">{selectedOffer.promoLink}</p>
-                </div>
-              ) : (
-                <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
-                  先选定一个 Offer，再打开任务弹窗配置点击量、时段、时区和 Referer。
-                </div>
-              )}
-
-              <button
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                disabled={!selectedOffer}
-                onClick={() => selectedOffer && openDialogForOffer(selectedOffer)}
-                type="button"
-              >
-                <Zap className="h-4 w-4" />
-                新建 / 编辑任务
-              </button>
-            </div>
-          </section>
-
-          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">重点提醒</p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">先处理这些任务</h3>
-
-            <div className="mt-5 space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-foreground">已暂停任务</h4>
-                  <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-600">
-                    {pausedRows.length}
-                  </span>
-                </div>
-                {pausedRows.map((row) => (
-                  <button
-                    className="w-full rounded-xl border border-amber-200 bg-amber-500/5 p-4 text-left transition hover:bg-amber-500/10"
-                    key={`paused-${row.task.id}`}
-                    onClick={() => row.offer && openDialogForOffer(row.offer)}
-                    type="button"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
-                        <AlertTriangle className="h-4 w-4" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground">{row.brandName}</p>
-                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                          {row.task.pauseMessage || "任务已暂停，建议检查代理或手动恢复。"}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-foreground">成功率偏低</h4>
-                  <span className="rounded-full bg-orange-500/10 px-2.5 py-1 text-[11px] font-semibold text-orange-600">
-                    {weakRows.length}
-                  </span>
-                </div>
-                {weakRows.map((row) => (
-                  <button
-                    className="w-full rounded-xl border border-orange-200 bg-orange-500/5 p-4 text-left transition hover:bg-orange-500/10"
-                    key={`weak-${row.task.id}`}
-                    onClick={() => row.offer && openDialogForOffer(row.offer)}
-                    type="button"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-orange-500/10 text-orange-600">
-                        <AlertTriangle className="h-4 w-4" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground">{row.brandName}</p>
-                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                          当前成功率只有 {formatPercent(row.successRate)}，建议复核时段、Referer 和代理稳定性。
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {!pausedRows.length && !weakRows.length ? (
-                <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
-                  当前没有明显异常任务，适合继续扩充新的 Offer 任务。
-                </div>
-              ) : null}
-            </div>
-          </section>
-        </div>
       </section>
 
       <ClickFarmTaskDialog

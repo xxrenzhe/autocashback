@@ -147,15 +147,6 @@ export function AccountsManager() {
     [accounts, deferredSearchQuery, offers, payoutFilter, platformFilter, sort, statusFilter]
   );
 
-  const pausedRows = useMemo(
-    () => allConsole.rows.filter((row) => row.account.status === "paused").slice(0, 3),
-    [allConsole.rows]
-  );
-  const denseRows = useMemo(
-    () => allConsole.rows.filter((row) => row.linkedOfferCount >= 2).slice(0, 3),
-    [allConsole.rows]
-  );
-
   async function loadData(options?: { background?: boolean; preserveNotice?: boolean }) {
     if (options?.background) {
       setRefreshing(true);
@@ -332,7 +323,6 @@ export function AccountsManager() {
             </button>
           </div>
         }
-        description="保留筛选、统计和账号表格，把首屏压缩到可直接操作。"
         eyebrow="Accounts"
         title={
           <span className="flex flex-wrap items-center gap-3">
@@ -375,8 +365,7 @@ export function AccountsManager() {
         />
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr),420px]">
-        <div className="space-y-6">
+      <section className="space-y-6">
           <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
@@ -591,21 +580,17 @@ export function AccountsManager() {
                     </button>
                   </div>
                 }
-                description="先创建返利平台账号，再继续挂接 Offer 和自动化任务。"
+                description="创建账号后再挂接 Offer。"
                 icon={WalletCards}
                 title={hasActiveFilters ? "当前筛选条件下没有账号" : "还没有返利账号"}
               />
             )}
           </section>
-        </div>
-
-        <div className="space-y-6">
-          <SheetFrame
+        <SheetFrame
             open={editorOpen}
             onClose={resetForm}
             eyebrow={editingId ? "编辑账号" : "新建账号"}
             title={editingId ? "更新当前返利账号" : "补齐新的返利平台账号"}
-            description="建议按运营人、平台角色或国家维度命名，后续在 Offer 和任务页更容易识别。"
           >
             <form className="space-y-4" onSubmit={submitForm}>
               <label className="block text-sm font-medium text-foreground">
@@ -709,61 +694,6 @@ export function AccountsManager() {
               </div>
             </form>
           </SheetFrame>
-          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">重点提醒</p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">优先检查这些账号</h3>
-
-            <div className="mt-5 space-y-4">
-              {pausedRows.map((row) => (
-                <button
-                  className="w-full rounded-xl border border-border bg-background p-4 text-left transition hover:bg-muted/40"
-                  key={`paused-${row.account.id}`}
-                  onClick={() => handleEdit(row.account)}
-                  type="button"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
-                      <CreditCard className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{row.account.accountName}</p>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        当前账号已暂停，建议确认是否仍有挂接 Offer 或是否需要重新启用。
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-
-              {denseRows.map((row) => (
-                <button
-                  className="w-full rounded-xl border border-border bg-background p-4 text-left transition hover:bg-muted/40"
-                  key={`dense-${row.account.id}`}
-                  onClick={() => handleEdit(row.account)}
-                  type="button"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <WalletCards className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{row.account.accountName}</p>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        当前已挂接 {row.linkedOfferCount} 个 Offer，属于核心账号，建议保证备注和收款方式信息完整。
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-
-              {!pausedRows.length && !denseRows.length ? (
-                <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
-                  当前没有明显需要优先处理的账号，可以继续补齐新的平台账号。
-                </div>
-              ) : null}
-            </div>
-          </section>
-        </div>
       </section>
     </div>
   );

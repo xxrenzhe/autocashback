@@ -19,7 +19,7 @@ import type {
   QueueTaskStatus,
   QueueTaskType
 } from "@autocashback/domain";
-import { EmptyState, MetricGroup, PageHeader, StatCard, StatusBadge, TableSkeleton, cn } from "@autocashback/ui";
+import { EmptyState, PageHeader, StatCard, StatusBadge, TableSkeleton, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 import { AdminOperationsMonitor } from "@/components/admin-operations-monitor";
 import { fetchJson } from "@/lib/api-error-handler";
@@ -481,7 +481,6 @@ export function QueueMonitor() {
             </button>
           </div>
         }
-        description="首屏收敛到队列状态、筛选和任务列表，减少跳转提示卡片。"
         eyebrow="Queue"
         title={
           <span className="flex flex-wrap items-center gap-3">
@@ -695,7 +694,7 @@ export function QueueMonitor() {
               </div>
             ) : (
               <EmptyState
-                description="可以放宽筛选条件，或去业务页检查是否还有待入队的任务。"
+                description="放宽筛选后重试。"
                 icon={Workflow}
                 title="当前筛选条件下没有队列任务"
               />
@@ -741,12 +740,9 @@ export function QueueMonitor() {
               </div>
             </div>
 
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              调整全局并发、轮询间隔和每种任务类型的并发上限，保存后会自动同步到调度服务。
-            </p>
             {configDirty ? (
               <p className="mt-3 rounded-lg border border-amber-200 bg-amber-500/10 px-3 py-2 text-sm text-amber-700">
-                当前配置含未保存修改。离开页面前请先保存，或点击重置恢复到上次保存版本。
+                当前配置有未保存修改。
               </p>
             ) : null}
 
@@ -892,35 +888,6 @@ export function QueueMonitor() {
             )}
           </section>
 
-          <MetricGroup
-            description="优先处理失败堆积、调度异常和依赖缺失，避免阻塞整体吞吐。"
-            title="先处理这些队列风险"
-          >
-            <div className="space-y-4">
-              {consoleData.risks.slice(0, 4).map((risk) => (
-                <div className="rounded-xl border border-border bg-background p-4" key={risk.id}>
-                  <div className="flex items-start gap-3">
-                    <span
-                      className={cn(
-                        "mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg",
-                        risk.tone === "red"
-                          ? "bg-destructive/10 text-destructive"
-                          : risk.tone === "amber"
-                            ? "bg-amber-500/10 text-amber-600"
-                            : "bg-slate-100 text-foreground"
-                      )}
-                    >
-                      {risk.tone === "slate" ? <Wrench className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{risk.title}</p>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{risk.description}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </MetricGroup>
         </div>
       </section>
 
