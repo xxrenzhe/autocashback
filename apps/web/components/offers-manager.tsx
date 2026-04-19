@@ -29,8 +29,6 @@ import {
 } from "@autocashback/domain";
 import {
   EmptyState,
-  PageHeader,
-  StatCard,
   StatSkeleton,
   StatusBadge,
   TableSkeleton,
@@ -92,6 +90,30 @@ function offerStatusVariant(status: OfferRecord["status"]) {
   }
 }
 
+function OfferMetric({
+  label,
+  value,
+  tone = "default"
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "warning" | "success";
+}) {
+  const toneClassName =
+    tone === "warning"
+      ? "border-amber-200 bg-amber-500/10 text-amber-700"
+      : tone === "success"
+        ? "border-emerald-200 bg-emerald-500/10 text-emerald-700"
+        : "border-border bg-card text-foreground";
+
+  return (
+    <div className={cn("rounded-xl border px-4 py-3", toneClassName)}>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+    </div>
+  );
+}
+
 export function OffersManager() {
   const [offers, setOffers] = useState<OfferRecord[]>([]);
   const [accounts, setAccounts] = useState<CashbackAccount[]>([]);
@@ -99,6 +121,7 @@ export function OffersManager() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [pending, setPending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
         const router = useRouter();
   const pathname = usePathname();
@@ -209,6 +232,7 @@ export function OffersManager() {
     } else {
       setLoading(true);
     }
+    setError(null);
 
     try {
       const [offersResult, accountsResult] = await Promise.all([
@@ -227,6 +251,7 @@ export function OffersManager() {
       setOffers(offersResult.data.offers || []);
       setAccounts(accountsResult.data.accounts || []);
     } catch {
+      setError("加载数据失败");
       toast.error("加载数据失败");
     } finally {
       setLoading(false);
@@ -410,32 +435,73 @@ export function OffersManager() {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        actions={
-          <>
-            <button
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
-              onClick={startCreateOffer}
-              type="button"
-            >
-              <CirclePlus className="h-4 w-4" />
-              新建 Offer
-            </button>
-            <button
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
-              disabled={refreshing}
-              onClick={() => void loadAll({ background: true, preserveNotice: true })}
-              type="button"
-            >
-              <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
-              {refreshing ? "刷新中…" : "刷新列表"}
-            </button>
-          </>
-        }
-      />
+    <div className="space-y-5">
+      <section className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Offer</h1>
+            {!loading ? (
+              <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+                {allConsole.overview.totalOffers}
+              </span>
+            ) : null}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            按平台、国家、状态和 suffix 完整度筛选。
+          </p>
+        </div>
 
-      <section className="grid gap-4 xl:grid-cols-4">
+        <div className="flex flex-wrap items-center gap-2">
+          {allConsole.overview.warningOffers > 0 ? (
+            <button
+              className="rounded-full bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-700"
+              onClick={() =>
+                applyFilters({
+                  statusFilter: "warning",
+                  resolutionFilter: "all",
+                  sort: "remaining-cap"
+                })
+              }
+              type="button"
+            >
+              预警 {allConsole.overview.warningOffers}
+            </button>
+          ) : null}
+          {allConsole.overview.unresolvedSuffixCount > 0 ? (
+            <button
+              className="rounded-full border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground"
+              onClick={() =>
+                applyFilters({
+                  resolutionFilter: "unresolved",
+                  statusFilter: "all"
+                })
+              }
+              type="button"
+            >
+              待解析 {allConsole.overview.unresolvedSuffixCount}
+            </button>
+          ) : null}
+          <button
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
+            disabled={refreshing}
+            onClick={() => void loadAll({ background: true, preserveNotice: true })}
+            type="button"
+          >
+            <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
+            {refreshing ? "刷新中…" : "刷新"}
+          </button>
+          <button
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
+            onClick={startCreateOffer}
+            type="button"
+          >
+            <CirclePlus className="h-4 w-4" />
+            新建 Offer
+          </button>
+        </div>
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {loading ? (
           <>
             <StatSkeleton />
@@ -445,171 +511,102 @@ export function OffersManager() {
           </>
         ) : (
           <>
-            <StatCard
-              label="Offer 总数"
-              tone="slate"
-              value={String(allConsole.overview.totalOffers)}
-            />
-            <StatCard
+            <OfferMetric label="Offer" value={String(allConsole.overview.totalOffers)} />
+            <OfferMetric
               label="阈值预警"
-              tone={allConsole.overview.warningOffers > 0 ? "amber" : "emerald"}
+              tone={allConsole.overview.warningOffers > 0 ? "warning" : "success"}
               value={String(allConsole.overview.warningOffers)}
             />
-            <StatCard
+            <OfferMetric
               label="待解析 Suffix"
-              tone={allConsole.overview.unresolvedSuffixCount > 0 ? "amber" : "emerald"}
+              tone={allConsole.overview.unresolvedSuffixCount > 0 ? "warning" : "success"}
               value={String(allConsole.overview.unresolvedSuffixCount)}
             />
-            <StatCard
-              label="覆盖国家"
-              tone="emerald"
-              value={String(allConsole.overview.coveredCountryCount)}
-            />
+            <OfferMetric label="覆盖国家" tone="success" value={String(allConsole.overview.coveredCountryCount)} />
           </>
         )}
       </section>
 
-      <section className="space-y-6">
-          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">筛选</p>
-                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按平台、状态、国家和 suffix 完整度筛选 Offer</h3>
+      <section className="overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div className="border-b border-border/70 px-5 py-4">
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1.6fr)_repeat(4,minmax(0,1fr))_auto]">
+            <label className="block text-sm font-medium text-foreground">
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
+                <Search className="h-4 w-4 text-muted-foreground/80" />
+                <input
+                  className="w-full bg-transparent text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground/80"
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="品牌、Campaign、账号、国家或链接"
+                  value={searchQuery}
+                />
               </div>
-              <div className="flex flex-wrap gap-2">
-                {allConsole.overview.warningOffers > 0 ? (
-                  <button
-                    className="rounded-full bg-amber-500/10 px-4 py-2 text-xs font-semibold text-amber-600"
-                    onClick={() =>
-                      applyFilters({
-                        statusFilter: "warning",
-                        resolutionFilter: "all",
-                        sort: "remaining-cap"
-                      })
-                    }
-                    type="button"
-                  >
-                    查看阈值预警
-                  </button>
-                ) : null}
-                {allConsole.overview.unresolvedSuffixCount > 0 ? (
-                  <button
-                    className="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold text-foreground"
-                    onClick={() =>
-                      applyFilters({
-                        resolutionFilter: "unresolved",
-                        statusFilter: "all"
-                      })
-                    }
-                    type="button"
-                  >
-                    查看待解析 suffix
-                  </button>
-                ) : null}
-                {hasActiveFilters ? (
-                  <button
-                    className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
-                    onClick={() =>
-                      applyFilters({
-                        searchQuery: "",
-                        platformFilter: "all",
-                        statusFilter: "all",
-                        countryFilter: "all",
-                        resolutionFilter: "all",
-                        sort: "recent"
-                      })
-                    }
-                    type="button"
-                  >
-                    清空筛选
-                  </button>
-                ) : null}
-              </div>
-            </div>
+            </label>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <label className="block text-sm font-medium text-foreground md:col-span-2 xl:col-span-1">
-                搜索 Offer
-                <div className="mt-2 flex items-center gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
-                  <Search className="h-4 w-4 text-muted-foreground/80" />
-                  <input
-                    className="w-full bg-transparent text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground/80"
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    placeholder="品牌、Campaign、账号、国家或链接"
-                    value={searchQuery}
-                  />
-                </div>
-              </label>
+            <label className="block text-sm font-medium text-foreground">
+              <select
+                className="h-10 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
+                onChange={(event) =>
+                  setPlatformFilter(event.target.value as OfferRecord["platformCode"] | "all")
+                }
+                value={platformFilter}
+              >
+                <option value="all">全部平台</option>
+                {PLATFORM_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-              <label className="block text-sm font-medium text-foreground">
-                平台
+            <label className="block text-sm font-medium text-foreground">
+              <select
+                className="h-10 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
+                onChange={(event) =>
+                  setStatusFilter(event.target.value as OfferRecord["status"] | "all")
+                }
+                value={statusFilter}
+              >
+                <option value="all">全部状态</option>
+                <option value="active">运行中</option>
+                <option value="warning">阈值预警</option>
+                <option value="draft">待完善</option>
+              </select>
+            </label>
+
+            <label className="block text-sm font-medium text-foreground">
+              <select
+                className="h-10 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
+                onChange={(event) => setCountryFilter(event.target.value)}
+                value={countryFilter}
+              >
+                <option value="all">全部国家</option>
+                {allConsole.countryOptions.map((country) => (
+                  <option key={country} value={country}>
+                    {country}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block text-sm font-medium text-foreground">
+              <select
+                className="h-10 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
+                onChange={(event) =>
+                  setResolutionFilter(event.target.value as "all" | "resolved" | "unresolved")
+                }
+                value={resolutionFilter}
+              >
+                <option value="all">Suffix 全部</option>
+                <option value="resolved">已解析</option>
+                <option value="unresolved">待解析</option>
+              </select>
+            </label>
+
+            <div className="flex items-center gap-2 xl:justify-end">
+              <label className="block min-w-0 flex-1 text-sm font-medium text-foreground xl:max-w-[180px]">
                 <select
-                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
-                  onChange={(event) =>
-                    setPlatformFilter(event.target.value as OfferRecord["platformCode"] | "all")
-                  }
-                  value={platformFilter}
-                >
-                  <option value="all">全部平台</option>
-                  {PLATFORM_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="block text-sm font-medium text-foreground">
-                状态
-                <select
-                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
-                  onChange={(event) =>
-                    setStatusFilter(event.target.value as OfferRecord["status"] | "all")
-                  }
-                  value={statusFilter}
-                >
-                  <option value="all">全部状态</option>
-                  <option value="active">运行中</option>
-                  <option value="warning">阈值预警</option>
-                  <option value="draft">待完善</option>
-                </select>
-              </label>
-
-              <label className="block text-sm font-medium text-foreground">
-                国家
-                <select
-                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
-                  onChange={(event) => setCountryFilter(event.target.value)}
-                  value={countryFilter}
-                >
-                  <option value="all">全部国家</option>
-                  {allConsole.countryOptions.map((country) => (
-                    <option key={country} value={country}>
-                      {country}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="block text-sm font-medium text-foreground">
-                Suffix 状态
-                <select
-                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
-                  onChange={(event) =>
-                    setResolutionFilter(event.target.value as "all" | "resolved" | "unresolved")
-                  }
-                  value={resolutionFilter}
-                >
-                  <option value="all">全部</option>
-                  <option value="resolved">已解析</option>
-                  <option value="unresolved">待解析</option>
-                </select>
-              </label>
-
-              <label className="block text-sm font-medium text-foreground">
-                排序
-                <select
-                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
+                  className="h-10 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                   onChange={(event) => setSort(event.target.value as OfferConsoleSort)}
                   value={sort}
                 >
@@ -620,31 +617,49 @@ export function OffersManager() {
                   ))}
                 </select>
               </label>
+              {hasActiveFilters ? (
+                <button
+                  className="h-10 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground"
+                  onClick={() =>
+                    applyFilters({
+                      searchQuery: "",
+                      platformFilter: "all",
+                      statusFilter: "all",
+                      countryFilter: "all",
+                      resolutionFilter: "all",
+                      sort: "recent"
+                    })
+                  }
+                  type="button"
+                >
+                  清空
+                </button>
+              ) : null}
             </div>
+          </div>
+        </div>
 
-            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/40 p-4">
-              <div>
-                <p className="text-sm font-semibold text-foreground">当前结果 {consoleData.rows.length} 条</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {deferredSearchQuery !== searchQuery ? "正在整理列表..." : "筛选结果会保留所有现有任务操作入口。"}
-                </p>
-              </div>
-              <span className="rounded-full bg-background px-3 py-1 text-xs font-semibold text-muted-foreground shadow-sm">
-                绑定账号 {allConsole.overview.linkedAccountCount}
-              </span>
-            </div>
-          </section>
+        <div className="flex flex-col gap-2 border-b border-border/70 bg-muted/20 px-5 py-3 text-sm lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
+            <span className="font-medium text-foreground">结果 {consoleData.rows.length}</span>
+            <span>绑定账号 {allConsole.overview.linkedAccountCount}</span>
+            <span>覆盖国家 {allConsole.overview.coveredCountryCount}</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {deferredSearchQuery !== searchQuery ? "正在整理列表..." : "所有任务操作入口仍保留在行内。"}
+          </p>
+        </div>
 
-          <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
-            <div className="border-b border-border/70 p-5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Offer 列表</p>
-              <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按健康度和动作入口管理 Offer</h3>
-            </div>
+        {error ? (
+          <div className="border-b border-destructive/20 bg-destructive/10 px-5 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        ) : null}
 
-            {loading ? (
-              <TableSkeleton className="m-5" rows={6} />
-            ) : consoleData.rows.length ? (
-              <div className="overflow-x-auto p-5">
+        {loading ? (
+          <TableSkeleton className="m-5" rows={6} />
+        ) : consoleData.rows.length ? (
+          <div className="overflow-x-auto p-5">
                 <table className="min-w-full text-left text-sm">
                   <thead className="text-muted-foreground font-medium text-xs border-b border-border sticky top-0 bg-background/95 backdrop-blur z-10">
                     <tr>
@@ -787,192 +802,192 @@ export function OffersManager() {
                     })}
                   </tbody>
                 </table>
-              </div>
-            ) : (
-              <EmptyState
-                action={
-                  <div className="flex flex-wrap justify-center gap-3">
-                    {hasActiveFilters ? (
-                      <button
-                        className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
-                        onClick={() =>
-                          applyFilters({
-                            searchQuery: "",
-                            platformFilter: "all",
-                            statusFilter: "all",
-                            countryFilter: "all",
-                            resolutionFilter: "all",
-                            sort: "recent"
-                          })
-                        }
-                        type="button"
-                      >
-                        清空筛选
-                      </button>
-                    ) : null}
-                    <button
-                      className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
-                      onClick={startCreateOffer}
-                      type="button"
-                    >
-                      新建 Offer
-                    </button>
-                  </div>
-                }
-                className="m-6"
-                icon={WalletCards}
-                title={hasActiveFilters ? "当前筛选条件下没有 Offer" : "还没有 Offer"}
-              />
-            )}
-          </section>
-        <SheetFrame
-            open={editorOpen}
-            onClose={resetForm}
-            eyebrow={editingId ? "编辑 Offer" : "新建 Offer"}
-            title={editingId ? "更新当前 Offer" : "补齐新的投放条目"}
-          >
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              <label className="block text-sm font-medium text-foreground">
-                推广链接
-                <textarea
-                  className="mt-2 min-h-28 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
-                  onChange={(event) => setForm({ ...form, promoLink: event.target.value })}
-                  placeholder="填写返利站的推广链接"
-                  value={form.promoLink}
-                />
-              </label>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-medium text-foreground">
-                  推广国家
-                  <input
-                    className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
-                    maxLength={8}
-                    onChange={(event) =>
-                      setForm({ ...form, targetCountry: event.target.value.toUpperCase() })
-                    }
-                    value={form.targetCountry}
-                  />
-                </label>
-
-                <label className="block text-sm font-medium text-foreground">
-                  品牌名
-                  <input
-                    className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
-                    onChange={(event) => setForm({ ...form, brandName: event.target.value })}
-                    value={form.brandName}
-                  />
-                </label>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-medium text-foreground">
-                  返利网平台
-                  <select
-                    className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        platformCode: event.target.value as OfferRecord["platformCode"],
-                        cashbackAccountId: ""
+          </div>
+        ) : (
+          <EmptyState
+            action={
+              <div className="flex flex-wrap justify-center gap-3">
+                {hasActiveFilters ? (
+                  <button
+                    className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
+                    onClick={() =>
+                      applyFilters({
+                        searchQuery: "",
+                        platformFilter: "all",
+                        statusFilter: "all",
+                        countryFilter: "all",
+                        resolutionFilter: "all",
+                        sort: "recent"
                       })
                     }
-                    value={form.platformCode}
+                    type="button"
                   >
-                    {PLATFORM_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="block text-sm font-medium text-foreground">
-                  返利网账号
-                  <select
-                    className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
-                    onChange={(event) => setForm({ ...form, cashbackAccountId: event.target.value })}
-                    value={form.cashbackAccountId}
-                  >
-                    <option value="">请选择账号</option>
-                    {filteredAccounts.map((account) => (
-                      <option key={account.id} value={account.id}>
-                        {account.accountName}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    清空筛选
+                  </button>
+                ) : null}
+                <button
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
+                  onClick={startCreateOffer}
+                  type="button"
+                >
+                  新建 Offer
+                </button>
               </div>
+            }
+            className="m-6"
+            icon={WalletCards}
+            title={hasActiveFilters ? "当前筛选条件下没有 Offer" : "还没有 Offer"}
+          />
+        )}
 
-              {!filteredAccounts.length ? (
-                <div className="rounded-xl border border-amber-200 bg-amber-500/10 p-4 text-sm text-amber-600">
-                  当前平台下还没有可绑定的返利账号。请先去
-                  {" "}
-                  <Link className="font-semibold underline" href="/accounts">
-                    账号管理
-                  </Link>
-                  {" "}
-                  补齐账号。
-                </div>
-              ) : null}
+        <SheetFrame
+          open={editorOpen}
+          onClose={resetForm}
+          eyebrow={editingId ? "编辑 Offer" : "新建 Offer"}
+          title={editingId ? "更新当前 Offer" : "补齐新的投放条目"}
+        >
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <label className="block text-sm font-medium text-foreground">
+              推广链接
+              <textarea
+                className="mt-2 min-h-28 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+                onChange={(event) => setForm({ ...form, promoLink: event.target.value })}
+                placeholder="填写返利站的推广链接"
+                value={form.promoLink}
+              />
+            </label>
 
+            <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm font-medium text-foreground">
-                Campaign Label
+                推广国家
                 <input
-                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
-                  onChange={(event) => setForm({ ...form, campaignLabel: event.target.value })}
-                  placeholder="用于识别广告侧投放或内部命名"
-                  value={form.campaignLabel}
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+                  maxLength={8}
+                  onChange={(event) =>
+                    setForm({ ...form, targetCountry: event.target.value.toUpperCase() })
+                  }
+                  value={form.targetCountry}
                 />
               </label>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-medium text-foreground">
-                  佣金阈值 USD
-                  <input
-                    className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono tabular-nums transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
-                    min={0}
-                    onChange={(event) =>
-                      setForm({ ...form, commissionCapUsd: Number(event.target.value) })
-                    }
-                    step="0.01"
-                    type="number"
-                    value={form.commissionCapUsd}
-                  />
-                </label>
+              <label className="block text-sm font-medium text-foreground">
+                品牌名
+                <input
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+                  onChange={(event) => setForm({ ...form, brandName: event.target.value })}
+                  value={form.brandName}
+                />
+              </label>
+            </div>
 
-                <label className="block text-sm font-medium text-foreground">
-                  已记录佣金 USD
-                  <input
-                    className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono tabular-nums transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
-                    min={0}
-                    onChange={(event) =>
-                      setForm({ ...form, manualRecordedCommissionUsd: Number(event.target.value) })
-                    }
-                    step="0.01"
-                    type="number"
-                    value={form.manualRecordedCommissionUsd}
-                  />
-                </label>
-              </div>
-
-              {form.manualRecordedCommissionUsd >= form.commissionCapUsd ? (
-                <div className="rounded-xl border border-amber-200 bg-amber-500/10 p-4 text-sm text-amber-600">
-                  当前佣金已达到阈值，保存后 Offer 会进入预警状态，建议尽快核查是否需要停投。
-                </div>
-              ) : null}
-
-              <div className="flex flex-wrap gap-3 pt-6">
-                <button
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 w-full"
-                  disabled={pending}
-                  type="submit"
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-medium text-foreground">
+                返利网平台
+                <select
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      platformCode: event.target.value as OfferRecord["platformCode"],
+                      cashbackAccountId: ""
+                    })
+                  }
+                  value={form.platformCode}
                 >
-                  {pending ? "保存中…" : editingId ? "更新 Offer" : "创建 Offer"}
-                </button>
+                  {PLATFORM_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block text-sm font-medium text-foreground">
+                返利网账号
+                <select
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+                  onChange={(event) => setForm({ ...form, cashbackAccountId: event.target.value })}
+                  value={form.cashbackAccountId}
+                >
+                  <option value="">请选择账号</option>
+                  {filteredAccounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.accountName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {!filteredAccounts.length ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-500/10 p-4 text-sm text-amber-600">
+                当前平台下还没有可绑定的返利账号。请先去
+                {" "}
+                <Link className="font-semibold underline" href="/accounts">
+                  账号管理
+                </Link>
+                {" "}
+                补齐账号。
               </div>
-            </form>
-          </SheetFrame>
+            ) : null}
+
+            <label className="block text-sm font-medium text-foreground">
+              Campaign Label
+              <input
+                className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+                onChange={(event) => setForm({ ...form, campaignLabel: event.target.value })}
+                placeholder="用于识别广告侧投放或内部命名"
+                value={form.campaignLabel}
+              />
+            </label>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-medium text-foreground">
+                佣金阈值 USD
+                <input
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono tabular-nums transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+                  min={0}
+                  onChange={(event) =>
+                    setForm({ ...form, commissionCapUsd: Number(event.target.value) })
+                  }
+                  step="0.01"
+                  type="number"
+                  value={form.commissionCapUsd}
+                />
+              </label>
+
+              <label className="block text-sm font-medium text-foreground">
+                已记录佣金 USD
+                <input
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono tabular-nums transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+                  min={0}
+                  onChange={(event) =>
+                    setForm({ ...form, manualRecordedCommissionUsd: Number(event.target.value) })
+                  }
+                  step="0.01"
+                  type="number"
+                  value={form.manualRecordedCommissionUsd}
+                />
+              </label>
+            </div>
+
+            {form.manualRecordedCommissionUsd >= form.commissionCapUsd ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-500/10 p-4 text-sm text-amber-600">
+                当前佣金已达到阈值，保存后 Offer 会进入预警状态，建议尽快核查是否需要停投。
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap gap-3 pt-6">
+              <button
+                className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                disabled={pending}
+                type="submit"
+              >
+                {pending ? "保存中…" : editingId ? "更新 Offer" : "创建 Offer"}
+              </button>
+            </div>
+          </form>
+        </SheetFrame>
       </section>
 
       <ClickFarmTaskDialog
