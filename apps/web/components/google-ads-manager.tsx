@@ -314,7 +314,6 @@ export function GoogleAdsManager() {
                   {syncing ? "同步中" : "快速同步"}
                 </button>
               }
-              description="先确认基础配置、OAuth 状态和可访问账号数量，再决定是去设置页补参数，还是直接同步和诊断。"
               eyebrow="Google Ads"
               title="账号连接控制台"
             />

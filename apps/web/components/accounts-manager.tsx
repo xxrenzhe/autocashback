@@ -337,7 +337,6 @@ export function AccountsManager() {
                 </button>
               </div>
             }
-            description="在这里统一维护返利平台账号、收款方式和挂接的 Offer。先看账号覆盖，再补齐平台和投放归属。"
             eyebrow="Accounts"
             title={
               <span className="flex flex-wrap items-center gap-3">

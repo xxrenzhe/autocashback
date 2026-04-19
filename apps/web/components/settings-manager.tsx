@@ -471,7 +471,6 @@ export function SettingsManager() {
         <div className="grid gap-0 xl:grid-cols-[1.1fr,0.9fr]">
           <div className="bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.16),transparent_48%),linear-gradient(180deg,rgba(236,253,245,0.95)_0%,rgba(255,255,255,0.98)_100%)] px-6 py-7 sm:px-8">
             <PageHeader
-              description="先确认代理、Google Ads、平台备注和脚本是否就绪，再进入对应分组修改具体配置。"
               eyebrow="Settings"
               title="系统配置控制台"
             />

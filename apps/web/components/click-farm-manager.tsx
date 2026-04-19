@@ -257,7 +257,6 @@ export function ClickFarmManager() {
                 </button>
               </div>
             }
-            description="统一查看补点击任务的节奏、成功率和暂停原因。先处理异常任务，再补齐新的 Offer 任务。"
             eyebrow="Click Farm"
             title={
               <span className="flex flex-wrap items-center gap-3">

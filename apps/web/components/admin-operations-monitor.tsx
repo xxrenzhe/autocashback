@@ -169,7 +169,6 @@ export function AdminOperationsMonitor() {
           </button>
         }
         title="业务运营控制台"
-        description="先看整体负载和风险，再跳转到换链接、补点击、代理或 Offer 页面做针对性处理。"
       />
 
       <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">

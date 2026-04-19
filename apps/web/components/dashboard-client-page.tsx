@@ -221,7 +221,6 @@ export function DashboardClientPage({ username }: { username: string }) {
           </button>
         }
         title={`${username}，先看今天的总览`}
-        description="先确认 Offer、换链和账号的核心状态，再进入对应模块处理动作和风险。"
       />
 
       <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
