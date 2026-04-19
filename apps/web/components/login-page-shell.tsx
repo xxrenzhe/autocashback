@@ -32,19 +32,6 @@ const loginActions = [
   }
 ];
 
-const loginSignals = [
-  {
-    label: "账号开通",
-    value: "管理员统一创建",
-    note: "试用账号和正式账号都从后台统一开通。"
-  },
-  {
-    label: "登录后入口",
-    value: "直接进入控制台",
-    note: "继续处理账号、Offer 和换链等日常动作。"
-  }
-];
-
 function ContactButton(props: {
   className: string;
   onClick: () => void;
@@ -89,40 +76,30 @@ export function LoginPageShell() {
         </header>
       </div>
 
-      <div className="mx-auto grid min-h-[calc(100vh-6rem)] max-w-7xl items-start gap-10 px-5 pb-10 pt-10 lg:grid-cols-[1.02fr,0.98fr] lg:items-stretch lg:px-8 lg:pt-12">
+      <div className="mx-auto grid min-h-[calc(100vh-6rem)] max-w-7xl items-start gap-8 px-5 pb-10 pt-10 lg:grid-cols-[0.96fr,1.04fr] lg:items-stretch lg:px-8 lg:pt-12">
         <section className="flex h-full max-w-2xl flex-col">
-          <h1 className="max-w-4xl font-bold tracking-tight text-foreground text-5xl font-semibold leading-tight text-foreground lg:text-6xl">
+          <h1 className="max-w-4xl text-5xl font-semibold leading-tight tracking-tight text-foreground lg:text-6xl">
             登录后，
             <span className="block text-primary">继续当天返利运营</span>
           </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
-            已有账号可直接进入控制台，继续处理账号、Offer、佣金和换链任务。还没有账号时，先申请试用或联系管理员统一开通。
+          <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground">
+            已有账号直接进入控制台；没有账号时，申请试用或联系管理员开通。
           </p>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {loginSignals.map((item) => (
-              <article className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" key={item.label}>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{item.label}</p>
-                <p className="mt-4 text-xl font-semibold tracking-tight text-foreground">{item.value}</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.note}</p>
-              </article>
-            ))}
-          </div>
-
-          <div className="bg-card text-card-foreground rounded-xl border shadow-sm mt-8 p-5">
-            <p className="text-sm font-semibold text-foreground">登录后通常会先继续这些动作：</p>
-            <div className="mt-5 grid gap-3">
+          <div className="mt-8 rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
+            <p className="text-sm font-semibold text-foreground">常用入口</p>
+            <div className="mt-4 grid gap-2">
               {loginActions.map((item) => {
                 const Icon = item.icon;
 
                 return (
-                  <div className="flex items-start gap-3 rounded-xl bg-muted/40 p-4" key={item.title}>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <div className="flex items-start gap-3 rounded-lg border border-border bg-background px-3 py-2.5" key={item.title}>
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                       <Icon className="h-4 w-4" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                      <p className="mt-1 text-sm leading-6 text-muted-foreground">{item.text}</p>
+                      <p className="mt-1 truncate text-xs text-muted-foreground">{item.text}</p>
                     </div>
                   </div>
                 );
@@ -134,7 +111,6 @@ export function LoginPageShell() {
         <div className="flex h-full w-full lg:justify-self-end">
           <div className="mx-auto flex h-full w-full max-w-[34rem] flex-col">
             <LoginForm className="h-full" onContactClick={() => setIsContactDialogOpen(true)} />
-            <p className="mt-4 text-center text-sm text-muted-foreground">试用账号与正式账号均由管理员统一开通。</p>
           </div>
         </div>
       </div>

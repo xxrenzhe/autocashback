@@ -32,7 +32,7 @@ const replacements = [
   [/刷新中\.\.\./g, '刷新中…'],
 ];
 
-['components/admin-operations-monitor.tsx', 'components/settings-manager.tsx'].forEach(file => {
+['components/settings-manager.tsx'].forEach(file => {
   let content = fs.readFileSync(file, 'utf8');
   for (const [pattern, replacement] of replacements) {
     content = content.replace(pattern, replacement);

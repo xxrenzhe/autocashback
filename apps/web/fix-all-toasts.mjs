@@ -20,7 +20,6 @@ const targetFiles = [
   'settings-manager.tsx',
   'admin-users-manager.tsx',
   'account-security-panel.tsx',
-  'admin-operations-monitor.tsx',
   'dashboard-client-page.tsx',
   'queue-monitor.tsx',
   'click-farm-task-dialog.tsx',

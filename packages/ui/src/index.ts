@@ -1,10 +1,6 @@
 export { cn } from "./cn";
 export { EmptyState } from "./empty-state";
 export { MetricGroup } from "./metric-group";
-export { PageHeader } from "./page-header";
-export { PageHeaderProvider, usePageHeaderContext } from "./page-header-context";
-export { ShortcutCard } from "./shortcut-card";
 export { CardSkeleton, StatSkeleton, TableSkeleton } from "./skeletons";
-export { StatCard } from "./stat-card";
 export { StatusBadge, getStatusBadgeMeta, type StatusBadgeVariant } from "./status-badge";
 export { getToneStyles, type Tone } from "./tone";

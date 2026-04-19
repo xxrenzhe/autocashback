@@ -21,7 +21,7 @@ import {
   X
 } from "lucide-react";
 
-import { cn, PageHeaderProvider } from "@autocashback/ui";
+import { cn } from "@autocashback/ui";
 import { Toaster } from "sonner";
 import type { CurrentUser } from "@autocashback/domain";
 
@@ -56,12 +56,6 @@ function isActivePath(pathname: string, href: string) {
     return pathname === href;
   }
   return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function resolveCurrentNav(pathname: string) {
-  return [...userLinks, ...adminLinks]
-    .filter((item) => isActivePath(pathname, item.href))
-    .sort((left, right) => right.href.length - left.href.length)[0];
 }
 
 function NavSection({
@@ -142,9 +136,6 @@ export function AppShell({
   const displayName = user.username || user.email;
   const userInitial = displayName.slice(0, 1).toUpperCase();
   const roleLabel = roleLabels[user.role] ?? user.role;
-  const currentNav = resolveCurrentNav(pathname);
-  const pageTitle = currentNav?.label ?? "管理后台";
-
   useEffect(() => {
     setMobileNavOpen(false);
   }, [pathname]);
@@ -342,7 +333,7 @@ export function AppShell({
 
         <main className="flex-1 p-4 sm:p-5 lg:p-8">
           <div className="mx-auto max-w-7xl">
-            <PageHeaderProvider value={{ title: pageTitle }}>{children}</PageHeaderProvider>
+            {children}
           </div>
         </main>
       </div>
