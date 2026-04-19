@@ -11,11 +11,11 @@ export function GoogleAdsSettingsTab({
   onClearGoogleAdsConfig
 }: GoogleAdsSettingsTabProps) {
   return (
-    <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" id="google-ads-settings">
+    <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm" id="google-ads-settings">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-primary">Google Ads API</p>
-          <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">OAuth 凭证配置</h3>
+          <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">OAuth 凭证配置</h3>
         </div>
         <button
           className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
@@ -26,18 +26,13 @@ export function GoogleAdsSettingsTab({
         </button>
       </div>
 
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">
-        在这里保存 Google Ads OAuth 基础参数。首次保存后请发起授权；如果你修改了基础参数，系统会清除旧授权状态，需重新获取
-        Refresh Token 并同步账号。
-      </p>
-
-      <div className="mt-5 grid gap-3 rounded-xl border border-border bg-muted/40 p-5 text-sm text-muted-foreground lg:grid-cols-3">
+      <div className="mt-4 grid gap-3 rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground lg:grid-cols-3">
         <p>基础项完成度：{overview.googleAdsBaseConfigCount} / 4</p>
         <p>OAuth 状态：{googleAdsConfig.hasRefreshToken ? "已授权" : "未授权"}</p>
         <p>最近验证：{googleAdsConfig.lastVerifiedAt || "尚未验证"}</p>
       </div>
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <label className="block text-sm font-medium text-foreground">
           Client ID
           <input
@@ -87,7 +82,7 @@ export function GoogleAdsSettingsTab({
         </label>
       </div>
 
-      <div className="mt-5 grid gap-3 rounded-xl border border-border bg-muted/40 p-5 text-sm text-muted-foreground lg:grid-cols-3">
+      <div className="mt-4 grid gap-3 rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground lg:grid-cols-3">
         <p>Client ID：{googleAdsConfig.hasClientId ? "已保存" : "未配置"}</p>
         <p>Client Secret：{googleAdsConfig.hasClientSecret ? "已保存" : "未配置"}</p>
         <p>Developer Token：{googleAdsConfig.hasDeveloperToken ? "已保存" : "未配置"}</p>
@@ -96,7 +91,7 @@ export function GoogleAdsSettingsTab({
         <p>Token 过期：{googleAdsConfig.tokenExpiresAt || "未获取"}</p>
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-3">
+      <div className="mt-4 flex flex-wrap gap-3">
         <button
           className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
           onClick={onSaveGoogleAdsConfig}

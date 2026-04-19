@@ -6,19 +6,17 @@ export function PlatformNotesSettingsTab({
   onPlatformNoteChange
 }: PlatformNotesSettingsTabProps) {
   return (
-    <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" id="platform-settings">
+    <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm" id="platform-settings">
       <p className="text-xs font-semibold uppercase tracking-wider text-primary">返利网配置</p>
-      <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">平台接入策略</h3>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">
-        在这里维护各返利平台的运营说明、登录入口和处理规范，方便团队统一查看和协作。
-      </p>
-
-      <div className="mt-5 rounded-xl border border-border bg-muted/40 p-5 text-sm text-muted-foreground">
-        当前已填写 {overview.noteCount} / 3 份平台说明。建议至少补齐 TopCashback、Rakuten 和 Custom 的登录入口、风控点和操作规范。
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-lg font-semibold tracking-tight text-foreground">平台接入策略</h3>
+        <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+          已填写 {overview.noteCount}/3
+        </span>
       </div>
 
-      <div className="mt-5 grid gap-4 xl:grid-cols-3">
-        <label className="rounded-xl border border-border bg-muted/40 p-5 text-sm font-medium text-foreground">
+      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+        <label className="rounded-xl border border-border bg-muted/30 p-4 text-sm font-medium text-foreground">
           TopCashback
           <textarea
             className="mt-3 min-h-36 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal"
@@ -26,7 +24,7 @@ export function PlatformNotesSettingsTab({
             value={platformNotes.topcashback}
           />
         </label>
-        <label className="rounded-xl border border-border bg-muted/40 p-5 text-sm font-medium text-foreground">
+        <label className="rounded-xl border border-border bg-muted/30 p-4 text-sm font-medium text-foreground">
           Rakuten
           <textarea
             className="mt-3 min-h-36 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal"
@@ -34,7 +32,7 @@ export function PlatformNotesSettingsTab({
             value={platformNotes.rakuten}
           />
         </label>
-        <label className="rounded-xl border border-border bg-muted/40 p-5 text-sm font-medium text-foreground">
+        <label className="rounded-xl border border-border bg-muted/30 p-4 text-sm font-medium text-foreground">
           Custom
           <textarea
             className="mt-3 min-h-36 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal"

@@ -103,14 +103,11 @@ export function AccountSecurityPanel() {
   }
 
   return (
-    <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
+    <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-primary">账户安全</p>
-          <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">密码与登录会话</h3>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
-            在这里可以修改密码、查看活跃会话，并按需撤销单个或全部登录状态。
-          </p>
+          <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">密码与登录会话</h3>
         </div>
         <button
           className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive"
@@ -121,8 +118,8 @@ export function AccountSecurityPanel() {
         </button>
       </div>
 
-      <div className="mt-6 grid gap-5 xl:grid-cols-[0.8fr,1.2fr]">
-        <div className="rounded-xl border border-border bg-muted/40 p-5">
+      <div className="mt-4 grid gap-4 xl:grid-cols-[0.8fr,1.2fr]">
+        <div className="rounded-xl border border-border bg-muted/30 p-4">
           <p className="text-sm font-semibold text-foreground">修改密码</p>
           <div className="mt-4 space-y-4">
             <label className="block text-sm text-foreground">
@@ -166,7 +163,7 @@ export function AccountSecurityPanel() {
           </button>
         </div>
 
-        <div className="rounded-xl border border-border bg-muted/40 p-5">
+        <div className="rounded-xl border border-border bg-muted/30 p-4">
           <div className="flex items-center justify-between gap-4">
             <p className="text-sm font-semibold text-foreground">活跃会话</p>
             <button

@@ -13,11 +13,11 @@ export function ProxySettingsTab({
   onValidateProxyEntry
 }: ProxySettingsTabProps) {
   return (
-    <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" id="proxy-settings">
+    <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm" id="proxy-settings">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-primary">代理配置</p>
-          <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">按国家维护解析代理</h3>
+          <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">按国家维护解析代理</h3>
         </div>
         <button
           className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
@@ -28,11 +28,11 @@ export function ProxySettingsTab({
         </button>
       </div>
 
-      <div className="mt-5 space-y-4">
+      <div className="mt-4 space-y-3">
         {proxyEntries.length ? (
           proxyEntries.map((entry, index) => (
-            <div className="rounded-xl border border-border bg-muted/40 p-5" key={`${entry.label}-${index}`}>
-              <div className="grid gap-4 lg:grid-cols-[140px,1fr,140px,120px]">
+            <div className="rounded-xl border border-border bg-muted/30 p-4" key={`${entry.label}-${index}`}>
+              <div className="grid gap-3 lg:grid-cols-[140px,1fr,140px,120px]">
                 <label className="block text-sm font-medium text-foreground">
                   国家
                   <input
@@ -75,7 +75,7 @@ export function ProxySettingsTab({
                 </label>
               </div>
 
-              <div className="mt-4 flex justify-end">
+              <div className="mt-3 flex justify-end">
                 <div className="flex flex-wrap items-center justify-end gap-3">
                   {proxyValidation[index]?.message ? (
                     <span

@@ -2,15 +2,10 @@
 
 import * as Tabs from "@radix-ui/react-tabs";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Globe2,
-  Link2,
-  NotebookPen,
-  ShieldCheck
-} from "lucide-react";
+import { Save } from "lucide-react";
 
 import type { ProxySettingEntry } from "@autocashback/domain";
-import { PageHeader, StatCard } from "@autocashback/ui";
+import { cn } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { AccountSecuritySettingsTab } from "@/components/settings/account-security-settings-tab";
@@ -40,6 +35,30 @@ const emptyProxyEntry: ProxySettingEntry = {
   url: "",
   active: true
 };
+
+function SettingsMetric({
+  label,
+  value,
+  tone = "default"
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "warning" | "success";
+}) {
+  const toneClassName =
+    tone === "warning"
+      ? "border-amber-200 bg-amber-500/10 text-amber-700"
+      : tone === "success"
+        ? "border-emerald-200 bg-emerald-500/10 text-emerald-700"
+        : "border-border bg-card text-foreground";
+
+  return (
+    <div className={cn("rounded-xl border px-4 py-3", toneClassName)}>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+    </div>
+  );
+}
 
 function parseProxyEntries(raw: string): ProxySettingEntry[] {
   try {
@@ -422,41 +441,57 @@ export function SettingsManager() {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader eyebrow="Settings" title="系统配置控制台" />
+    <div className="space-y-4">
+      <section className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">系统配置</h1>
+            <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+              {SETTINGS_TAB_ITEMS.find((tab) => tab.value === activeTab)?.label}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">代理、Google Ads、脚本、平台备注与账户安全。</p>
+        </div>
 
-      <section className="grid gap-4 xl:grid-cols-4">
-        <StatCard
-          icon={Globe2}
+        <button
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          disabled={loading}
+          onClick={saveSettings}
+          type="button"
+        >
+          <Save className="h-4 w-4" />
+          保存设置
+        </button>
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <SettingsMetric
           label="活跃代理"
-          tone={overview.hasGlobalProxy ? "emerald" : "amber"}
+          tone={overview.hasGlobalProxy ? "success" : "warning"}
           value={`${overview.activeProxyCount}`}
         />
-        <StatCard
-          icon={ShieldCheck}
+        <SettingsMetric
           label="Google Ads 基础项"
-          tone={overview.googleAdsFullyConnected ? "emerald" : "amber"}
+          tone={overview.googleAdsFullyConnected ? "success" : "warning"}
           value={`${overview.googleAdsBaseConfigCount}/4`}
         />
-        <StatCard
-          icon={NotebookPen}
+        <SettingsMetric
           label="平台备注"
-          tone={overview.noteCount >= 2 ? "emerald" : "slate"}
+          tone={overview.noteCount >= 2 ? "success" : "default"}
           value={`${overview.noteCount}/3`}
         />
-        <StatCard
-          icon={Link2}
+        <SettingsMetric
           label="脚本状态"
-          tone={overview.scriptReady ? "emerald" : "amber"}
+          tone={overview.scriptReady ? "success" : "warning"}
           value={overview.scriptReady ? "ready" : "pending"}
         />
       </section>
 
-      <Tabs.Root className="space-y-4" onValueChange={handleTabValueChange} value={activeTab}>
-        <Tabs.List className="flex flex-wrap gap-2 rounded-xl border border-border bg-muted/30 p-2">
+      <Tabs.Root className="space-y-3" onValueChange={handleTabValueChange} value={activeTab}>
+        <Tabs.List className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-2 shadow-sm">
           {SETTINGS_TAB_ITEMS.map((tab) => (
             <Tabs.Trigger
-              className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-background/80 hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-white"
+              className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted/60 hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-white"
               key={tab.value}
               value={tab.value}
             >
@@ -524,17 +559,6 @@ export function SettingsManager() {
           />
         </Tabs.Content>
       </Tabs.Root>
-
-      <div className="flex items-center gap-4">
-        <button
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-          disabled={loading}
-          onClick={saveSettings}
-          type="button"
-        >
-          保存设置
-        </button>
-      </div>
     </div>
   );
 }
