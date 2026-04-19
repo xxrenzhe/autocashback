@@ -483,7 +483,7 @@ export function GoogleAdsManager() {
                 </tbody>
               </table>
             ) : (
-              <EmptyState description="先完成连接。" icon={Building2} title="暂无可访问账号" />
+              <EmptyState icon={Building2} title="暂无可访问账号" />
             )}
           </div>
         </div>

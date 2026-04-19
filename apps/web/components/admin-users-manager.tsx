@@ -693,12 +693,7 @@ export function AdminUsersManager() {
         {loading ? (
           <TableSkeleton className="mt-6" rows={Math.min(8, pagination.limit)} />
         ) : emptyState ? (
-          <EmptyState
-            className="mt-6"
-            description="调整筛选或直接创建用户。"
-            icon={Search}
-            title="当前筛选条件下没有用户"
-          />
+          <EmptyState className="mt-6" icon={Search} title="当前筛选条件下没有用户" />
         ) : (
           <div className="mt-6 overflow-x-auto rounded-xl border border-border">
             <table className="min-w-[1160px] w-full text-left text-sm">
@@ -1116,17 +1111,9 @@ export function AdminUsersManager() {
                 </div>
               ))
             ) : loginHistory.length ? (
-              <EmptyState
-                description="换个 IP 关键字试试。"
-                icon={Search}
-                title="没有匹配该 IP 的登录记录"
-              />
+              <EmptyState icon={Search} title="没有匹配该 IP 的登录记录" />
             ) : (
-              <EmptyState
-                description="暂无登录记录。"
-                icon={History}
-                title="暂无登录记录"
-              />
+              <EmptyState icon={History} title="暂无登录记录" />
             )}
           </div>
         )}
@@ -1233,11 +1220,7 @@ export function AdminUsersManager() {
             ) : null}
           </div>
         ) : (
-          <EmptyState
-            description="最近没有安全告警。"
-            icon={ShieldAlert}
-            title="暂无安全告警"
-          />
+          <EmptyState icon={ShieldAlert} title="暂无安全告警" />
         )}
       </ModalFrame>
     </div>

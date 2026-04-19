@@ -684,7 +684,7 @@ export function QueueMonitor() {
                 ) : null}
               </div>
             ) : (
-              <EmptyState description="调整筛选后重试。" icon={Workflow} title="当前筛选条件下没有队列任务" />
+              <EmptyState icon={Workflow} title="当前筛选条件下没有队列任务" />
             )}
           </section>
         </div>

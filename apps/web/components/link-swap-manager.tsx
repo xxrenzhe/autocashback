@@ -710,7 +710,6 @@ export function LinkSwapManager() {
                   <tr>
                     <td className="py-6" colSpan={8}>
                       <EmptyState
-                        description={consoleData.rows.length === 0 ? "创建 Offer 后会生成任务。" : "调整筛选后重试。"}
                         icon={Link2}
                         title={consoleData.rows.length === 0 ? "当前还没有换链任务" : "当前筛选条件下没有匹配任务"}
                       />
@@ -805,11 +804,7 @@ export function LinkSwapManager() {
             ))}
           </div>
         ) : (
-          <EmptyState
-            description="暂无执行记录。"
-            icon={History}
-            title="当前任务还没有执行历史"
-          />
+          <EmptyState icon={History} title="当前任务还没有执行历史" />
         )}
       </ModalFrame>
     </div>

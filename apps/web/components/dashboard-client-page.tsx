@@ -54,7 +54,6 @@ function ActionCard({ item }: { item: DashboardActionItem }) {
   return (
     <Link href={item.href}>
       <ShortcutCard
-        description={item.description}
         icon={Icon}
         title={item.title}
         tone={item.tone}
@@ -275,11 +274,7 @@ export function DashboardClientPage({ username }: { username: string }) {
             {data.recentRuns.length ? (
               data.recentRuns.map((run) => <RunCard key={run.id} run={run} />)
             ) : (
-              <EmptyState
-                description="暂无执行记录。"
-                icon={Boxes}
-                title="还没有换链执行记录"
-              />
+              <EmptyState icon={Boxes} title="还没有换链执行记录" />
             )}
           </div>
         </div>

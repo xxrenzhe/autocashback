@@ -109,12 +109,7 @@ export function ProxySettingsTab({
             </div>
           ))
         ) : (
-          <EmptyState
-            className="text-left"
-            description="先添加代理。"
-            icon={Globe2}
-            title="还没有代理配置"
-          />
+          <EmptyState className="text-left" icon={Globe2} title="还没有代理配置" />
         )}
       </div>
     </section>

@@ -573,7 +573,6 @@ export function ClickFarmManager() {
                     ) : null}
                   </div>
                 }
-                description="先选 Offer 再创建任务。"
                 icon={Zap}
                 title={
                   searchQuery || statusFilter !== "all" || countryFilter !== "all"

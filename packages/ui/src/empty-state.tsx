@@ -11,7 +11,7 @@ export function EmptyState({
 }: {
   action?: ReactNode;
   className?: string;
-  description: string;
+  description?: string;
   icon?: ComponentType<{ className?: string }>;
   title: string;
 }) {
@@ -28,7 +28,7 @@ export function EmptyState({
         </span>
       ) : null}
       <p className={cn("text-sm font-semibold text-foreground", Icon ? "mt-4" : "")}>{title}</p>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+      {description ? <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p> : null}
       {action ? <div className="mt-4">{action}</div> : null}
     </div>
   );

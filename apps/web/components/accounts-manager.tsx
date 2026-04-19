@@ -561,7 +561,6 @@ export function AccountsManager() {
                     </button>
                   </div>
                 }
-                description="创建账号后再挂接 Offer。"
                 icon={WalletCards}
                 title={hasActiveFilters ? "当前筛选条件下没有账号" : "还没有返利账号"}
               />

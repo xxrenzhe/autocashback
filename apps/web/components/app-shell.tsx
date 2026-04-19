@@ -51,18 +51,6 @@ const roleLabels = {
   user: "普通用户"
 } as const;
 
-const pageDescriptions: Record<string, string> = {
-  "/dashboard": "先确认 Offer、换链和账号的核心状态，再进入对应模块处理动作和风险。",
-  "/accounts": "在这里统一维护返利平台账号、收款方式和挂接的 Offer。先看账号覆盖，再补齐平台和投放归属。",
-  "/offers": "管理 Offer 投放信息、佣金阈值和运营状态。",
-  "/link-swap": "查看换链接任务、解析结果与脚本对接状态。",
-  "/google-ads": "先确认基础配置、OAuth 状态和可访问账号数量，再决定是去设置页补参数，还是直接同步和诊断。",
-  "/click-farm": "统一查看补点击任务的节奏、成功率和暂停原因。先处理异常任务，再补齐新的 Offer 任务。",
-  "/settings": "先确认代理、Google Ads、平台备注和脚本是否就绪，再进入对应分组修改具体配置。",
-  "/queue": "先看队列并发、调度器状态和系统运行压力，再进入业务运营面板处理具体风险。",
-  "/admin/users": "管理后台用户、权限与跨账号运营边界。"
-};
-
 function isActivePath(pathname: string, href: string) {
   if (href === "/dashboard") {
     return pathname === href;
@@ -156,7 +144,6 @@ export function AppShell({
   const roleLabel = roleLabels[user.role] ?? user.role;
   const currentNav = resolveCurrentNav(pathname);
   const pageTitle = currentNav?.label ?? "管理后台";
-  const pageDescription = pageDescriptions[currentNav?.href ?? "/dashboard"] ?? pageDescriptions["/dashboard"];
 
   useEffect(() => {
     setMobileNavOpen(false);
@@ -355,7 +342,7 @@ export function AppShell({
 
         <main className="flex-1 p-4 sm:p-5 lg:p-8">
           <div className="mx-auto max-w-7xl">
-            <PageHeaderProvider value={{ title: pageTitle, description: pageDescription }}>{children}</PageHeaderProvider>
+            <PageHeaderProvider value={{ title: pageTitle }}>{children}</PageHeaderProvider>
           </div>
         </main>
       </div>

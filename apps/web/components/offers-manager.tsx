@@ -820,11 +820,6 @@ export function OffersManager() {
                   </div>
                 }
                 className="m-6"
-                description={
-                  hasActiveFilters
-                    ? "放宽筛选或新建 Offer。"
-                    : "创建 Offer 后再配置任务。"
-                }
                 icon={WalletCards}
                 title={hasActiveFilters ? "当前筛选条件下没有 Offer" : "还没有 Offer"}
               />

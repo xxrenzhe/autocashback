@@ -12,7 +12,7 @@ export function ShortcutCard({
   trailing
 }: {
   className?: string;
-  description: string;
+  description?: string;
   icon: ComponentType<{ className?: string }>;
   title: string;
   tone?: Exclude<Tone, "red">;
@@ -34,7 +34,7 @@ export function ShortcutCard({
         {trailing}
       </div>
       <p className="mt-4 text-sm font-semibold text-foreground">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+      {description ? <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p> : null}
     </div>
   );
 }

@@ -249,11 +249,7 @@ export function AdminOperationsMonitor() {
                     </Link>
                   ))
                 ) : (
-                  <EmptyState
-                    className="bg-primary/10/60"
-                    description="暂无风险。"
-                    title="当前没有明显风险"
-                  />
+                  <EmptyState className="bg-primary/10/60" title="当前没有明显风险" />
                 )}
               </div>
             </section>
