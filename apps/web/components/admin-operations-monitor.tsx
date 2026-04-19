@@ -19,7 +19,6 @@ import {
 import {
   EmptyState,
   MetricGroup,
-  PageHeader,
   ShortcutCard,
   StatCard,
   StatusBadge,
@@ -155,8 +154,14 @@ export function AdminOperationsMonitor() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        actions={
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">业务运营控制台</h2>
+          <div className="mt-3 text-sm leading-6 text-muted-foreground">
+            先看队列并发、调度器状态和系统运行压力，再进入业务运营面板处理具体风险。
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
           <button
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background/90 px-3 py-2 text-sm font-semibold text-foreground transition hover:border-emerald-200 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
             disabled={loading || refreshing}
@@ -166,9 +171,8 @@ export function AdminOperationsMonitor() {
             <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
             {refreshing ? "刷新中…" : "刷新监控"}
           </button>
-        }
-        title="业务运营控制台"
-      />
+        </div>
+      </div>
 
       <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden p-0">
         <div className="grid gap-0 xl:grid-cols-[1.1fr,0.9fr]">
