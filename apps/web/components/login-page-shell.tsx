@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { Coins, Link2, WalletCards, Workflow } from "lucide-react";
+import { Coins, Link2, WalletCards } from "lucide-react";
 
 import { BrandMark } from "@/components/brand-mark";
 import { ContactQrDialog } from "@/components/contact-qr-dialog";
@@ -13,22 +13,17 @@ const loginActions = [
   {
     icon: WalletCards,
     title: "继续维护返利账号",
-    text: "进入控制台后继续处理账号状态、国家覆盖和平台备注。"
+    text: "处理账号状态、国家覆盖和平台备注。"
   },
   {
     icon: Coins,
     title: "查看 Offer 与佣金进度",
-    text: "快速确认当天重点 Offer、阈值状态和需要跟进的变更。"
+    text: "确认当天重点 Offer、阈值状态和变更。"
   },
   {
     icon: Link2,
     title: "执行换链与链接复核",
-    text: "把最新终链更新到系统，减少活动链路切换时的漏改风险。"
-  },
-  {
-    icon: Workflow,
-    title: "承接交接与日常协作",
-    text: "从总览继续进入账号、Offer 或任务处理，不需要回头翻表。"
+    text: "把最新终链更新到系统，减少漏改。"
   }
 ];
 
@@ -91,13 +86,13 @@ export function LoginPageShell() {
               const Icon = item.icon;
 
               return (
-                <div className="flex items-start gap-3 rounded-lg border border-border bg-card px-3 py-2.5 text-card-foreground shadow-sm" key={item.title}>
+                <div className="flex items-start gap-3 rounded-lg border border-border bg-background/70 px-3 py-2.5 text-card-foreground" key={item.title}>
                   <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                    <p className="mt-1 truncate text-xs text-muted-foreground">{item.text}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{item.text}</p>
                   </div>
                 </div>
               );

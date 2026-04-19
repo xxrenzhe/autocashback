@@ -578,9 +578,11 @@ export function QueueMonitor() {
           <section className="overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
             <div className="border-b border-border/70 p-4">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-primary">任务列表</p>
-                  <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">队列监控</h2>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h2 className="text-sm font-semibold text-foreground">队列任务</h2>
+                  <span className="rounded-full bg-muted px-2.5 py-1 font-mono tabular-nums text-xs text-muted-foreground">
+                    {consoleData.rows.length}
+                  </span>
                 </div>
                 {(searchQuery || statusFilter !== "all" || typeFilter !== "all" || sort !== "recent") && (
                   <button
@@ -598,9 +600,9 @@ export function QueueMonitor() {
                 )}
               </div>
 
-              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <label className="block text-sm font-medium text-foreground md:col-span-2">
-                  搜索任务
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-[1.4fr,0.7fr,0.7fr,0.8fr]">
+                <label className="block text-sm font-medium text-foreground md:col-span-2 xl:col-span-1">
+                  <span className="text-xs text-muted-foreground">搜索</span>
                   <div className="mt-2 flex items-center gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
                     <Search className="h-4 w-4 text-muted-foreground/80" />
                     <input
@@ -613,7 +615,7 @@ export function QueueMonitor() {
                 </label>
 
                 <label className="block text-sm font-medium text-foreground">
-                  状态
+                  <span className="text-xs text-muted-foreground">状态</span>
                   <select
                     className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                     onChange={(event) => setStatusFilter(event.target.value as QueueTaskStatus | "all")}
@@ -628,7 +630,7 @@ export function QueueMonitor() {
                 </label>
 
                 <label className="block text-sm font-medium text-foreground">
-                  类型
+                  <span className="text-xs text-muted-foreground">类型</span>
                   <select
                     className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                     onChange={(event) => setTypeFilter(event.target.value as QueueTaskType | "all")}
@@ -643,7 +645,7 @@ export function QueueMonitor() {
                 </label>
 
                 <label className="block text-sm font-medium text-foreground">
-                  排序
+                  <span className="text-xs text-muted-foreground">排序</span>
                   <select
                     className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2"
                     onChange={(event) => setSort(event.target.value as QueueConsoleSort)}
@@ -743,10 +745,9 @@ export function QueueMonitor() {
 
           <section className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">调度器健康检查</p>
-                <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">后台调度器</h2>
-                <p className="mt-1 text-sm text-muted-foreground">换链接与补点击调度状态。</p>
+              <div className="space-y-1">
+                <h2 className="text-sm font-semibold text-foreground">调度器状态</h2>
+                <p className="text-xs text-muted-foreground">换链接与补点击调度状态。</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -802,11 +803,11 @@ export function QueueMonitor() {
                     return (
                       <div className={cn("rounded-xl border p-4", tone.panel)} key={item.key}>
                         <div className="flex items-start justify-between gap-3">
-                          <h3 className="font-medium text-foreground">{item.label}</h3>
+                          <h3 className="text-sm font-semibold text-foreground">{item.label}</h3>
                           <StatusBadge label={statusMeta.label} variant={statusMeta.variant} />
                         </div>
-                        <p className="mt-3 text-sm text-foreground">{item.value.message}</p>
-                        <div className="mt-4 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+                        <p className="mt-2 text-sm text-foreground">{item.value.message}</p>
+                        <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
                           <p>启用任务：{item.value.metrics.enabledTasks}</p>
                           <p>最近入队：{item.value.metrics.recentQueuedTasks}</p>
                           <p>待调度：{item.value.metrics.overdueTasks}</p>
@@ -832,7 +833,7 @@ export function QueueMonitor() {
           </section>
         </div>
       ) : (
-              <div className="space-y-4">
+        <div className="space-y-4">
           <section
             className={cn(
               "rounded-xl border bg-card p-4 text-card-foreground shadow-sm",
@@ -840,9 +841,13 @@ export function QueueMonitor() {
             )}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">队列配置</p>
-                <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">配置管理</h2>
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="text-sm font-semibold text-foreground">队列配置</h2>
+                {configDirty ? (
+                  <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                    未保存
+                  </span>
+                ) : null}
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -863,12 +868,6 @@ export function QueueMonitor() {
                 </button>
               </div>
             </div>
-
-            {configDirty ? (
-              <p className="mt-4 rounded-lg border border-amber-200 bg-amber-500/10 px-3 py-2 text-sm text-amber-700">
-                当前配置有未保存修改。
-              </p>
-            ) : null}
 
             {configLoading && !config ? (
               <p className="mt-4 rounded-lg bg-muted/40 px-4 py-5 text-sm text-muted-foreground">正在加载队列配置...</p>
@@ -949,15 +948,12 @@ function MonitorCard(props: {
   } as const;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-muted-foreground">{props.label}</span>
-        <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-semibold", toneStyles[props.tone])}>
-          {props.label}
-        </span>
-      </div>
-      <p className="mt-4 text-3xl font-semibold tracking-tight text-foreground">{props.value}</p>
-      <p className="mt-2 text-sm text-muted-foreground">{props.meta}</p>
+    <div className="rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
+      <span className={cn("inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold", toneStyles[props.tone])}>
+        {props.label}
+      </span>
+      <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">{props.value}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{props.meta}</p>
     </div>
   );
 }

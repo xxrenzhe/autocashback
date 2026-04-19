@@ -48,19 +48,12 @@ export function LoginForm(props: {
 
   return (
     <form className={cn("overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm", props.className)} onSubmit={handleSubmit}>
-      <div className="border-b border-border bg-muted/20 px-6 py-5 sm:px-8">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">安全登录</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">进入后台</h2>
-          </div>
-          <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">
-            内部系统
-          </span>
+      <div className="px-6 pb-6 pt-6 sm:px-8 sm:pb-8 sm:pt-8">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">账号登录</h2>
+          <p className="mt-1 text-sm text-muted-foreground">输入账号信息，继续进入后台。</p>
         </div>
-      </div>
 
-      <div className="px-6 pb-6 pt-5 sm:px-8 sm:pb-8">
         <div className="space-y-4">
           <label className="block text-sm font-medium text-foreground" htmlFor="username">
             用户名或邮箱
@@ -105,14 +98,14 @@ export function LoginForm(props: {
           type="submit"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
-          {pending ? "正在验证…" : "安全登录"}
+          {pending ? "正在验证…" : "登录"}
           {!pending ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : null}
         </button>
 
-        <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground">还没有账号？</p>
+        <div className="mt-6 text-sm text-muted-foreground">
+          还没有账号？
           <button
-            className="mt-1 rounded-sm text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="ml-1 rounded-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             onClick={props.onContactClick}
             type="button"
           >
