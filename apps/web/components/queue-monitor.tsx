@@ -468,14 +468,19 @@ export function QueueMonitor() {
   const totalTasks = stats.running + stats.pending + stats.completed + stats.failed;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">队列配置与监控</h1>
-          <p className="mt-1 text-sm text-muted-foreground">管理任务队列、调度状态和并发限制</p>
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">队列配置与监控</h1>
+            <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+              {activeTab === "monitor" ? "monitor" : "config"}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">任务队列、调度状态与并发限制。</p>
         </div>
         {activeTab === "monitor" ? (
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2">
             <button
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
               disabled={refreshing}
@@ -504,14 +509,14 @@ export function QueueMonitor() {
         ) : null}
       </div>
 
-      <div className="border-b border-border">
-        <nav className="-mb-px flex gap-8">
+      <div className="rounded-xl border border-border bg-card p-2 shadow-sm">
+        <nav className="flex gap-2">
           <button
             className={cn(
-              "inline-flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors",
+              "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
               activeTab === "monitor"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+                ? "bg-primary text-white"
+                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
             )}
             onClick={() => setActiveTab("monitor")}
             type="button"
@@ -521,10 +526,10 @@ export function QueueMonitor() {
           </button>
           <button
             className={cn(
-              "inline-flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors",
+              "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
               activeTab === "config"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+                ? "bg-primary text-white"
+                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
             )}
             onClick={() => setActiveTab("config")}
             type="button"
@@ -542,8 +547,8 @@ export function QueueMonitor() {
       ) : null}
 
       {activeTab === "monitor" ? (
-        <div className="space-y-6">
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="space-y-4">
+          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <MonitorCard
               label="运行中"
               tone="blue"
@@ -570,12 +575,12 @@ export function QueueMonitor() {
             />
           </section>
 
-          <section className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden">
-            <div className="border-b border-border/70 p-5">
+          <section className="overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
+            <div className="border-b border-border/70 p-4">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-primary">任务列表</p>
-                  <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground">队列监控</h2>
+                  <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">队列监控</h2>
                 </div>
                 {(searchQuery || statusFilter !== "all" || typeFilter !== "all" || sort !== "recent") && (
                   <button
@@ -593,7 +598,7 @@ export function QueueMonitor() {
                 )}
               </div>
 
-              <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <label className="block text-sm font-medium text-foreground md:col-span-2">
                   搜索任务
                   <div className="mt-2 flex items-center gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
@@ -655,7 +660,7 @@ export function QueueMonitor() {
             </div>
 
             {loading ? (
-              <TableSkeleton className="m-5" rows={8} />
+              <TableSkeleton className="m-4" rows={8} />
             ) : consoleData.rows.length ? (
               <div className="overflow-x-auto">
                 <table className="min-w-[1080px] w-full text-left text-sm">
@@ -720,11 +725,11 @@ export function QueueMonitor() {
                 </table>
               </div>
             ) : (
-              <EmptyState className="m-5" icon={Workflow} title="当前筛选条件下没有队列任务" />
+              <EmptyState className="m-4" icon={Workflow} title="当前筛选条件下没有队列任务" />
             )}
 
             {hasMoreRows ? (
-              <div className="border-t border-border/60 p-5">
+              <div className="border-t border-border/60 p-4">
                 <button
                   className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
                   onClick={() => setVisibleTaskCount((current) => current + TASKS_PAGE_SIZE)}
@@ -736,12 +741,12 @@ export function QueueMonitor() {
             ) : null}
           </section>
 
-          <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
+          <section className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">调度器健康检查</p>
-                <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground">后台调度器</h2>
-                <p className="mt-2 text-sm text-muted-foreground">监控换链接和补点击调度器的状态与入队情况。</p>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">后台调度器</h2>
+                <p className="mt-1 text-sm text-muted-foreground">换链接与补点击调度状态。</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -827,17 +832,17 @@ export function QueueMonitor() {
           </section>
         </div>
       ) : (
-        <div className="space-y-6">
+              <div className="space-y-4">
           <section
             className={cn(
-              "bg-card text-card-foreground rounded-xl border shadow-sm p-5",
+              "rounded-xl border bg-card p-4 text-card-foreground shadow-sm",
               configDirty ? "border-amber-200 bg-amber-500/5" : ""
             )}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">队列配置</p>
-                <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground">配置管理</h2>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">配置管理</h2>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -871,7 +876,7 @@ export function QueueMonitor() {
 
             {config ? (
               <>
-                <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   <ConfigInput
                     label="全局并发"
                     value={config.config.globalConcurrency}
@@ -889,7 +894,7 @@ export function QueueMonitor() {
                   />
                 </div>
 
-                <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                <div className="mt-5 grid gap-4 lg:grid-cols-2">
                   <div className="space-y-3">
                     {queueConfigTaskLabels.map((item) => (
                       <ConfigInput
@@ -901,7 +906,7 @@ export function QueueMonitor() {
                     ))}
                   </div>
 
-                  <div className="rounded-xl border border-border bg-muted/40 p-4">
+                  <div className="rounded-xl border border-border bg-muted/30 p-4">
                     <p className="text-sm font-semibold text-foreground">当前生效配置</p>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                       <ConfigStat label="全局并发" value={String(config.config.globalConcurrency)} />

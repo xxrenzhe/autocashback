@@ -1,17 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
 import { useState } from "react";
 import {
   ArrowRight,
   Coins,
-  Globe2,
   Link2,
   Radar,
   ShieldCheck,
-  Sparkles,
-  Target,
   WalletCards,
   Workflow
 } from "lucide-react";
@@ -21,30 +17,29 @@ import { ContactQrDialog } from "@/components/contact-qr-dialog";
 
 const navLinks = [
   { href: "#workflow", label: "接入流程" },
-  { href: "#features", label: "核心能力" },
-  { href: "#scenarios", label: "适合场景" },
+  { href: "#features", label: "核心模块" },
   { href: "#faq", label: "常见问题" }
 ];
 
 const heroSignals = [
-  "先开通试用账号，再进入后台继续日常返利运营",
-  "账号、Offer、佣金和链接更新都能回到一个工作台",
-  "适合多平台、多账号和多国家的返利协作场景",
-  "关键风险和例行操作都有固定入口，减少错链和漏改"
+  "先开通试用账号，再进入后台",
+  "账号、Offer、佣金和换链统一收口",
+  "适合多平台、多账号、多国家协作",
+  "高频变更时先看状态，再做动作"
 ];
 
-const operatingTracks = [
+const workflowSteps = [
   {
-    title: "先收口账号与国家配置",
-    text: "把平台账号、国家覆盖和运营备注都整理进同一处，避免多人操作时口径不一致。"
+    title: "开通账号",
+    text: "先申请试用或联系管理员开通，统一进入后台。"
   },
   {
-    title: "再维护 Offer 与佣金状态",
-    text: "品牌、国家、佣金阈值和最新链接集中留档，方便快速复核和追踪变化。"
+    title: "维护账号和 Offer",
+    text: "把平台账号、国家覆盖、Offer 链接和佣金状态收进同一处。"
   },
   {
-    title: "最后执行换链或补点击动作",
-    text: "进入后台后直接处理当天任务，不再来回确认该改哪条链接、该跟哪组 Offer。"
+    title: "执行换链与日常动作",
+    text: "直接从控制台进入换链、补点击和复核流程。"
   }
 ];
 
@@ -52,157 +47,53 @@ const modules = [
   {
     icon: WalletCards,
     title: "账号管理",
-    text: "一个平台支持多账号、多国家和多收款方式，运营备注也能留在同一条记录里。"
+    text: "多平台、多账号、多收款方式统一留档。"
   },
   {
     icon: Coins,
-    title: "Offer 总览",
-    text: "品牌、国家、佣金阈值和处理状态集中呈现，方便先看重点再做动作。"
+    title: "Offer 管理",
+    text: "品牌、国家、佣金阈值和状态集中维护。"
   },
   {
     icon: Link2,
     title: "换链接执行",
-    text: "活动链接变化时，团队可以快速同步最新终链，减少错链、旧链和漏改。"
+    text: "终链变化后集中更新，减少漏改和旧链。"
   },
   {
     icon: Radar,
     title: "风险提醒",
-    text: "当终链缺失、代理失效或任务成功率波动时，系统会把异常更早暴露出来。"
-  }
-];
-
-const platformCards = [
-  {
-    title: "TopCashback",
-    text: "适合把账号、Offer 和佣金变化统一收口，减少日常运营中的重复确认。"
-  },
-  {
-    title: "Rakuten",
-    text: "把平台记录、链接维护和团队协作收进同一个后台，方便持续运营。"
-  },
-  {
-    title: "Custom",
-    text: "可以继续扩展更多返利平台，把分散来源的记录拉回同一套工作流。"
-  }
-];
-
-const scenarioCards = [
-  {
-    title: "多账号团队",
-    text: "当同一平台下有多个账号在跑不同国家或不同品牌时，更适合用统一后台承接协作。"
-  },
-  {
-    title: "多 Offer 维护",
-    text: "Offer 多了以后，最怕佣金阈值、终链和状态分散在不同表里，统一记录能明显减轻负担。"
-  },
-  {
-    title: "高频换链场景",
-    text: "活动链路更新频繁时，固定入口比聊天同步更稳，能减少漏改和误改。"
-  },
-  {
-    title: "交接与复盘",
-    text: "交接时只需要看系统里的状态和记录，不用再把历史信息从多个工具里拼回来。"
+    text: "把异常、预警和需要跟进的项提前暴露出来。"
   }
 ];
 
 const faqItems = [
   {
-    question: "适合什么样的返利团队？",
-    answer: "适合需要同时管理多个返利账号、多个 Offer、多个国家和高频链接更新的运营团队。"
+    question: "适合什么样的团队？",
+    answer: "适合需要同时维护多个返利账号、多个 Offer 和高频链接更新的返利团队。"
   },
   {
-    question: "可以替代现有表格协作吗？",
-    answer: "可以。它的目标就是把账号、Offer、佣金和换链记录从零散表格里收回统一后台。"
+    question: "能替代表格协作吗？",
+    answer: "可以，核心目标就是把分散在表格和聊天里的记录收回统一后台。"
   },
   {
-    question: "上线后最直接的变化是什么？",
-    answer: "最直接的是少翻表、少漏改、少错链，让团队先看关键状态，再进入具体处理动作。"
+    question: "怎么开始使用？",
+    answer: "先申请试用或联系开通，账号创建后直接登录进入控制台。"
   }
 ];
 
-type FooterItem =
-  | {
-      type: "link";
-      href: string;
-      label: string;
-    }
-  | {
-      type: "contact";
-      label: string;
-    };
-
-const footerColumns: Array<{
-  title: string;
-  items: FooterItem[];
-}> = [
-  {
-    title: "产品",
-    items: [
-      { type: "link", href: "#workflow", label: "接入流程" },
-      { type: "link", href: "#features", label: "核心能力" },
-      { type: "link", href: "#faq", label: "常见问题" },
-      { type: "link", href: "/login", label: "账号登录" }
-    ]
-  },
-  {
-    title: "场景",
-    items: [
-      { type: "link", href: "#scenarios", label: "多账号协作" },
-      { type: "link", href: "#scenarios", label: "多 Offer 维护" },
-      { type: "link", href: "#features", label: "风险提醒" },
-      { type: "link", href: "#features", label: "换链接执行" }
-    ]
-  },
-  {
-    title: "开始使用",
-    items: [
-      { type: "link", href: "#faq", label: "常见问题" },
-      { type: "contact", label: "申请试用" },
-      { type: "contact", label: "联系开通" },
-      { type: "link", href: "/login", label: "进入后台" }
-    ]
-  }
-];
-
-function HeaderCtaButton(props: {
-  onClick: () => void;
+function ContactButton({
+  children,
+  className,
+  onClick
+}: {
+  children: React.ReactNode;
   className: string;
-  children: ReactNode;
+  onClick: () => void;
 }) {
   return (
-    <button className={props.className} onClick={props.onClick} type="button">
-      {props.children}
+    <button className={className} onClick={onClick} type="button">
+      {children}
     </button>
-  );
-}
-
-function FooterItemLink(props: {
-  item: FooterItem;
-  onContactClick: () => void;
-}) {
-  if (props.item.type === "contact") {
-    return (
-      <HeaderCtaButton
-        className="text-sm text-muted-foreground transition-colors hover:text-primary"
-        onClick={props.onContactClick}
-      >
-        {props.item.label}
-      </HeaderCtaButton>
-    );
-  }
-
-  if (props.item.href.startsWith("/")) {
-    return (
-      <Link className="text-sm text-muted-foreground transition-colors hover:text-primary" href={props.item.href}>
-        {props.item.label}
-      </Link>
-    );
-  }
-
-  return (
-    <a className="text-sm text-muted-foreground transition-colors hover:text-primary" href={props.item.href}>
-      {props.item.label}
-    </a>
   );
 }
 
@@ -235,12 +126,12 @@ export default function MarketingHomePage() {
             </nav>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              <HeaderCtaButton
+              <ContactButton
                 className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-emerald-700/20 transition hover:-translate-y-0.5 hover:bg-emerald-500 motion-reduce:transform-none"
                 onClick={() => setIsContactDialogOpen(true)}
               >
                 申请试用
-              </HeaderCtaButton>
+              </ContactButton>
               <Link
                 className="hidden text-sm font-semibold text-foreground transition-colors hover:text-primary md:inline-flex"
                 href="/login"
@@ -252,35 +143,35 @@ export default function MarketingHomePage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-5 pb-10 pt-24 lg:px-8 lg:pt-28">
-        <section className="grid gap-8 pb-12 pt-4 lg:grid-cols-[1.04fr,0.96fr] lg:items-center lg:pt-8">
+      <div className="mx-auto max-w-7xl px-5 pb-12 pt-24 lg:px-8 lg:pt-28">
+        <section className="grid gap-6 pb-10 pt-4 lg:grid-cols-[1.06fr,0.94fr] lg:items-start lg:pt-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">返利运营后台</p>
-            <h1 className="mt-5 max-w-4xl font-bold tracking-tight text-foreground text-5xl font-semibold leading-tight text-foreground lg:text-7xl">
+            <h1 className="mt-5 max-w-4xl text-5xl font-semibold leading-tight tracking-tight text-foreground lg:text-7xl">
               把返利运营
               <span className="block text-primary">收回一个后台</span>
             </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
-              AutoCashBack 把账号管理、Offer 维护、佣金状态和链接更新收进统一工作台，让返利团队先看关键状态，再进入当天要处理的动作。
+            <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground lg:text-lg lg:leading-8">
+              AutoCashBack 把账号、Offer、佣金状态和换链接动作收进同一工作台，让团队先看关键状态，再进入当天要处理的任务。
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <HeaderCtaButton
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <ContactButton
                 className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-semibold text-white shadow-md shadow-emerald-700/20 transition hover:-translate-y-0.5 hover:bg-emerald-500 motion-reduce:transform-none sm:w-auto"
                 onClick={() => setIsContactDialogOpen(true)}
               >
                 申请试用
                 <ArrowRight className="h-4 w-4" />
-              </HeaderCtaButton>
+              </ContactButton>
               <Link
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border bg-background px-6 py-3 text-base font-semibold text-foreground transition hover:border-primary hover:text-primary sm:w-auto"
+                className="inline-flex w-full items-center justify-center rounded-full border border-border bg-background px-6 py-3 text-base font-semibold text-foreground transition hover:border-primary hover:text-primary sm:w-auto"
                 href="/login"
               >
                 进入后台
               </Link>
             </div>
 
-            <div className="mt-7 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+            <div className="mt-6 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
               {heroSignals.map((item) => (
                 <p className="inline-flex items-start gap-2" key={item}>
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
@@ -290,137 +181,95 @@ export default function MarketingHomePage() {
             </div>
           </div>
 
-          <div className="space-y-5">
-            <section className="bg-card text-card-foreground rounded-xl border shadow-sm p-7" id="platforms">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-primary">接入方式</p>
-                  <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">上线时最常从这三件事开始</h2>
-                </div>
-                <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
-                  返利团队
-                </span>
+          <section className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm" id="workflow">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">接入流程</p>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">最常见的启动路径</h2>
               </div>
+              <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+                3 steps
+              </span>
+            </div>
 
-              <div className="mt-6 grid gap-4">
-                {operatingTracks.map((item, index) => (
-                  <article className="rounded-xl border border-border bg-background p-4" key={item.title}>
-                    <div className="flex items-start gap-3">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">
-                        0{index + 1}
-                      </span>
-                      <div>
-                        <h3 className="text-base font-semibold text-foreground">{item.title}</h3>
-                        <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.text}</p>
-                      </div>
+            <div className="mt-4 grid gap-3">
+              {workflowSteps.map((item, index) => (
+                <article className="rounded-lg border border-border bg-background px-4 py-3" key={item.title}>
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">{item.text}</p>
                     </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-          </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
         </section>
 
-        <section className="bg-card text-card-foreground rounded-xl border shadow-sm scroll-mt-28 px-6 py-8 lg:px-10" id="workflow">
-          <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">平台适配</p>
-            <h2 className="mt-3 font-bold tracking-tight text-foreground text-4xl font-semibold text-foreground">
-              先把分散记录收口，再让团队在同一套后台里协作
-            </h2>
-            <p className="mt-4 text-sm leading-7 text-muted-foreground">
-              不同返利平台可以保留各自差异，但账号、Offer 和链接更新不需要再分散在多个工具里维护。
-            </p>
-          </div>
-          <div className="mt-8 grid gap-5 lg:grid-cols-3">
-            {platformCards.map((item) => (
-              <article className="rounded-xl border border-border bg-muted/40 p-5" key={item.title}>
-                <div className="flex items-center gap-3">
-                  <Globe2 className="h-5 w-5 text-primary" />
-                  <h3 className="text-xl font-semibold text-foreground">{item.title}</h3>
-                </div>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">{item.text}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="grid scroll-mt-28 gap-5 py-10 lg:grid-cols-4" id="features">
+        <section className="grid scroll-mt-28 gap-4 py-6 lg:grid-cols-4" id="features">
           {modules.map((module) => {
             const Icon = module.icon;
 
             return (
-              <article className="bg-card text-card-foreground rounded-xl border shadow-sm p-5" key={module.title}>
-                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Icon className="h-5 w-5" />
+              <article className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm" key={module.title}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Icon className="h-4 w-4" />
                 </div>
-                <h3 className="mt-4 text-lg font-semibold text-foreground">{module.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">{module.text}</p>
+                <h3 className="mt-4 text-base font-semibold text-foreground">{module.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{module.text}</p>
               </article>
             );
           })}
         </section>
 
-        <section className="grid scroll-mt-28 gap-5 pb-10 lg:grid-cols-[0.94fr,1.06fr]" id="scenarios">
-          <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
+        <section className="grid gap-4 py-6 lg:grid-cols-[1.08fr,0.92fr]">
+          <div className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
             <div className="flex items-center gap-3">
-              <Workflow className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold tracking-tight text-foreground">为什么团队更容易用起来</h2>
+              <Workflow className="h-4 w-4 text-primary" />
+              <h2 className="text-base font-semibold tracking-tight text-foreground">为什么更接近日常运营</h2>
             </div>
-            <div className="mt-5 space-y-4 text-sm leading-7 text-muted-foreground">
-              <p>如果你的团队还在多个表格、聊天记录和临时文档之间切换，AutoCashBack 会更像一个稳定的返利运营中台。</p>
-              <p>它把账号、Offer、佣金和换链记录留在同一个入口里，减少反复确认，也让交接和复盘更轻松。</p>
-              <p>无论是日常维护还是活动高峰期，你都能更快看到当前状态，并把关键动作留在系统里。</p>
+            <div className="mt-4 space-y-3 text-sm leading-7 text-muted-foreground">
+              <p>如果团队仍在多个表格、聊天和临时文档之间切换，最容易出现链接漏改、佣金状态不同步和交接信息丢失。</p>
+              <p>AutoCashBack 的重点不是展示更多卡片，而是让账号、Offer、佣金和换链动作回到同一套固定工作流里。</p>
             </div>
           </div>
 
-          <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">适合场景</p>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground">从零散协作切到固定工作流</h2>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              {scenarioCards.map((item) => (
-                <article className="rounded-xl bg-muted/40 p-5" key={item.title}>
-                  <div className="flex items-center gap-2">
-                    <Target className="h-4 w-4 text-primary" />
-                    <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.text}</p>
+          <div className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm" id="faq">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">常见问题</p>
+            <div className="mt-4 space-y-3">
+              {faqItems.map((item) => (
+                <article className="rounded-lg border border-border bg-background px-4 py-3" key={item.question}>
+                  <h3 className="text-sm font-semibold text-foreground">{item.question}</h3>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{item.answer}</p>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="bg-card text-card-foreground rounded-xl border shadow-sm scroll-mt-28 px-6 py-8 lg:px-10" id="faq">
-          <p className="text-xs font-semibold uppercase tracking-wider text-primary">常见问题</p>
-          <div className="mt-6 grid gap-4 lg:grid-cols-3">
-            {faqItems.map((item) => (
-              <article className="rounded-xl border border-border bg-muted/40 p-5" key={item.question}>
-                <h3 className="text-lg font-semibold text-foreground">{item.question}</h3>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">{item.answer}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="py-10" id="cta">
-          <div className="bg-card text-card-foreground rounded-xl border shadow-sm flex flex-col gap-5 overflow-hidden px-6 py-8 lg:flex-row lg:items-center lg:justify-between lg:px-10">
+        <section className="py-6" id="cta">
+          <div className="flex flex-col gap-5 rounded-xl border bg-card px-5 py-6 text-card-foreground shadow-sm lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">快速开始</p>
-              <h2 className="mt-2 font-bold tracking-tight text-foreground text-4xl font-semibold text-foreground">
-                让返利运营先看清状态，再进入当天动作
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+                先开通，再进入后台继续当天返利运营
               </h2>
               <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                适合希望把账号、Offer、佣金和链接更新统一管理起来的返利团队，也适合正在从零散表格切到系统协作的团队。
+                适合希望把账号、Offer、佣金和链接更新统一管理起来的返利团队。
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <HeaderCtaButton
+              <ContactButton
                 className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500"
                 onClick={() => setIsContactDialogOpen(true)}
               >
                 联系开通
-                <Sparkles className="h-4 w-4" />
-              </HeaderCtaButton>
+                <ArrowRight className="h-4 w-4" />
+              </ContactButton>
               <Link
                 className="rounded-full border border-border bg-background px-6 py-3 text-sm font-semibold text-foreground transition hover:border-primary hover:text-primary"
                 href="/login"
@@ -430,70 +279,27 @@ export default function MarketingHomePage() {
             </div>
           </div>
         </section>
-      </div>
 
-      <footer className="pb-10 pt-4">
-        <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <div className="overflow-hidden rounded-[32px] border border-border/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(248,250,252,0.94)_100%)] shadow-md">
-            <div className="grid gap-10 px-6 py-8 lg:grid-cols-[1.2fr,0.8fr,0.8fr,0.8fr] lg:px-10 lg:py-10">
-              <div className="lg:pr-10">
-                <Link className="flex items-center gap-3" href="/">
-                  <BrandMark />
-                  <div>
-                    <p className="text-base font-semibold text-foreground">AutoCashBack</p>
-                    <p className="text-sm text-muted-foreground">返利运营后台</p>
-                  </div>
-                </Link>
-                <p className="mt-5 max-w-md text-sm leading-7 text-muted-foreground">
-                  面向返利团队的统一运营后台，用更少的切换和更清晰的记录，承接账号、Offer、佣金和链接更新。
-                </p>
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <HeaderCtaButton
-                    className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500"
-                    onClick={() => setIsContactDialogOpen(true)}
-                  >
-                    联系开通
-                  </HeaderCtaButton>
-                  <Link
-                    className="rounded-full border border-border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition hover:border-primary hover:text-primary"
-                    href="/login"
-                  >
-                    账号登录
-                  </Link>
-                </div>
-              </div>
-
-              {footerColumns.map((column) => (
-                <div key={column.title}>
-                  <h3 className="text-sm font-semibold tracking-[0.12em] text-foreground">{column.title}</h3>
-                  <ul className="mt-4 space-y-3">
-                    {column.items.map((item) => (
-                      <li key={item.label}>
-                        <FooterItemLink item={item} onContactClick={() => setIsContactDialogOpen(true)} />
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+        <footer className="border-t border-border/70 py-6 text-sm text-muted-foreground">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="font-medium text-foreground">AutoCashBack</p>
+              <p className="mt-1">返利运营后台</p>
             </div>
-
-            <div className="flex flex-col gap-4 border-t border-border/80 bg-background/70 p-5 text-center text-sm text-muted-foreground md:flex-row md:items-center md:justify-between md:text-left lg:px-10">
-              <p>© 2026 AutoCashBack. All rights reserved.</p>
-              <div className="flex flex-wrap items-center justify-center gap-5 md:justify-end">
-                <HeaderCtaButton
-                  className="text-sm text-muted-foreground transition-colors hover:text-primary"
-                  onClick={() => setIsContactDialogOpen(true)}
-                >
-                  申请试用
-                </HeaderCtaButton>
-                <Link className="text-sm text-muted-foreground transition-colors hover:text-primary" href="/login">
-                  账号登录
-                </Link>
-              </div>
+            <div className="flex flex-wrap items-center gap-5">
+              <ContactButton
+                className="text-sm text-muted-foreground transition-colors hover:text-primary"
+                onClick={() => setIsContactDialogOpen(true)}
+              >
+                申请试用
+              </ContactButton>
+              <Link className="text-sm text-muted-foreground transition-colors hover:text-primary" href="/login">
+                账号登录
+              </Link>
             </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
 
       <ContactQrDialog onClose={() => setIsContactDialogOpen(false)} open={isContactDialogOpen} />
     </main>
