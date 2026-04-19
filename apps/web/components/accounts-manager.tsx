@@ -465,13 +465,10 @@ export function AccountsManager() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 border-b border-border/70 bg-muted/20 px-5 py-3 text-sm lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
-            <span className="font-medium text-foreground">结果 {consoleData.rows.length}</span>
-            <span>挂接 Offer {allConsole.overview.linkedOfferCount}</span>
-            <span>平台覆盖 {allConsole.overview.platformCount}</span>
-          </div>
-          <p className="text-xs text-muted-foreground">账号创建与编辑仍使用右侧抽屉。</p>
+        <div className="flex flex-wrap items-center gap-2 border-b border-border/70 bg-muted/20 px-5 py-3 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">结果 {consoleData.rows.length}</span>
+          <span>挂接 Offer {allConsole.overview.linkedOfferCount}</span>
+          <span>平台覆盖 {allConsole.overview.platformCount}</span>
         </div>
 
         {loading ? (

@@ -828,10 +828,6 @@ export function QueueMonitor() {
         </div>
       ) : (
         <div className="space-y-6">
-          <section className="rounded-xl border border-amber-200 bg-amber-500/10 px-4 py-3 text-sm text-amber-800">
-            修改配置后会直接生效，建议按机器能力逐步调整并发限制。
-          </section>
-
           <section
             className={cn(
               "bg-card text-card-foreground rounded-xl border shadow-sm p-5",

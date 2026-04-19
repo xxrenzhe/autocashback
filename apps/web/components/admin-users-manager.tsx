@@ -1058,7 +1058,6 @@ export function AdminUsersManager() {
               <p className="mt-2">
                 密码: <span className="text-base font-semibold text-primary">{resetPasswordData.password}</span>
               </p>
-              <p className="mt-3 font-sans text-xs text-muted-foreground">首次登录需要修改密码。</p>
             </div>
 
             <div className="flex justify-end gap-3">

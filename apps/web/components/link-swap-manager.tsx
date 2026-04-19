@@ -591,13 +591,10 @@ export function LinkSwapManager() {
             </div>
           </div>
 
-        <div className="flex flex-col gap-2 border-b border-border/70 bg-muted/20 px-5 py-3 text-sm lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
-            <span className="font-medium text-foreground">结果 {filteredRows.length}</span>
-            <span>当前页 {paginatedRows.length}</span>
-            <span>最近成功率 {consoleData.stats.recentSuccessRate}%</span>
-          </div>
-          <p className="text-xs text-muted-foreground">任务创建和编辑仍使用原有弹窗。</p>
+        <div className="flex flex-wrap items-center gap-2 border-b border-border/70 bg-muted/20 px-5 py-3 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">结果 {filteredRows.length}</span>
+          <span>当前页 {paginatedRows.length}</span>
+          <span>最近成功率 {consoleData.stats.recentSuccessRate}%</span>
         </div>
 
           <div className="overflow-x-auto p-5">
