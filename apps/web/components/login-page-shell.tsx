@@ -8,7 +8,6 @@ import { ArrowRight, ShieldCheck } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { ContactQrDialog } from "@/components/contact-qr-dialog";
 import { LoginForm } from "@/components/login-form";
-import { OpsStructureIllustration } from "@/components/ops-structure-illustration";
 
 const loginSignals = [
   "已开通账号可直接进入控制台。",
@@ -76,6 +75,9 @@ const footerColumns: Array<{
   }
 ];
 
+const footerItemClassName =
+  "inline-flex cursor-pointer items-center justify-start self-start border-0 bg-transparent p-0 text-left text-sm leading-6 text-muted-foreground transition-colors hover:text-foreground";
+
 function ContactButton(props: {
   children: ReactNode;
   className: string;
@@ -95,7 +97,7 @@ function FooterItemLink(props: {
   if (props.item.type === "contact") {
     return (
       <ContactButton
-        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+        className={footerItemClassName}
         onClick={props.onContactClick}
       >
         {props.item.label}
@@ -104,7 +106,7 @@ function FooterItemLink(props: {
   }
 
   return (
-    <Link className="text-sm text-muted-foreground transition-colors hover:text-foreground" href={props.item.href}>
+    <Link className={footerItemClassName} href={props.item.href}>
       {props.item.label}
     </Link>
   );
@@ -147,21 +149,16 @@ export function LoginPageShell() {
             页面只保留登录与进入路径。已有账号直接进入后台，没有账号时先申请试用或联系管理员开通。
           </p>
 
-          <div className="surface-panel mt-8 overflow-hidden">
-            <div className="border-b border-border/80 px-5 py-4">
-              <p className="label-kicker">后台结构</p>
-              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-foreground">登录后继续这三类工作</h2>
-            </div>
-            <div className="space-y-5 px-5 py-5">
-              <div className="divide-y divide-border border-y border-border/80">
-                {loginScopes.map((item) => (
-                  <article className="grid gap-2 py-4 sm:grid-cols-[5rem,1fr] sm:items-start sm:gap-4" key={item.title}>
-                    <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
-                    <p className="text-sm leading-6 text-muted-foreground">{item.text}</p>
-                  </article>
-                ))}
-              </div>
-              <OpsStructureIllustration compact className="rounded-xl border border-border bg-white/70 p-3" />
+          <div className="mt-8 border-y border-border/80 py-5">
+            <p className="label-kicker">登录后</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-foreground">进入控制台后通常会继续这些操作</h2>
+            <div className="mt-4 divide-y divide-border border-y border-border/80">
+              {loginScopes.map((item) => (
+                <article className="grid gap-2 py-4 sm:grid-cols-[5rem,1fr] sm:items-start sm:gap-4" key={item.title}>
+                  <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
+                  <p className="text-sm leading-6 text-muted-foreground">{item.text}</p>
+                </article>
+              ))}
             </div>
           </div>
 
