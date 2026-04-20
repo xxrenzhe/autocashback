@@ -117,7 +117,7 @@ export function GoogleAdsSettingsTab({
       </div>
 
       <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,1fr)]">
-        <div className="rounded-2xl border border-border bg-muted/20 p-4">
+        <div className="rounded-xl border border-border bg-muted/20 p-4">
           <div className="flex items-start gap-2">
             <ShieldCheck className="mt-0.5 h-4 w-4 text-primary" />
             <div className="space-y-2 text-sm text-muted-foreground">
@@ -145,7 +145,7 @@ export function GoogleAdsSettingsTab({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4">
+        <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4">
           <div className="flex items-start gap-2">
             <KeyRound className="mt-0.5 h-4 w-4 text-amber-700" />
             <div className="space-y-2 text-sm text-amber-900">
@@ -161,18 +161,18 @@ export function GoogleAdsSettingsTab({
         </div>
       </div>
 
-      <dl className="mt-4 grid gap-3 rounded-xl border border-border bg-muted/30 p-4 text-sm lg:grid-cols-3">
-        <div>
+      <dl className="mt-4 grid gap-0 rounded-xl border border-border bg-muted/20 p-4 text-sm lg:grid-cols-3 lg:divide-x lg:divide-border/70">
+        <div className="py-2 first:pt-0 last:pb-0 lg:px-4 lg:first:pl-0 lg:last:pr-0">
           <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">基础项</dt>
-          <dd className="mt-1 font-medium text-foreground">{overview.googleAdsBaseConfigCount} / 4</dd>
+          <dd className="mt-2 font-medium text-foreground">{overview.googleAdsBaseConfigCount} / 4</dd>
         </div>
-        <div>
+        <div className="py-2 first:pt-0 last:pb-0 lg:px-4 lg:first:pl-0 lg:last:pr-0">
           <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">OAuth</dt>
-          <dd className="mt-1 font-medium text-foreground">{googleAdsConfig.hasRefreshToken ? "已授权" : "未授权"}</dd>
+          <dd className="mt-2 font-medium text-foreground">{googleAdsConfig.hasRefreshToken ? "已授权" : "未授权"}</dd>
         </div>
-        <div>
+        <div className="py-2 first:pt-0 last:pb-0 lg:px-4 lg:first:pl-0 lg:last:pr-0">
           <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">最近验证</dt>
-          <dd className="mt-1 font-medium text-foreground">{googleAdsConfig.lastVerifiedAt || "--"}</dd>
+          <dd className="mt-2 font-medium text-foreground">{googleAdsConfig.lastVerifiedAt || "--"}</dd>
         </div>
       </dl>
 
@@ -218,34 +218,34 @@ export function GoogleAdsSettingsTab({
         </FieldShell>
       </div>
 
-      <dl className="mt-4 grid gap-3 rounded-xl border border-border bg-muted/30 p-4 text-sm lg:grid-cols-3">
-        <div>
+      <dl className="mt-4 grid gap-0 rounded-xl border border-border bg-muted/20 p-4 text-sm lg:grid-cols-3 lg:divide-x lg:divide-y-0 lg:divide-border/70">
+        <div className="py-2 first:pt-0 last:pb-0 lg:px-4 lg:first:pl-0 lg:last:pr-0">
           <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Client ID</dt>
-          <dd className="mt-1 font-medium text-foreground">{googleAdsConfig.hasClientId ? "已保存" : "未配置"}</dd>
+          <dd className="mt-2 font-medium text-foreground">{googleAdsConfig.hasClientId ? "已保存" : "未配置"}</dd>
         </div>
-        <div>
+        <div className="py-2 first:pt-0 last:pb-0 lg:px-4 lg:first:pl-0 lg:last:pr-0">
           <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Client Secret</dt>
-          <dd className="mt-1 font-medium text-foreground">
+          <dd className="mt-2 font-medium text-foreground">
             {googleAdsConfig.hasClientSecret ? "已保存" : "未配置"}
           </dd>
         </div>
-        <div>
+        <div className="py-2 first:pt-0 last:pb-0 lg:px-4 lg:first:pl-0 lg:last:pr-0">
           <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Developer Token</dt>
-          <dd className="mt-1 font-medium text-foreground">
+          <dd className="mt-2 font-medium text-foreground">
             {googleAdsConfig.hasDeveloperToken ? "已保存" : "未配置"}
           </dd>
         </div>
-        <div>
+        <div className="py-2 first:pt-0 last:pb-0 lg:px-4 lg:first:pl-0 lg:last:pr-0 lg:border-t lg:border-border/70">
           <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Refresh Token</dt>
-          <dd className="mt-1 font-medium text-foreground">{googleAdsConfig.hasRefreshToken ? "已获取" : "等待 OAuth"}</dd>
+          <dd className="mt-2 font-medium text-foreground">{googleAdsConfig.hasRefreshToken ? "已获取" : "等待 OAuth"}</dd>
         </div>
-        <div>
+        <div className="py-2 first:pt-0 last:pb-0 lg:px-4 lg:first:pl-0 lg:last:pr-0 lg:border-t lg:border-border/70">
           <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">最近验证</dt>
-          <dd className="mt-1 font-medium text-foreground">{googleAdsConfig.lastVerifiedAt || "--"}</dd>
+          <dd className="mt-2 font-medium text-foreground">{googleAdsConfig.lastVerifiedAt || "--"}</dd>
         </div>
-        <div>
+        <div className="py-2 first:pt-0 last:pb-0 lg:px-4 lg:first:pl-0 lg:last:pr-0 lg:border-t lg:border-border/70">
           <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Token 过期</dt>
-          <dd className="mt-1 font-medium text-foreground">{googleAdsConfig.tokenExpiresAt || "--"}</dd>
+          <dd className="mt-2 font-medium text-foreground">{googleAdsConfig.tokenExpiresAt || "--"}</dd>
         </div>
       </dl>
 

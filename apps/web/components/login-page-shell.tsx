@@ -153,40 +153,42 @@ export function LoginPageShell() {
               <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-foreground">登录后继续这三类工作</h2>
             </div>
             <div className="space-y-5 px-5 py-5">
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="divide-y divide-border border-y border-border/80">
                 {loginScopes.map((item) => (
-                  <article className="rounded-2xl border border-border bg-secondary/40 p-4" key={item.title}>
+                  <article className="grid gap-2 py-4 sm:grid-cols-[5rem,1fr] sm:items-start sm:gap-4" key={item.title}>
                     <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.text}</p>
+                    <p className="text-sm leading-6 text-muted-foreground">{item.text}</p>
                   </article>
                 ))}
               </div>
-              <OpsStructureIllustration compact className="rounded-2xl border border-border bg-white/70 p-3" />
+              <OpsStructureIllustration compact className="rounded-xl border border-border bg-white/70 p-3" />
             </div>
           </div>
 
-          <div className="mt-6 grid gap-4 lg:grid-cols-[1.05fr,0.95fr]">
-            <div className="rounded-2xl border border-border bg-card/80 p-4">
-              <p className="text-sm font-semibold text-foreground">进入前确认</p>
-              <div className="mt-3 space-y-3">
-                {loginSignals.map((item) => (
-                  <p className="flex items-start gap-2 text-sm leading-6 text-muted-foreground" key={item}>
-                    <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-primary" />
-                    <span>{item}</span>
-                  </p>
-                ))}
+          <div className="mt-6 border-y border-border/80 py-5">
+            <div className="grid gap-6 lg:grid-cols-[0.9fr,1.1fr]">
+              <div>
+                <p className="text-sm font-semibold text-foreground">进入前确认</p>
+                <div className="mt-3 space-y-3">
+                  {loginSignals.map((item) => (
+                    <p className="flex items-start gap-2 text-sm leading-6 text-muted-foreground" key={item}>
+                      <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-primary" />
+                      <span>{item}</span>
+                    </p>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div className="rounded-2xl border border-border bg-secondary/40 p-4">
-              <p className="text-sm font-semibold text-foreground">安全提示</p>
-              <div className="mt-3 space-y-3">
-                {securityNotes.map((item) => (
-                  <p className="flex items-start gap-2 text-sm leading-6 text-muted-foreground" key={item}>
-                    <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-primary" />
-                    <span>{item}</span>
-                  </p>
-                ))}
+              <div className="border-t border-border/80 pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+                <p className="text-sm font-semibold text-foreground">安全提示</p>
+                <div className="mt-3 space-y-3">
+                  {securityNotes.map((item) => (
+                    <p className="flex items-start gap-2 text-sm leading-6 text-muted-foreground" key={item}>
+                      <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-primary" />
+                      <span>{item}</span>
+                    </p>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -195,7 +197,7 @@ export function LoginPageShell() {
         <div className="flex h-full w-full lg:justify-self-end">
           <div className="mx-auto flex h-full w-full max-w-[34rem] flex-col">
             <LoginForm className="h-full" onContactClick={() => setIsContactDialogOpen(true)} />
-            <div className="mt-4 rounded-2xl border border-border bg-card/70 px-5 py-4 text-sm leading-6 text-muted-foreground">
+            <div className="mt-4 border-t border-border/80 pt-4 text-sm leading-6 text-muted-foreground">
               没有账号时，先通过客服微信申请试用或联系开通，再使用统一入口登录。
               <button
                 className="mt-3 inline-flex items-center gap-2 font-medium text-foreground transition hover:text-primary"

@@ -17,13 +17,13 @@ export function ScriptSettingsTab({
           <h3 className="text-sm font-semibold text-foreground">换链接脚本</h3>
           <p className="text-xs text-muted-foreground">复制最新脚本或轮换 Token。</p>
         </div>
-        <div className="rounded-xl border border-border bg-muted/30 px-3 py-2">
+        <div className="border-l border-border/70 pl-4">
           <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Script Token</p>
           <p className="mt-2 font-mono tabular-nums text-sm text-foreground">{script.token || "尚未生成"}</p>
         </div>
       </div>
 
-      <div className="mt-4 rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+      <div className="mt-4 border-y border-border/70 py-4 text-sm text-muted-foreground">
         <div className="flex items-center gap-3">
           <span
             className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg ${

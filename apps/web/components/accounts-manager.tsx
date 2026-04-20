@@ -341,29 +341,29 @@ export function AccountsManager() {
         title="返利账号"
       />
 
-      <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
-        <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <div>
+      <section className="rounded-xl border border-border bg-card px-4 py-4 text-card-foreground shadow-sm">
+        <dl className="grid gap-0 sm:grid-cols-2 sm:divide-x sm:divide-border/80 xl:grid-cols-5">
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">启用账号</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.activeAccounts}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.activeAccounts}</dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">暂停账号</dt>
-            <dd className={cn("mt-1 text-2xl font-semibold tracking-tight", allConsole.overview.pausedAccounts > 0 ? "text-amber-700" : "text-foreground")}>
+            <dd className={cn("mt-2 text-2xl font-semibold tracking-tight", allConsole.overview.pausedAccounts > 0 ? "text-amber-700" : "text-foreground")}>
               {allConsole.overview.pausedAccounts}
             </dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">挂接 Offer</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.linkedOfferCount}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.linkedOfferCount}</dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">平台覆盖</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.platformCount}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.platformCount}</dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">当前视图</dt>
-            <dd className="mt-1 text-sm leading-6 text-muted-foreground">
+            <dd className="mt-2 text-sm leading-6 text-muted-foreground">
               排序 {sortOptions.find((option) => option.value === sort)?.label || "按最新创建"}
             </dd>
           </div>
@@ -575,7 +575,13 @@ export function AccountsManager() {
                 </button>
               </div>
             }
+            description={
+              hasActiveFilters
+                ? "调整筛选条件，或直接新建账号继续配置返利平台。"
+                : "先录入返利平台账号，再继续挂接 Offer 和后续运营动作。"
+            }
             icon={WalletCards}
+            illustration={!hasActiveFilters ? true : undefined}
             title={hasActiveFilters ? "当前筛选条件下没有账号" : "还没有返利账号"}
           />
         )}

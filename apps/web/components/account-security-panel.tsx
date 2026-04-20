@@ -119,7 +119,7 @@ export function AccountSecurityPanel() {
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[0.8fr,1.2fr]">
-        <div className="rounded-xl border border-border bg-muted/30 p-4">
+        <div className="border-y border-border/70 py-4">
           <p className="text-sm font-semibold text-foreground">修改密码</p>
           <div className="mt-4 space-y-4">
             <label className="block text-sm text-foreground">
@@ -163,7 +163,7 @@ export function AccountSecurityPanel() {
           </button>
         </div>
 
-        <div className="rounded-xl border border-border bg-muted/30 p-4">
+        <div className="border-y border-border/70 py-4">
           <div className="flex items-center justify-between gap-4">
             <p className="text-sm font-semibold text-foreground">活跃会话</p>
             <button
@@ -180,7 +180,7 @@ export function AccountSecurityPanel() {
               <p className="rounded-lg bg-background px-4 py-5 text-sm text-muted-foreground">正在加载会话...</p>
             ) : sessions.length ? (
               sessions.map((session) => (
-                <div className="rounded-lg border border-border bg-background p-4" key={session.sessionId}>
+                <div className="border border-border bg-background p-4 first:rounded-t-lg last:rounded-b-lg" key={session.sessionId}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 whitespace-nowrap">

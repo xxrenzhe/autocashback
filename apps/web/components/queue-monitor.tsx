@@ -105,6 +105,30 @@ function schedulerTone(value: "healthy" | "warning" | "error") {
   };
 }
 
+function QueueSummaryStat(props: {
+  label: string;
+  value: string | number;
+  tone?: "default" | "success" | "warning" | "danger";
+  detail?: string;
+}) {
+  const toneClassName =
+    props.tone === "success"
+      ? "text-emerald-700"
+      : props.tone === "warning"
+        ? "text-amber-700"
+        : props.tone === "danger"
+          ? "text-destructive"
+          : "text-foreground";
+
+  return (
+    <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
+      <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{props.label}</dt>
+      <dd className={`mt-2 text-2xl font-semibold tracking-tight ${toneClassName}`}>{props.value}</dd>
+      {props.detail ? <p className="mt-1 text-xs leading-5 text-muted-foreground">{props.detail}</p> : null}
+    </div>
+  );
+}
+
 function queueTaskStatusBadge(status: QueueTaskStatus) {
   if (status === "running") {
     return { label: "运行中", variant: "running" as const };
@@ -548,32 +572,21 @@ export function QueueMonitor() {
 
       {activeTab === "monitor" ? (
         <div className="space-y-4">
-          <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
-            <dl className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-              <div>
-                <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">运行中</dt>
-                <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{consoleData.overview.runningTasks}</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">待执行</dt>
-                <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{consoleData.overview.pendingTasks}</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">失败</dt>
-                <dd className="mt-1 text-2xl font-semibold tracking-tight text-destructive">{consoleData.overview.failedTasks}</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">调度器</dt>
-                <dd className={cn("mt-1 text-2xl font-semibold tracking-tight", consoleData.overview.activeSchedulerCount === 2 ? "text-emerald-700" : "text-amber-700")}>
-                  {consoleData.overview.activeSchedulerCount}/2
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">当前视图</dt>
-                <dd className="mt-1 text-sm leading-6 text-muted-foreground">
-                  总任务 {totalTasks}，排序 {sortOptions.find((option) => option.value === sort)?.label || "按最新创建"}
-                </dd>
-              </div>
+          <section className="rounded-xl border border-border bg-card px-4 py-4 text-card-foreground shadow-sm">
+            <dl className="grid gap-0 md:grid-cols-2 md:divide-x md:divide-border/80 xl:grid-cols-5">
+              <QueueSummaryStat label="运行中" value={consoleData.overview.runningTasks} />
+              <QueueSummaryStat label="待执行" value={consoleData.overview.pendingTasks} />
+              <QueueSummaryStat label="失败" tone="danger" value={consoleData.overview.failedTasks} />
+              <QueueSummaryStat
+                label="调度器"
+                tone={consoleData.overview.activeSchedulerCount === 2 ? "success" : "warning"}
+                value={`${consoleData.overview.activeSchedulerCount}/2`}
+              />
+              <QueueSummaryStat
+                label="当前视图"
+                detail={`排序 ${sortOptions.find((option) => option.value === sort)?.label || "按最新创建"}`}
+                value={totalTasks}
+              />
             </dl>
           </section>
 
@@ -787,7 +800,7 @@ export function QueueMonitor() {
                   </div>
                 ) : null}
 
-                <div className="grid gap-4 lg:grid-cols-2">
+                <div className="overflow-hidden rounded-xl border border-border/70 bg-background/70">
                   {[
                     {
                       key: "click-farm",
@@ -803,20 +816,24 @@ export function QueueMonitor() {
                     const tone = schedulerTone(item.value.status);
                     const statusMeta = schedulerStatusBadge(item.value.status);
                     return (
-                      <div className={cn("rounded-xl border p-4", tone.panel)} key={item.key}>
-                        <div className="flex items-start justify-between gap-3">
-                          <h3 className="text-sm font-semibold text-foreground">{item.label}</h3>
-                          <StatusBadge label={statusMeta.label} variant={statusMeta.variant} />
+                      <div className={cn("border-t px-4 py-4 first:border-t-0", tone.panel)} key={item.key}>
+                        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                          <div>
+                            <div className="flex items-center gap-3">
+                              <h3 className="text-sm font-semibold text-foreground">{item.label}</h3>
+                              <StatusBadge label={statusMeta.label} variant={statusMeta.variant} />
+                            </div>
+                            <p className="mt-2 text-sm text-foreground">{item.value.message}</p>
+                          </div>
+                          <dl className="grid gap-x-6 gap-y-2 text-xs text-muted-foreground sm:grid-cols-2 xl:grid-cols-3">
+                            <div><dt className="inline">启用任务：</dt><dd className="inline">{item.value.metrics.enabledTasks}</dd></div>
+                            <div><dt className="inline">最近入队：</dt><dd className="inline">{item.value.metrics.recentQueuedTasks}</dd></div>
+                            <div><dt className="inline">待调度：</dt><dd className="inline">{item.value.metrics.overdueTasks}</dd></div>
+                            <div><dt className="inline">运行中：</dt><dd className="inline">{item.value.metrics.runningTasks || 0}</dd></div>
+                            <div><dt className="inline">检查周期：</dt><dd className="inline">{item.value.metrics.checkInterval}</dd></div>
+                            <div><dt className="inline">最后入队：</dt><dd className="inline">{formatDateTime(item.value.metrics.lastQueuedAt)}</dd></div>
+                          </dl>
                         </div>
-                        <p className="mt-2 text-sm text-foreground">{item.value.message}</p>
-                        <dl className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
-                          <div><dt className="inline">启用任务：</dt><dd className="inline">{item.value.metrics.enabledTasks}</dd></div>
-                          <div><dt className="inline">最近入队：</dt><dd className="inline">{item.value.metrics.recentQueuedTasks}</dd></div>
-                          <div><dt className="inline">待调度：</dt><dd className="inline">{item.value.metrics.overdueTasks}</dd></div>
-                          <div><dt className="inline">运行中：</dt><dd className="inline">{item.value.metrics.runningTasks || 0}</dd></div>
-                          <div><dt className="inline">检查周期：</dt><dd className="inline">{item.value.metrics.checkInterval}</dd></div>
-                          <div><dt className="inline">最后入队：</dt><dd className="inline">{formatDateTime(item.value.metrics.lastQueuedAt)}</dd></div>
-                        </dl>
                       </div>
                     );
                   })}
@@ -909,23 +926,11 @@ export function QueueMonitor() {
 
                   <div className="rounded-xl border border-border bg-muted/30 p-4">
                     <p className="text-sm font-semibold text-foreground">当前生效配置</p>
-                    <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">全局并发</dt>
-                        <dd className="mt-1 text-sm font-semibold text-foreground">{config.config.globalConcurrency}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">轮询间隔</dt>
-                        <dd className="mt-1 text-sm font-semibold text-foreground">{config.config.pollIntervalMs} ms</dd>
-                      </div>
-                      <div>
-                        <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">僵尸超时</dt>
-                        <dd className="mt-1 text-sm font-semibold text-foreground">{config.config.staleTimeoutMs} ms</dd>
-                      </div>
-                      <div>
-                        <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">来源</dt>
-                        <dd className="mt-1 text-sm font-semibold text-foreground">{config.configSource === "database" ? "数据库" : "默认值"}</dd>
-                      </div>
+                    <dl className="mt-4 grid gap-0 border-y border-border/70 sm:grid-cols-2 sm:divide-x sm:divide-border/70">
+                      <QueueSummaryStat label="全局并发" value={config.config.globalConcurrency} />
+                      <QueueSummaryStat label="轮询间隔" value={`${config.config.pollIntervalMs} ms`} />
+                      <QueueSummaryStat label="僵尸超时" value={`${config.config.staleTimeoutMs} ms`} />
+                      <QueueSummaryStat label="来源" value={config.configSource === "database" ? "数据库" : "默认值"} />
                     </dl>
                     <p className="mt-4 text-sm text-muted-foreground">
                       {config.note || "配置保存后会自动同步到调度服务。"}

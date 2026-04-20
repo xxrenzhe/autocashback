@@ -75,54 +75,43 @@ function NavSection({
   items,
   label,
   pathname,
-  collapsed,
-  tone = "default"
+  collapsed
 }: {
   items: NavItem[];
   label: string;
   pathname: string;
   collapsed: boolean;
-  tone?: "admin" | "default";
 }) {
   return (
     <div>
       {!collapsed ? (
         <div className="flex items-center gap-2 px-3 pb-2">
-          {tone === "admin" ? <Shield className="h-3.5 w-3.5 text-violet-700" /> : <Circle className="h-2.5 w-2.5 fill-current text-primary" />}
-          <p className={cn("text-[11px] font-semibold uppercase tracking-[0.22em]", tone === "admin" ? "text-violet-700" : "text-muted-foreground")}>
-            {label}
-          </p>
+          <Circle className="h-2.5 w-2.5 fill-current text-primary" />
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">{label}</p>
         </div>
       ) : null}
       <nav className="space-y-1">
         {items.map((item) => {
           const Icon = item.icon;
           const active = isActivePath(pathname, item.href);
-          const activeClassName =
-            tone === "admin"
-              ? "border-violet-200 bg-violet-50 text-violet-800"
-              : "border-primary/15 bg-primary/10 text-primary";
-          const inactiveClassName =
-            tone === "admin"
-              ? "border-transparent text-muted-foreground hover:bg-violet-50/80 hover:text-violet-800"
-              : "border-transparent text-muted-foreground hover:bg-primary/5 hover:text-foreground";
-          const activeIconClassName = tone === "admin" ? "text-violet-700" : "text-primary";
 
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "group flex items-center rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
-                collapsed ? "justify-center" : "gap-3",
-                active ? activeClassName : inactiveClassName
+                "group flex items-center border-l-[3px] px-3 py-2 text-sm font-medium transition-colors",
+                collapsed ? "justify-center rounded-md border-l-transparent" : "gap-3 rounded-r-md",
+                active
+                  ? "border-l-primary bg-primary/8 text-foreground"
+                  : "border-l-transparent text-muted-foreground hover:bg-primary/5 hover:text-foreground"
               )}
               title={collapsed ? item.label : undefined}
             >
               <Icon
                 className={cn(
                   "h-4 w-4 flex-shrink-0",
-                  active ? activeIconClassName : "text-muted-foreground group-hover:text-current"
+                  active ? "text-primary" : "text-muted-foreground group-hover:text-current"
                 )}
                 aria-hidden="true"
               />
@@ -268,7 +257,7 @@ export function AppShell({
             <NavSection collapsed={!sidebarOpen} items={userLinks} label="运营中心" pathname={pathname} />
 
             {user.role === "admin" ? (
-              <NavSection collapsed={!sidebarOpen} items={adminLinks} label="系统管理" pathname={pathname} tone="admin" />
+              <NavSection collapsed={!sidebarOpen} items={adminLinks} label="系统管理" pathname={pathname} />
             ) : null}
           </div>
 

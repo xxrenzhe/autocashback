@@ -274,36 +274,36 @@ export function GoogleAdsManager() {
         title="Google Ads"
       />
 
-      <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
-        <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <div>
+      <section className="rounded-xl border border-border bg-card px-4 py-4 text-card-foreground shadow-sm">
+        <dl className="grid gap-0 sm:grid-cols-2 sm:divide-x sm:divide-border/80 xl:grid-cols-5">
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">连接状态</dt>
             <dd
               className={cn(
-                "mt-1 text-2xl font-semibold tracking-tight",
+                "mt-2 text-2xl font-semibold tracking-tight",
                 overview.fullyConnected ? "text-emerald-700" : "text-amber-700"
               )}
             >
               {overviewStatusLabel}
             </dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">可访问账号</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{overview.accountCount}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{overview.accountCount}</dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">经理账号</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{overview.managerCount}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{overview.managerCount}</dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">测试账号</dt>
-            <dd className={cn("mt-1 text-2xl font-semibold tracking-tight", overview.testAccountCount > 0 ? "text-amber-700" : "text-foreground")}>
+            <dd className={cn("mt-2 text-2xl font-semibold tracking-tight", overview.testAccountCount > 0 ? "text-amber-700" : "text-foreground")}>
               {overview.testAccountCount}
             </dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">最近验证</dt>
-            <dd className="mt-1 text-sm leading-6 text-muted-foreground">{credentials?.lastVerifiedAt || "--"}</dd>
+            <dd className="mt-2 text-sm leading-6 text-muted-foreground">{credentials?.lastVerifiedAt || "--"}</dd>
           </div>
         </dl>
       </section>
@@ -411,22 +411,22 @@ export function GoogleAdsManager() {
 
         {diagnoseResult ? (
           <div className="mt-4 space-y-4">
-            <dl className="grid gap-3 rounded-lg border border-border bg-muted/20 px-4 py-3 md:grid-cols-4">
-              <div>
+            <dl className="grid gap-0 rounded-lg border border-border bg-muted/20 px-4 py-3 md:grid-cols-4 md:divide-x md:divide-border/70">
+              <div className="py-2 first:pt-0 last:pb-0 md:px-4 md:first:pl-0 md:last:pr-0">
                 <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">可访问账号</dt>
-                <dd className="mt-1 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{diagnoseResult.summary.totalAccessible}</dd>
+                <dd className="mt-2 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{diagnoseResult.summary.totalAccessible}</dd>
               </div>
-              <div>
+              <div className="py-2 first:pt-0 last:pb-0 md:px-4 md:first:pl-0 md:last:pr-0">
                 <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">读取成功</dt>
-                <dd className="mt-1 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{diagnoseResult.summary.okCount}</dd>
+                <dd className="mt-2 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{diagnoseResult.summary.okCount}</dd>
               </div>
-              <div>
+              <div className="py-2 first:pt-0 last:pb-0 md:px-4 md:first:pl-0 md:last:pr-0">
                 <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">读取失败</dt>
-                <dd className="mt-1 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{diagnoseResult.summary.errorCount}</dd>
+                <dd className="mt-2 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{diagnoseResult.summary.errorCount}</dd>
               </div>
-              <div>
+              <div className="py-2 first:pt-0 last:pb-0 md:px-4 md:first:pl-0 md:last:pr-0">
                 <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">测试账号</dt>
-                <dd className="mt-1 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{diagnoseResult.summary.testAccountTrue}</dd>
+                <dd className="mt-2 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{diagnoseResult.summary.testAccountTrue}</dd>
               </div>
             </dl>
 

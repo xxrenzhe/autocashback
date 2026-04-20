@@ -435,29 +435,29 @@ export function LinkSwapManager() {
         title="换链任务"
       />
 
-      <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
-        <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <div>
+      <section className="rounded-xl border border-border bg-card px-4 py-4 text-card-foreground shadow-sm">
+        <dl className="grid gap-0 sm:grid-cols-2 sm:divide-x sm:divide-border/80 xl:grid-cols-5">
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">总任务</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{consoleData.stats.totalTasks}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{consoleData.stats.totalTasks}</dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">运行中</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{consoleData.stats.runningTasks}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{consoleData.stats.runningTasks}</dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">已暂停</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{consoleData.stats.pausedTasks}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{consoleData.stats.pausedTasks}</dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">预警 / 异常</dt>
-            <dd className={cn("mt-1 text-2xl font-semibold tracking-tight", consoleData.stats.warningTasks > 0 ? "text-amber-700" : "text-foreground")}>
+            <dd className={cn("mt-2 text-2xl font-semibold tracking-tight", consoleData.stats.warningTasks > 0 ? "text-amber-700" : "text-foreground")}>
               {consoleData.stats.warningTasks}
             </dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">最近成功率</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{consoleData.stats.recentSuccessRate}%</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{consoleData.stats.recentSuccessRate}%</dd>
           </div>
         </dl>
       </section>

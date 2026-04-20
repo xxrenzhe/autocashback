@@ -15,7 +15,7 @@ export function PlatformNotesSettingsTab({
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-3">
-        <label className="rounded-xl border border-border bg-muted/30 p-4 text-sm font-medium text-foreground">
+        <label className="border-y border-border/70 py-4 text-sm font-medium text-foreground xl:px-4 xl:first:pl-0 xl:last:pr-0">
           <span className="block text-sm font-semibold text-foreground">TopCashback</span>
           <textarea
             className="mt-3 min-h-36 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal"
@@ -23,7 +23,7 @@ export function PlatformNotesSettingsTab({
             value={platformNotes.topcashback}
           />
         </label>
-        <label className="rounded-xl border border-border bg-muted/30 p-4 text-sm font-medium text-foreground">
+        <label className="border-y border-border/70 py-4 text-sm font-medium text-foreground xl:px-4 xl:first:pl-0 xl:last:pr-0">
           <span className="block text-sm font-semibold text-foreground">Rakuten</span>
           <textarea
             className="mt-3 min-h-36 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal"
@@ -31,7 +31,7 @@ export function PlatformNotesSettingsTab({
             value={platformNotes.rakuten}
           />
         </label>
-        <label className="rounded-xl border border-border bg-muted/30 p-4 text-sm font-medium text-foreground">
+        <label className="border-y border-border/70 py-4 text-sm font-medium text-foreground xl:px-4 xl:first:pl-0 xl:last:pr-0">
           <span className="block text-sm font-semibold text-foreground">Custom</span>
           <textarea
             className="mt-3 min-h-36 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal"

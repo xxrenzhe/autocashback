@@ -685,32 +685,32 @@ export function AdminUsersManager() {
         title="用户管理"
       />
 
-      <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
-        <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <div>
+      <section className="rounded-xl border border-border bg-card px-4 py-4 text-card-foreground shadow-sm">
+        <dl className="grid gap-0 sm:grid-cols-2 sm:divide-x sm:divide-border/80 xl:grid-cols-5">
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">风险账号</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{summary.riskCount}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{summary.riskCount}</dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">已锁定</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-amber-700">{summary.lockedCount}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-amber-700">{summary.lockedCount}</dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">已停用</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{summary.disabledCount}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{summary.disabledCount}</dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">活跃会话</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{summary.activeSessionUsersCount}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{summary.activeSessionUsersCount}</dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">分页</dt>
-            <dd className="mt-1 text-sm leading-6 text-muted-foreground">第 {pagination.page} / {Math.max(1, pagination.totalPages)} 页</dd>
+            <dd className="mt-2 text-sm leading-6 text-muted-foreground">第 {pagination.page} / {Math.max(1, pagination.totalPages)} 页</dd>
           </div>
         </dl>
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-sm">
+      <section className="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm">
         <div className="border-b border-border px-6 py-5">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
             <div>

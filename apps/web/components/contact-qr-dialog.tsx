@@ -73,7 +73,7 @@ export function ContactQrDialog(props: {
         </div>
 
         <div className="grid gap-6 px-6 py-6 md:grid-cols-[18rem,1fr]">
-          <div className="rounded-2xl border border-border bg-secondary/40 p-4">
+          <div className="rounded-xl border border-border bg-secondary/40 p-4">
             <Image
               alt="AutoCashBack 联系二维码"
               className="mx-auto h-64 w-64 rounded-xl border border-border bg-white object-contain p-3"
@@ -86,22 +86,18 @@ export function ContactQrDialog(props: {
             <p className="mt-4 text-center text-sm font-medium text-foreground">扫码后备注 “autocashback”</p>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <div className="rounded-2xl border border-border bg-card px-5 py-4">
-              <p className="text-sm font-semibold text-foreground">建议说明</p>
-              <div className="mt-3 space-y-3">
-                {contactSteps.map((step, index) => (
-                  <p className="flex items-start gap-3 text-sm leading-6 text-muted-foreground" key={step}>
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-secondary text-xs font-semibold text-foreground">
-                      {index + 1}
-                    </span>
-                    <span>{step}</span>
-                  </p>
-                ))}
-              </div>
+          <div className="flex flex-col justify-center">
+            <div className="divide-y divide-border border-y border-border/80">
+              {contactSteps.map((step, index) => (
+                <div className="grid gap-2 py-4 sm:grid-cols-[2rem,1fr]" key={step}>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-secondary text-xs font-semibold text-foreground">
+                    {index + 1}
+                  </span>
+                  <p className="text-sm leading-6 text-muted-foreground">{step}</p>
+                </div>
+              ))}
             </div>
-
-            <div className="rounded-2xl border border-border bg-secondary/40 px-5 py-4">
+            <div className="mt-5 border-t border-border/80 pt-4">
               <p className="text-sm font-semibold text-foreground">适合的沟通内容</p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 试用申请、账号开通、后台功能说明、团队使用场景、换链和 Offer 管理方式。

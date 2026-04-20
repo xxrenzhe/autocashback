@@ -255,11 +255,11 @@ export default function MarketingHomePage() {
               </Link>
             </div>
 
-            <dl className="mt-10 grid gap-3 sm:grid-cols-3">
+            <dl className="mt-10 divide-y divide-border border-y border-border/80">
               {heroPanels.map((item) => (
-                <div className="rounded-2xl border border-border bg-card/70 p-4" key={item.title}>
+                <div className="grid gap-2 py-4 sm:grid-cols-[8rem,1fr] sm:items-start sm:gap-4" key={item.title}>
                   <dt className="text-sm font-semibold text-foreground">{item.title}</dt>
-                  <dd className="mt-2 text-sm leading-6 text-muted-foreground">{item.text}</dd>
+                  <dd className="text-sm leading-6 text-muted-foreground">{item.text}</dd>
                 </div>
               ))}
             </dl>
@@ -283,19 +283,18 @@ export default function MarketingHomePage() {
                   右侧主视觉使用结构型 SVG 示意后台工作台：统一入口、状态区、动作区和执行结果。
                 </p>
               </div>
-              <span className="info-chip">结构示意图</span>
+              <span className="info-chip">工作台示意</span>
             </div>
 
             <div className="space-y-6 px-6 py-6">
-              <OpsStructureIllustration className="rounded-2xl border border-border bg-white/70 p-3" />
+              <OpsStructureIllustration className="rounded-xl border border-border bg-white/70 p-3" />
 
-              <dl className="grid gap-3 border-t border-border/80 pt-5 sm:grid-cols-3">
+              <dl className="divide-y divide-border border-t border-border/80 pt-1">
                 {workflowSteps.map((item, index) => (
-                  <div className="rounded-2xl border border-border bg-secondary/30 p-4" key={item.title}>
-                    <dt className="text-sm font-semibold text-foreground">
-                      0{index + 1} · {item.title}
-                    </dt>
-                    <dd className="mt-2 text-sm leading-6 text-muted-foreground">{item.text}</dd>
+                  <div className="grid gap-2 py-4 sm:grid-cols-[6rem,12rem,1fr] sm:items-start sm:gap-4" key={item.title}>
+                    <dt className="text-sm font-semibold text-primary">0{index + 1}</dt>
+                    <dd className="text-sm font-semibold text-foreground">{item.title}</dd>
+                    <dd className="text-sm leading-6 text-muted-foreground">{item.text}</dd>
                   </div>
                 ))}
               </dl>
@@ -312,19 +311,17 @@ export default function MarketingHomePage() {
             </p>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="divide-y divide-border border-y border-border/80">
             {modules.map((module) => {
               const Icon = module.icon;
 
               return (
-                <article className="surface-panel flex items-start gap-4 px-5 py-5" key={module.title}>
+                <article className="grid gap-3 py-5 sm:grid-cols-[3rem,10rem,1fr] sm:items-start sm:gap-4" key={module.title}>
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary/35 text-primary">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="text-base font-semibold text-foreground">{module.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{module.text}</p>
-                  </div>
+                  <h3 className="text-base font-semibold text-foreground">{module.title}</h3>
+                  <p className="min-w-0 text-sm leading-6 text-muted-foreground">{module.text}</p>
                 </article>
               );
             })}
@@ -337,11 +334,11 @@ export default function MarketingHomePage() {
             <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-foreground">哪些团队更适合收回统一后台</h2>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="divide-y divide-border border-y border-border/80">
             {scenarioCards.map((item) => (
-              <article className="rounded-2xl border border-border bg-card/80 p-5" key={item.title}>
+              <article className="grid gap-2 py-5 sm:grid-cols-[12rem,1fr] sm:items-start sm:gap-4" key={item.title}>
                 <h3 className="text-base font-semibold text-foreground">{item.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-muted-foreground">{item.text}</p>
+                <p className="text-sm leading-7 text-muted-foreground">{item.text}</p>
               </article>
             ))}
           </div>
@@ -353,11 +350,11 @@ export default function MarketingHomePage() {
             <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-foreground">开始使用前通常会问什么</h2>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="divide-y divide-border border-y border-border/80">
             {faqItems.map((item) => (
-              <article className="rounded-2xl border border-border bg-card/80 p-5" key={item.question}>
+              <article className="grid gap-2 py-5 sm:grid-cols-[15rem,1fr] sm:items-start sm:gap-4" key={item.question}>
                 <h3 className="text-base font-semibold text-foreground">{item.question}</h3>
-                <p className="mt-3 text-sm leading-7 text-muted-foreground">{item.answer}</p>
+                <p className="text-sm leading-7 text-muted-foreground">{item.answer}</p>
               </article>
             ))}
           </div>

@@ -111,7 +111,7 @@ export function LoginForm(props: {
           {!pending ? <ArrowRight aria-hidden="true" className="h-4 w-4" /> : null}
         </button>
 
-        <div className="rounded-2xl border border-border bg-secondary/30 px-4 py-4 text-sm leading-6 text-muted-foreground">
+        <div className="border-t border-border/80 pt-4 text-sm leading-6 text-muted-foreground">
           还没有账号？
           <button
             className="ml-1 rounded-sm font-medium text-foreground underline decoration-border underline-offset-4 transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"

@@ -238,31 +238,31 @@ export function ClickFarmManager() {
         title="补点击任务"
       />
 
-      <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
-        <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <div>
+      <section className="rounded-xl border border-border bg-card px-4 py-4 text-card-foreground shadow-sm">
+        <dl className="grid gap-0 sm:grid-cols-2 sm:divide-x sm:divide-border/80 xl:grid-cols-5">
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">运行中任务</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.activeTasks}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.activeTasks}</dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">暂停 / 异常</dt>
-            <dd className={cn("mt-1 text-2xl font-semibold tracking-tight", allConsole.overview.warningTasks > 0 ? "text-amber-700" : "text-foreground")}>
+            <dd className={cn("mt-2 text-2xl font-semibold tracking-tight", allConsole.overview.warningTasks > 0 ? "text-amber-700" : "text-foreground")}>
               {allConsole.overview.warningTasks}
             </dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">累计点击</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.totalClicks}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.totalClicks}</dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">平均成功率</dt>
-            <dd className={cn("mt-1 text-2xl font-semibold tracking-tight", allConsole.overview.averageSuccessRate >= 80 ? "text-foreground" : "text-amber-700")}>
+            <dd className={cn("mt-2 text-2xl font-semibold tracking-tight", allConsole.overview.averageSuccessRate >= 80 ? "text-foreground" : "text-amber-700")}>
               {allConsole.overview.averageSuccessRate.toFixed(1)}%
             </dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">当前视图</dt>
-            <dd className="mt-1 text-sm leading-6 text-muted-foreground">
+            <dd className="mt-2 text-sm leading-6 text-muted-foreground">
               排序 {sortOptions.find((option) => option.value === sort)?.label || "按最新创建"}
             </dd>
           </div>

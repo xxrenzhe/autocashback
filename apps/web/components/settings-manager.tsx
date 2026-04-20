@@ -61,6 +61,22 @@ function parseProxyEntries(raw: string): ProxySettingEntry[] {
   }
 }
 
+function SettingsSummaryStat(props: {
+  label: string;
+  value: string | number;
+  tone?: "default" | "success" | "warning";
+}) {
+  const toneClassName =
+    props.tone === "success" ? "text-emerald-700" : props.tone === "warning" ? "text-amber-700" : "text-foreground";
+
+  return (
+    <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
+      <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{props.label}</dt>
+      <dd className={`mt-2 text-2xl font-semibold tracking-tight ${toneClassName}`}>{props.value}</dd>
+    </div>
+  );
+}
+
 export function SettingsManager() {
   const [proxyEntries, setProxyEntries] = useState<ProxySettingEntry[]>([]);
   const [proxyValidation, setProxyValidation] = useState<Record<number, ProxyValidationState>>({});
@@ -466,36 +482,17 @@ export function SettingsManager() {
         title="设置"
       />
 
-      <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
-        <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <div>
-            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">有效代理</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{overview.activeProxyCount}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">覆盖国家</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{overview.configuredProxyCountries}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Google Ads</dt>
-            <dd
-              className={`mt-1 text-2xl font-semibold tracking-tight ${
-                overview.googleAdsFullyConnected ? "text-emerald-700" : overview.googleAdsNeedsOAuth ? "text-amber-700" : "text-foreground"
-              }`}
-            >
-              {overview.googleAdsFullyConnected ? "已连通" : overview.googleAdsNeedsOAuth ? "待授权" : `${overview.googleAdsBaseConfigCount}/4`}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">平台备注</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{overview.noteCount}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">脚本模板</dt>
-            <dd className={`mt-1 text-2xl font-semibold tracking-tight ${overview.scriptReady ? "text-foreground" : "text-amber-700"}`}>
-              {overview.scriptReady ? "已就绪" : "待配置"}
-            </dd>
-          </div>
+      <section className="rounded-xl border border-border bg-card px-4 py-4 text-card-foreground shadow-sm">
+        <dl className="grid gap-0 sm:grid-cols-2 sm:divide-x sm:divide-border/80 xl:grid-cols-5">
+          <SettingsSummaryStat label="有效代理" value={overview.activeProxyCount} />
+          <SettingsSummaryStat label="覆盖国家" value={overview.configuredProxyCountries} />
+          <SettingsSummaryStat
+            label="Google Ads"
+            tone={overview.googleAdsFullyConnected ? "success" : overview.googleAdsNeedsOAuth ? "warning" : "default"}
+            value={overview.googleAdsFullyConnected ? "已连通" : overview.googleAdsNeedsOAuth ? "待授权" : `${overview.googleAdsBaseConfigCount}/4`}
+          />
+          <SettingsSummaryStat label="平台备注" value={overview.noteCount} />
+          <SettingsSummaryStat label="脚本模板" tone={overview.scriptReady ? "default" : "warning"} value={overview.scriptReady ? "已就绪" : "待配置"} />
         </dl>
       </section>
 

@@ -24,9 +24,9 @@ const PROXY_FORMAT_EXAMPLES = [
   },
   {
     title: "Kookeey / Cliproxy",
-    toneClassName: "border-violet-200 bg-violet-50/70 text-violet-700",
+    toneClassName: "border-border bg-muted/70 text-foreground",
     badgeLabel: "兼容",
-    badgeClassName: "bg-violet-100 text-violet-700",
+    badgeClassName: "bg-background text-muted-foreground",
     description: "如果供应商提供四段式配置，也可以直接填写使用。",
     example: "host:port:username:password"
   }
@@ -68,7 +68,7 @@ export function ProxySettingsTab({
       </div>
 
       <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,1fr)]">
-        <div className="rounded-2xl border border-border bg-muted/20 p-4">
+        <div className="rounded-xl border border-border bg-muted/20 p-4">
           <div className="flex items-start gap-2">
             <Info className="mt-0.5 h-4 w-4 text-primary" />
             <div className="space-y-2 text-sm text-muted-foreground">
@@ -96,7 +96,7 @@ export function ProxySettingsTab({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4">
+        <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4">
           <div className="flex items-start gap-2">
             <AlertCircle className="mt-0.5 h-4 w-4 text-amber-700" />
             <div className="space-y-2 text-sm text-amber-900">
@@ -117,7 +117,7 @@ export function ProxySettingsTab({
             const validation = proxyValidation[index];
 
             return (
-              <div className="rounded-2xl border border-border bg-muted/30 p-4" key={`${entry.label}-${index}`}>
+              <div className="rounded-xl border border-border bg-muted/30 p-4" key={`${entry.label}-${index}`}>
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <p className="text-sm font-semibold text-foreground">{entry.label || `代理 ${index + 1}`}</p>

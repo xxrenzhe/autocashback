@@ -488,31 +488,31 @@ export function OffersManager() {
         title="Offer"
       />
 
-      <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
-        <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <div>
+      <section className="rounded-xl border border-border bg-card px-4 py-4 text-card-foreground shadow-sm">
+        <dl className="grid gap-0 sm:grid-cols-2 sm:divide-x sm:divide-border/80 xl:grid-cols-5">
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Offer</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.totalOffers}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.totalOffers}</dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">阈值预警</dt>
-            <dd className={cn("mt-1 text-2xl font-semibold tracking-tight", allConsole.overview.warningOffers > 0 ? "text-amber-700" : "text-foreground")}>
+            <dd className={cn("mt-2 text-2xl font-semibold tracking-tight", allConsole.overview.warningOffers > 0 ? "text-amber-700" : "text-foreground")}>
               {allConsole.overview.warningOffers}
             </dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">待解析 Suffix</dt>
-            <dd className={cn("mt-1 text-2xl font-semibold tracking-tight", allConsole.overview.unresolvedSuffixCount > 0 ? "text-amber-700" : "text-foreground")}>
+            <dd className={cn("mt-2 text-2xl font-semibold tracking-tight", allConsole.overview.unresolvedSuffixCount > 0 ? "text-amber-700" : "text-foreground")}>
               {allConsole.overview.unresolvedSuffixCount}
             </dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">覆盖国家</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.coveredCountryCount}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.coveredCountryCount}</dd>
           </div>
-          <div>
+          <div className="py-3 first:pt-0 last:pb-0 sm:px-4 xl:first:pl-0 xl:last:pr-0">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">绑定账号</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.linkedAccountCount}</dd>
+            <dd className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.linkedAccountCount}</dd>
           </div>
         </dl>
       </section>
@@ -825,7 +825,13 @@ export function OffersManager() {
               </div>
             }
             className="m-6"
+            description={
+              hasActiveFilters
+                ? "调整搜索或筛选条件，或者直接新建一个 Offer。"
+                : "先创建 Offer，后续才能继续换链、补点击和效果排查。"
+            }
             icon={WalletCards}
+            illustration={!hasActiveFilters ? true : undefined}
             title={hasActiveFilters ? "当前筛选条件下没有 Offer" : "还没有 Offer"}
           />
         )}
