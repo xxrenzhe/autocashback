@@ -29,7 +29,6 @@ import {
 } from "@autocashback/domain";
 import {
   EmptyState,
-  StatSkeleton,
   StatusBadge,
   TableSkeleton,
   cn,
@@ -88,30 +87,6 @@ function offerStatusVariant(status: OfferRecord["status"]) {
     default:
       return "pending" as const;
   }
-}
-
-function OfferMetric({
-  label,
-  value,
-  tone = "default"
-}: {
-  label: string;
-  value: string;
-  tone?: "default" | "warning" | "success";
-}) {
-  const toneClassName =
-    tone === "warning"
-      ? "border-amber-200 bg-amber-500/10 text-amber-700"
-      : tone === "success"
-        ? "border-emerald-200 bg-emerald-500/10 text-emerald-700"
-        : "border-border bg-card text-foreground";
-
-  return (
-    <div className={cn("rounded-xl border px-4 py-3", toneClassName)}>
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
-    </div>
-  );
 }
 
 export function OffersManager() {
@@ -441,7 +416,7 @@ export function OffersManager() {
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Offer</h1>
             {!loading ? (
-              <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+              <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
                 {allConsole.overview.totalOffers}
               </span>
             ) : null}
@@ -501,30 +476,33 @@ export function OffersManager() {
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {loading ? (
-          <>
-            <StatSkeleton />
-            <StatSkeleton />
-            <StatSkeleton />
-            <StatSkeleton />
-          </>
-        ) : (
-          <>
-            <OfferMetric label="Offer" value={String(allConsole.overview.totalOffers)} />
-            <OfferMetric
-              label="阈值预警"
-              tone={allConsole.overview.warningOffers > 0 ? "warning" : "success"}
-              value={String(allConsole.overview.warningOffers)}
-            />
-            <OfferMetric
-              label="待解析 Suffix"
-              tone={allConsole.overview.unresolvedSuffixCount > 0 ? "warning" : "success"}
-              value={String(allConsole.overview.unresolvedSuffixCount)}
-            />
-            <OfferMetric label="覆盖国家" tone="success" value={String(allConsole.overview.coveredCountryCount)} />
-          </>
-        )}
+      <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
+        <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Offer</dt>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.totalOffers}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">阈值预警</dt>
+            <dd className={cn("mt-1 text-2xl font-semibold tracking-tight", allConsole.overview.warningOffers > 0 ? "text-amber-700" : "text-foreground")}>
+              {allConsole.overview.warningOffers}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">待解析 Suffix</dt>
+            <dd className={cn("mt-1 text-2xl font-semibold tracking-tight", allConsole.overview.unresolvedSuffixCount > 0 ? "text-amber-700" : "text-foreground")}>
+              {allConsole.overview.unresolvedSuffixCount}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">覆盖国家</dt>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.coveredCountryCount}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">绑定账号</dt>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.linkedAccountCount}</dd>
+          </div>
+        </dl>
       </section>
 
       <section className="overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
