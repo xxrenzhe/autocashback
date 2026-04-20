@@ -86,6 +86,24 @@ type SecurityAlert = {
   }>;
 };
 
+type ConfirmAction =
+  | {
+      kind: "delete";
+      user: AdminUser;
+    }
+  | {
+      kind: "reset-password";
+      user: AdminUser;
+    }
+  | {
+      kind: "toggle-state";
+      user: AdminUser;
+    }
+  | {
+      kind: "unlock";
+      user: AdminUser;
+    };
+
 type SortField = "id" | "username" | "email" | "role" | "createdAt" | "lastLoginAt" | "status";
 type SortDirection = "asc" | "desc";
 type StatusFilter = "all" | "risk" | "locked" | "disabled" | "active-session";
@@ -212,6 +230,7 @@ export function AdminUsersManager() {
   const [loginHistory, setLoginHistory] = useState<LoginRecord[]>([]);
   const [historyIpQuery, setHistoryIpQuery] = useState("");
   const [securityAlerts, setSecurityAlerts] = useState<SecurityAlert[]>([]);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   function formatDateTime(value: string | null) {
@@ -354,16 +373,7 @@ export function AdminUsersManager() {
     await loadUsers({ page: pagination.page });
   }
 
-  async function handleDeleteUser(user: AdminUser) {
-    if (user.isActive) {
-      toast.error("删除前请先停用该账号");
-      return;
-    }
-
-    if (!window.confirm(`确定要删除用户“${user.username}”吗？此操作不可恢复。`)) {
-      return;
-    }
-
+  async function deleteUser(user: AdminUser) {
     setActionLoading(`delete-${user.id}`);
     const result = await fetchJson<{ success: boolean }>(`/api/admin/users/${user.id}`, {
       method: "DELETE"
@@ -382,11 +392,7 @@ export function AdminUsersManager() {
     });
   }
 
-  async function handleResetPassword(user: AdminUser) {
-    if (!window.confirm(`确定要重置用户“${user.username}”的密码吗？`)) {
-      return;
-    }
-
+  async function resetPassword(user: AdminUser) {
     setActionLoading(`password-${user.id}`);
     const result = await fetchJson<{ username: string; newPassword: string }>(
       `/api/admin/users/${user.id}/reset-password`,
@@ -407,18 +413,8 @@ export function AdminUsersManager() {
     toast.success(("密码已重置，失败记录和现有会话已清空"));
   }
 
-  async function handleToggleUserState(user: AdminUser) {
+  async function toggleUserState(user: AdminUser) {
     const nextIsActive = !user.isActive;
-    const confirmed = window.confirm(
-      nextIsActive
-        ? `确定要恢复用户“${user.username}”的登录能力吗？`
-        : `确定要停用用户“${user.username}”吗？停用后会立即清空该账号的现有会话。`
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
     setActionLoading(`toggle-${user.id}`);
     const result = await fetchJson<{ user: AdminUser }>(`/api/admin/users/${user.id}`, {
       method: "PATCH",
@@ -436,17 +432,7 @@ export function AdminUsersManager() {
     await loadUsers({ page: pagination.page });
   }
 
-  async function handleUnlockUser(user: AdminUser) {
-    const confirmed = window.confirm(
-      isUserLocked(user)
-        ? `确定要清空用户“${user.username}”的失败登录记录并解除锁定吗？`
-        : `确定要清空用户“${user.username}”的失败登录记录吗？`
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
+  async function unlockUser(user: AdminUser) {
     setActionLoading(`unlock-${user.id}`);
     const result = await fetchJson<{ user: AdminUser }>(`/api/admin/users/${user.id}`, {
       method: "PATCH",
@@ -462,6 +448,54 @@ export function AdminUsersManager() {
 
     toast.success(("锁定状态和失败记录已清空"));
     await loadUsers({ page: pagination.page });
+  }
+
+  function handleDeleteUser(user: AdminUser) {
+    if (user.isActive) {
+      toast.error("删除前请先停用该账号");
+      return;
+    }
+
+    setConfirmAction({ kind: "delete", user });
+  }
+
+  function handleResetPassword(user: AdminUser) {
+    setConfirmAction({ kind: "reset-password", user });
+  }
+
+  function handleToggleUserState(user: AdminUser) {
+    setConfirmAction({ kind: "toggle-state", user });
+  }
+
+  function handleUnlockUser(user: AdminUser) {
+    setConfirmAction({ kind: "unlock", user });
+  }
+
+  async function handleConfirmAction() {
+    if (!confirmAction) {
+      return;
+    }
+
+    if (confirmAction.kind === "delete") {
+      await deleteUser(confirmAction.user);
+      setConfirmAction(null);
+      return;
+    }
+
+    if (confirmAction.kind === "reset-password") {
+      await resetPassword(confirmAction.user);
+      setConfirmAction(null);
+      return;
+    }
+
+    if (confirmAction.kind === "toggle-state") {
+      await toggleUserState(confirmAction.user);
+      setConfirmAction(null);
+      return;
+    }
+
+    await unlockUser(confirmAction.user);
+    setConfirmAction(null);
   }
 
   async function handleLoadLoginHistory(user: AdminUser) {
@@ -561,6 +595,61 @@ export function AdminUsersManager() {
   const hasFilters = Boolean(searchQuery.trim()) || roleFilter !== "all" || statusFilter !== "all";
   const visibleStart = pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
   const visibleEnd = Math.min(pagination.page * pagination.limit, pagination.total);
+  const confirmDialogConfig = useMemo(() => {
+    if (!confirmAction) {
+      return null;
+    }
+
+    const { user } = confirmAction;
+
+    if (confirmAction.kind === "delete") {
+      return {
+        confirmLabel: "删除用户",
+        confirmClassName: "bg-destructive text-white hover:bg-destructive/90",
+        description: `用户“${user.username}”会被永久删除，此操作不可恢复。`,
+        loadingKey: `delete-${user.id}`,
+        title: "确认删除用户"
+      };
+    }
+
+    if (confirmAction.kind === "reset-password") {
+      return {
+        confirmLabel: "重置密码",
+        confirmClassName: "bg-primary text-white hover:opacity-95",
+        description: `将为“${user.username}”生成新密码，并清空失败记录和现有会话。`,
+        loadingKey: `password-${user.id}`,
+        title: "确认重置密码"
+      };
+    }
+
+    if (confirmAction.kind === "toggle-state") {
+      return user.isActive
+        ? {
+            confirmLabel: "停用账户",
+            confirmClassName: "bg-amber-600 text-white hover:bg-amber-500",
+            description: `停用“${user.username}”后，该用户将立即失去登录能力，现有会话也会被清空。`,
+            loadingKey: `toggle-${user.id}`,
+            title: "确认停用账户"
+          }
+        : {
+            confirmLabel: "启用账户",
+            confirmClassName: "bg-primary text-white hover:opacity-95",
+            description: `启用“${user.username}”后，该用户可恢复正常登录。`,
+            loadingKey: `toggle-${user.id}`,
+            title: "确认启用账户"
+          };
+    }
+
+    return {
+      confirmLabel: isUserLocked(user) ? "解除锁定" : "清空失败记录",
+      confirmClassName: "bg-amber-600 text-white hover:bg-amber-500",
+      description: isUserLocked(user)
+        ? `将清空“${user.username}”的失败登录记录，并立即解除当前锁定状态。`
+        : `将清空“${user.username}”当前累计的失败登录记录。`,
+      loadingKey: `unlock-${user.id}`,
+      title: isUserLocked(user) ? "确认解除锁定" : "确认清空失败记录"
+    };
+  }, [confirmAction]);
 
   return (
     <div className="space-y-5">
@@ -706,7 +795,7 @@ export function AdminUsersManager() {
           <EmptyState className="m-6" icon={Search} title="当前筛选条件下没有用户" />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-max min-w-[1120px] table-fixed text-sm [&_th]:h-11 [&_th]:px-3 [&_td]:px-3 [&_td]:py-3">
+            <table className="w-full min-w-[980px] table-fixed text-sm [&_th]:h-11 [&_th]:align-middle [&_th]:px-3 [&_td]:align-middle [&_td]:px-3 [&_td]:py-2.5">
               <thead className="border-b border-border bg-muted/30">
                 <tr>
                   <th
@@ -719,7 +808,7 @@ export function AdminUsersManager() {
                     </button>
                   </th>
                   <th
-                    className="w-[240px] whitespace-nowrap text-left font-medium text-muted-foreground"
+                    className="w-[220px] whitespace-nowrap text-left font-medium text-muted-foreground"
                     aria-sort={sortField === "username" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
                   >
                     <button className="inline-flex items-center gap-1 whitespace-nowrap" onClick={() => handleSort("username")} type="button">
@@ -728,7 +817,7 @@ export function AdminUsersManager() {
                     </button>
                   </th>
                   <th
-                    className="hidden w-[110px] whitespace-nowrap text-left font-medium text-muted-foreground lg:table-cell"
+                    className="hidden w-[96px] whitespace-nowrap text-left font-medium text-muted-foreground lg:table-cell"
                     aria-sort={sortField === "role" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
                   >
                     <button className="inline-flex items-center gap-1 whitespace-nowrap" onClick={() => handleSort("role")} type="button">
@@ -737,7 +826,7 @@ export function AdminUsersManager() {
                     </button>
                   </th>
                   <th
-                    className="w-[200px] whitespace-nowrap text-left font-medium text-muted-foreground"
+                    className="w-[160px] whitespace-nowrap text-left font-medium text-muted-foreground"
                     aria-sort={sortField === "status" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
                   >
                     <button className="inline-flex items-center gap-1 whitespace-nowrap" onClick={() => handleSort("status")} type="button">
@@ -745,9 +834,9 @@ export function AdminUsersManager() {
                       {renderSortIcon("status")}
                     </button>
                   </th>
-                  <th className="w-[140px] whitespace-nowrap text-left font-medium text-muted-foreground">会话</th>
+                  <th className="w-[92px] whitespace-nowrap text-left font-medium text-muted-foreground">会话</th>
                   <th
-                    className="hidden w-[180px] whitespace-nowrap text-left font-medium text-muted-foreground xl:table-cell"
+                    className="hidden w-[144px] whitespace-nowrap text-left font-medium text-muted-foreground xl:table-cell"
                     aria-sort={sortField === "lastLoginAt" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
                   >
                     <button className="inline-flex items-center gap-1 whitespace-nowrap" onClick={() => handleSort("lastLoginAt")} type="button">
@@ -756,7 +845,7 @@ export function AdminUsersManager() {
                     </button>
                   </th>
                   <th
-                    className="hidden w-[180px] whitespace-nowrap text-left font-medium text-muted-foreground xl:table-cell"
+                    className="hidden w-[144px] whitespace-nowrap text-left font-medium text-muted-foreground xl:table-cell"
                     aria-sort={sortField === "createdAt" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
                   >
                     <button className="inline-flex items-center gap-1 whitespace-nowrap" onClick={() => handleSort("createdAt")} type="button">
@@ -764,7 +853,7 @@ export function AdminUsersManager() {
                       {renderSortIcon("createdAt")}
                     </button>
                   </th>
-                  <th className="w-[120px] whitespace-nowrap text-center font-medium text-muted-foreground">操作</th>
+                  <th className="w-[132px] whitespace-nowrap text-center font-medium text-muted-foreground">操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -776,7 +865,7 @@ export function AdminUsersManager() {
                       <td className="hidden font-mono text-xs text-muted-foreground sm:table-cell">{user.id}</td>
                       <td>
                         <div className="flex min-w-0 items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
                             {user.username.slice(0, 2).toUpperCase()}
                           </div>
                           <div className="min-w-0">
@@ -796,7 +885,7 @@ export function AdminUsersManager() {
                         </span>
                       </td>
                       <td>
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col justify-center gap-1">
                           <div className="flex flex-wrap items-center gap-1.5">
                             <StatusBadge className="h-6 items-center px-2.5 text-[11px]" label={userStatusBadge.label} variant={userStatusBadge.variant} />
                             {user.failedLoginCount > 0 ? (
@@ -809,16 +898,9 @@ export function AdminUsersManager() {
                         </div>
                       </td>
                       <td>
-                        <div className="flex flex-wrap gap-1.5">
-                          <span className="inline-flex h-6 items-center rounded-full bg-muted px-2.5 text-[11px] font-medium text-muted-foreground">
-                            {user.activeSessionCount > 0 ? `${user.activeSessionCount} 个会话` : "无会话"}
-                          </span>
-                          {!user.isActive ? (
-                            <span className="inline-flex h-6 items-center rounded-full bg-destructive/10 px-2.5 text-[11px] font-medium text-destructive">
-                              已停用
-                            </span>
-                          ) : null}
-                        </div>
+                        <span className="inline-flex h-6 min-w-[3.5rem] items-center justify-center rounded-full bg-muted px-2 text-[11px] font-medium text-muted-foreground">
+                          {user.activeSessionCount > 0 ? `${user.activeSessionCount} 个` : "0"}
+                        </span>
                       </td>
                       <td className="hidden text-sm text-foreground xl:table-cell">{formatDateTime(user.lastLoginAt)}</td>
                       <td className="hidden text-sm text-foreground xl:table-cell">{formatDateTime(user.createdAt)}</td>
@@ -936,6 +1018,7 @@ export function AdminUsersManager() {
       </section>
 
       <ModalFrame
+        className="max-w-xl"
         description="创建新的系统账号，可选择角色并指定初始密码。"
         eyebrow="用户管理"
         onClose={() => setCreateOpen(false)}
@@ -1021,6 +1104,7 @@ export function AdminUsersManager() {
       </ModalFrame>
 
       <ModalFrame
+        className="max-w-lg"
         description="仅支持修改邮箱和角色，用户名保持不变。"
         eyebrow="用户管理"
         onClose={() => setEditOpen(false)}
@@ -1070,6 +1154,7 @@ export function AdminUsersManager() {
       </ModalFrame>
 
       <ModalFrame
+        className="max-w-lg"
         description="请将新的登录凭证发送给用户，首次登录需尽快修改密码。"
         eyebrow="用户管理"
         onClose={() => setResetPasswordOpen(false)}
@@ -1101,6 +1186,7 @@ export function AdminUsersManager() {
       </ModalFrame>
 
       <ModalFrame
+        className="max-w-2xl"
         description={
           selectedUser
             ? `${selectedUser.username} (${selectedUser.email || "无邮箱"}) 的最近登录历史`
@@ -1178,6 +1264,7 @@ export function AdminUsersManager() {
       </ModalFrame>
 
       <ModalFrame
+        className="max-w-2xl"
         description={
           selectedUser
             ? `${selectedUser.username} (${selectedUser.email || "无邮箱"}) 的账户安全告警`
@@ -1282,6 +1369,46 @@ export function AdminUsersManager() {
           <EmptyState icon={ShieldAlert} title="暂无安全告警" />
         )}
       </ModalFrame>
+
+      <ModalFrame
+        className="max-w-md"
+        description={confirmDialogConfig?.description}
+        eyebrow="用户操作确认"
+        onClose={() => {
+          if (actionLoading === null) {
+            setConfirmAction(null);
+          }
+        }}
+        open={Boolean(confirmAction && confirmDialogConfig)}
+        title={confirmDialogConfig?.title || "确认操作"}
+      >
+        <div className="space-y-5">
+          <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm leading-6 text-muted-foreground">
+            请确认后继续执行。执行完成后会自动刷新当前列表。
+          </div>
+          <div className="flex justify-end gap-3">
+            <button
+              className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted/60 disabled:opacity-50"
+              disabled={actionLoading !== null}
+              onClick={() => setConfirmAction(null)}
+              type="button"
+            >
+              取消
+            </button>
+            <button
+              className={cn(
+                "rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50",
+                confirmDialogConfig?.confirmClassName
+              )}
+              disabled={actionLoading !== null}
+              onClick={() => void handleConfirmAction()}
+              type="button"
+            >
+              {confirmDialogConfig && actionLoading === confirmDialogConfig.loadingKey ? "处理中..." : confirmDialogConfig?.confirmLabel}
+            </button>
+          </div>
+        </div>
+      </ModalFrame>
     </div>
   );
 }
@@ -1368,18 +1495,18 @@ function getUserRiskSummary(user: AdminUser) {
 
 function getUserRowClassName(user: AdminUser) {
   if (!user.isActive) {
-    return "border-b border-border/40 bg-destructive/5 align-top transition hover:bg-destructive/10 last:border-b-0";
+    return "border-b border-border/40 bg-destructive/5 align-middle transition hover:bg-destructive/10 last:border-b-0";
   }
 
   if (isUserLocked(user) || user.failedLoginCount > 0) {
-    return "border-b border-border/40 bg-amber-50/70 align-top transition hover:bg-amber-100/70 last:border-b-0";
+    return "border-b border-border/40 bg-amber-50/70 align-middle transition hover:bg-amber-100/70 last:border-b-0";
   }
 
   if (user.activeSessionCount > 0) {
-    return "border-b border-border/40 bg-emerald-50/45 align-top transition hover:bg-emerald-100/60 last:border-b-0";
+    return "border-b border-border/40 bg-emerald-50/45 align-middle transition hover:bg-emerald-100/60 last:border-b-0";
   }
 
-  return "border-b border-border/40 align-top transition hover:bg-muted/30 last:border-b-0";
+  return "border-b border-border/40 align-middle transition hover:bg-muted/30 last:border-b-0";
 }
 
 function getLoginHistoryStatusLabel(record: LoginRecord) {
