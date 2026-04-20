@@ -18,6 +18,7 @@ import { EmptyState, StatusBadge, TableSkeleton, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { ClickFarmTaskDialog } from "@/components/click-farm-task-dialog";
+import { ModalFrame } from "@/components/modal-frame";
 import { fetchJson } from "@/lib/api-error-handler";
 import {
   buildClickFarmConsole,
@@ -87,6 +88,7 @@ export function ClickFarmManager() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bootstrappedFromQuery, setBootstrappedFromQuery] = useState(false);
   const [taskActionLoading, setTaskActionLoading] = useState<string | null>(null);
+  const [pendingDeleteTask, setPendingDeleteTask] = useState<ClickFarmTask | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const selectedOffer = useMemo(
@@ -175,19 +177,17 @@ export function ClickFarmManager() {
   }
 
   async function handleTaskAction(action: "stop" | "restart" | "delete", task: ClickFarmTask) {
-    if (action === "delete" && !window.confirm("确认删除该补点击任务？历史统计会随任务一起移除。")) {
+    if (action === "delete") {
+      setPendingDeleteTask(task);
       return;
     }
 
     setTaskActionLoading(`${action}-${task.id}`);
 
-    const endpoint =
-      action === "delete"
-        ? `/api/click-farm/tasks/${task.id}`
-        : `/api/click-farm/tasks/${task.id}/${action}`;
+    const endpoint = `/api/click-farm/tasks/${task.id}/${action}`;
 
     const result = await fetchJson<{ task?: ClickFarmTask; success?: boolean }>(endpoint, {
-      method: action === "delete" ? "DELETE" : "POST"
+      method: "POST"
     });
 
     setTaskActionLoading(null);
@@ -198,11 +198,7 @@ export function ClickFarmManager() {
     }
 
     toast.success(
-      action === "stop"
-        ? "任务已暂停。"
-        : action === "restart"
-          ? "任务已恢复。"
-          : "任务已删除。"
+      action === "stop" ? "任务已暂停。" : "任务已恢复。"
     );
 
     await loadAll({ background: true, preserveNotice: true });
@@ -588,6 +584,43 @@ export function ClickFarmManager() {
         onClose={() => setDialogOpen(false)}
         onSaved={() => void loadAll({ background: true, preserveNotice: true })}
       />
+
+      <ModalFrame
+        className="max-w-md"
+        description="删除后历史统计会随任务一起移除，且当前任务不会再参与后续调度。"
+        eyebrow="补点击任务"
+        onClose={() => {
+          if (taskActionLoading === null) {
+            setPendingDeleteTask(null);
+          }
+        }}
+        open={Boolean(pendingDeleteTask)}
+        title="确认删除任务"
+      >
+        <div className="space-y-5">
+          <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm leading-6 text-muted-foreground">
+            {pendingDeleteTask ? `任务 #${pendingDeleteTask.id} 将被永久删除。` : "该任务将被永久删除。"}
+          </div>
+          <div className="flex justify-end gap-3">
+            <button
+              className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted/60 disabled:opacity-50"
+              disabled={taskActionLoading !== null}
+              onClick={() => setPendingDeleteTask(null)}
+              type="button"
+            >
+              取消
+            </button>
+            <button
+              className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-white transition hover:bg-destructive/90 disabled:opacity-50"
+              disabled={taskActionLoading !== null || !pendingDeleteTask}
+              onClick={() => pendingDeleteTask && void handleTaskAction("delete", pendingDeleteTask).finally(() => setPendingDeleteTask(null))}
+              type="button"
+            >
+              {pendingDeleteTask && taskActionLoading === `delete-${pendingDeleteTask.id}` ? "删除中..." : "删除任务"}
+            </button>
+          </div>
+        </div>
+      </ModalFrame>
     </div>
   );
 }

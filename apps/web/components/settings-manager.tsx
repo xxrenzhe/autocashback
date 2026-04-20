@@ -452,7 +452,7 @@ export function SettingsManager() {
               {SETTINGS_TAB_ITEMS.find((tab) => tab.value === activeTab)?.label}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground">代理、Google Ads、脚本与账户安全。</p>
+          <p className="text-sm text-muted-foreground">代理、Google Ads、脚本与账号安全。</p>
         </div>
 
         <button
@@ -466,11 +466,44 @@ export function SettingsManager() {
         </button>
       </section>
 
+      <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
+        <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">有效代理</dt>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{overview.activeProxyCount}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">覆盖国家</dt>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{overview.configuredProxyCountries}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Google Ads</dt>
+            <dd
+              className={`mt-1 text-2xl font-semibold tracking-tight ${
+                overview.googleAdsFullyConnected ? "text-emerald-700" : overview.googleAdsNeedsOAuth ? "text-amber-700" : "text-foreground"
+              }`}
+            >
+              {overview.googleAdsFullyConnected ? "ready" : overview.googleAdsNeedsOAuth ? "oauth" : `${overview.googleAdsBaseConfigCount}/4`}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">平台备注</dt>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{overview.noteCount}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">脚本模板</dt>
+            <dd className={`mt-1 text-2xl font-semibold tracking-tight ${overview.scriptReady ? "text-foreground" : "text-amber-700"}`}>
+              {overview.scriptReady ? "ready" : "pending"}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
       <Tabs.Root className="space-y-3" onValueChange={handleTabValueChange} value={activeTab}>
-        <Tabs.List className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-2">
+        <Tabs.List className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-1.5">
           {SETTINGS_TAB_ITEMS.map((tab) => (
             <Tabs.Trigger
-              className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted/60 hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-white"
+              className="rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:bg-muted/60 hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
               key={tab.value}
               value={tab.value}
             >
