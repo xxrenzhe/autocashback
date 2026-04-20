@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   Building2,
-  RefreshCcw,
 } from "lucide-react";
 
 import type { GoogleAdsAccountRecord, GoogleAdsCredentialStatus } from "@autocashback/domain";
@@ -110,7 +109,6 @@ export function GoogleAdsManager() {
   const [credentials, setCredentials] = useState<GoogleAdsCredentialStatus | null>(null);
   const [accounts, setAccounts] = useState<GoogleAdsAccountRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
   const [diagnosing, setDiagnosing] = useState(false);
   const [probeCustomerId, setProbeCustomerId] = useState("");
   const [diagnoseResult, setDiagnoseResult] = useState<DiagnosePayload | null>(null);
@@ -206,66 +204,6 @@ export function GoogleAdsManager() {
     })();
   }, []);
 
-  async function verifyAndSync(refresh = true) {
-    setSyncing(true);
-
-    try {
-      const verifyResult = await fetchJson<{ accountCount?: number }>("/api/google-ads/credentials/verify", {
-        method: "POST"
-      });
-      if (!verifyResult.success) {
-        throw new Error(verifyResult.userMessage);
-      }
-
-      const refreshed = await loadAll({
-        refreshAccounts: refresh
-      });
-      if (refreshed) {
-        toast.success(`Google Ads 配置验证成功，已同步 ${verifyResult.data.accountCount || 0} 个账号。`);
-      }
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Google Ads 验证失败");
-    } finally {
-      setSyncing(false);
-    }
-  }
-
-  const canConnect = Boolean(
-    credentials?.hasClientId &&
-      credentials?.hasClientSecret &&
-      credentials?.hasDeveloperToken &&
-      credentials?.loginCustomerId
-  );
-  const hasStoredConfig = Boolean(credentials?.hasCredentials);
-  const needsOAuth = Boolean(hasStoredConfig && !credentials?.hasRefreshToken);
-  const oauthSteps = [
-    {
-      key: "base",
-      label: "基础配置",
-      note: "Client / Token / MCC",
-      complete: hasStoredConfig
-    },
-    {
-      key: "oauth",
-      label: "OAuth 授权",
-      note: "获取 Refresh Token",
-      complete: Boolean(credentials?.hasRefreshToken)
-    },
-    {
-      key: "verify",
-      label: "配置验证",
-      note: "验证凭证",
-      complete: Boolean(credentials?.lastVerifiedAt)
-    },
-    {
-      key: "sync",
-      label: "账号同步",
-      note: "同步账号",
-      complete: accounts.length > 0
-    }
-  ] as const;
-  const currentOauthStep = oauthSteps.findIndex((step) => !step.complete);
-
   async function diagnoseCredentials() {
     setDiagnosing(true);
 
@@ -302,25 +240,16 @@ export function GoogleAdsManager() {
               {overview.fullyConnected ? "ready" : overview.needsOAuth ? "oauth" : "setup"}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground">OAuth、账号同步与 MCC 诊断。</p>
+          <p className="text-sm text-muted-foreground">查看账号映射与 MCC 诊断；配置和授权统一在设置页处理。</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <Link
             className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
-            href="/settings"
+            href="/settings#google-ads-settings"
           >
-            设置
+            前往设置
           </Link>
-          <button
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-60"
-            disabled={syncing}
-            onClick={() => verifyAndSync(true)}
-            type="button"
-          >
-            <RefreshCcw className={cn("h-4 w-4", syncing ? "animate-spin" : "")} />
-            {syncing ? "同步中" : "快速同步"}
-          </button>
         </div>
       </section>
 
@@ -356,108 +285,6 @@ export function GoogleAdsManager() {
             <dd className="mt-1 text-sm leading-6 text-muted-foreground">{credentials?.lastVerifiedAt || "--"}</dd>
           </div>
         </dl>
-      </section>
-
-      <section className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-sm font-semibold text-foreground">连接进度</h2>
-            <p className="text-xs text-muted-foreground">基础配置、OAuth、验证与账号同步。</p>
-          </div>
-          <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-            {currentOauthStep === -1 ? "已完成" : `Step ${currentOauthStep + 1}`}
-          </span>
-        </div>
-
-        <ol className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {oauthSteps.map((step, index) => {
-            const isCurrent = currentOauthStep === -1 ? index === oauthSteps.length - 1 : index === currentOauthStep;
-            return (
-              <li
-                className={cn(
-                  "border-l pl-3 transition-colors",
-                  step.complete
-                    ? "border-emerald-500"
-                    : isCurrent
-                      ? "border-amber-500"
-                      : "border-border"
-                )}
-                key={step.key}
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      "flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-semibold",
-                      step.complete
-                        ? "text-emerald-700"
-                        : isCurrent
-                          ? "text-amber-700"
-                          : "text-muted-foreground"
-                    )}
-                  >
-                    {index + 1}
-                  </span>
-                  <p className="text-sm font-semibold text-foreground">{step.label}</p>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">{step.note}</p>
-              </li>
-            );
-          })}
-        </ol>
-
-        <dl className="mt-4 grid gap-3 rounded-xl border border-border/70 bg-muted/20 p-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
-          <div>
-            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">基础配置</dt>
-            <dd className="mt-1 font-medium text-foreground">{credentials?.hasCredentials ? "已保存" : "未完成"}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Refresh Token</dt>
-            <dd className="mt-1 font-medium text-foreground">
-              {credentials?.hasRefreshToken ? "已获取" : "未授权"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">最近验证</dt>
-            <dd className="mt-1 font-medium text-foreground">{credentials?.lastVerifiedAt || "--"}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Token 过期</dt>
-            <dd className="mt-1 font-medium text-foreground">{credentials?.tokenExpiresAt || "--"}</dd>
-          </div>
-        </dl>
-
-        {!hasStoredConfig ? (
-          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-500/10 px-4 py-3 text-sm text-amber-800">
-            先到设置页补齐 Client ID、Client Secret、Developer Token 和 Login Customer ID。
-          </div>
-        ) : null}
-
-        {needsOAuth ? (
-          <div className="mt-4 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            当前还没有 Refresh Token，无法同步账号或执行 Google Ads API 换链。
-          </div>
-        ) : null}
-
-        <div className="mt-4 flex flex-wrap gap-3">
-          <button
-            className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
-            disabled={!canConnect}
-            onClick={() => {
-              window.location.href = "/api/auth/google-ads/authorize";
-            }}
-            type="button"
-          >
-            发起 OAuth 授权
-          </button>
-          <button
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-            disabled={!credentials?.hasRefreshToken || syncing}
-            onClick={() => verifyAndSync(true)}
-            type="button"
-          >
-            {syncing ? "同步中..." : "验证并同步账号"}
-          </button>
-        </div>
       </section>
 
       <section className="overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
