@@ -138,8 +138,8 @@ function LoadingState() {
         <div className="h-9 w-20 animate-pulse rounded-lg bg-muted" />
       </section>
       <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, index) => (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, index) => (
             <div className="space-y-2" key={index}>
               <div className="h-3 w-16 animate-pulse rounded-full bg-muted" />
               <div className="h-8 w-20 animate-pulse rounded-full bg-primary/10" />
@@ -147,8 +147,8 @@ function LoadingState() {
           ))}
         </div>
       </section>
-      <section className="grid gap-4 xl:grid-cols-[0.9fr,1.1fr]">
-        {Array.from({ length: 2 }).map((_, index) => (
+      <section className="grid gap-4 xl:grid-cols-[0.85fr,0.85fr,1.3fr]">
+        {Array.from({ length: 3 }).map((_, index) => (
           <div className="min-h-40 animate-pulse rounded-xl border border-border bg-card" key={index} />
         ))}
       </section>
@@ -221,7 +221,7 @@ export function DashboardClientPage({ username }: { username: string }) {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">仪表盘</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {username} · {data.overview.activeOffers} 个启用 Offer · {data.overview.activeTasks} 个换链任务
+            {username} · {data.overview.activeAccounts} 个活跃账号 · {data.overview.activeOffers} 个启用 Offer · {data.overview.activeTasks} 个换链任务
           </p>
         </div>
         <button
@@ -235,9 +235,13 @@ export function DashboardClientPage({ username }: { username: string }) {
         </button>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm sm:col-span-2 xl:col-span-4">
-          <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm sm:col-span-2 xl:col-span-5">
+          <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div>
+              <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">活跃账号</dt>
+              <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{data.overview.activeAccounts}</dd>
+            </div>
             <div>
               <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">启用 Offer</dt>
               <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{data.overview.activeOffers}</dd>
@@ -265,40 +269,36 @@ export function DashboardClientPage({ username }: { username: string }) {
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.9fr,1.1fr]">
+      <section className="grid gap-4 xl:grid-cols-[0.85fr,0.85fr,1.3fr]">
         <div className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
-          <div className="grid gap-5 xl:grid-cols-2">
-            <section>
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-semibold text-foreground">优先处理</h3>
-                <span className="rounded-full bg-muted px-2.5 py-1 font-mono tabular-nums text-xs text-muted-foreground">
-                  {data.actions.length}
-                </span>
-              </div>
-              <div className="mt-3 grid gap-2">
-                {data.actions.length ? (
-                  data.actions.map((item) => <ActionCard item={item} key={item.id} />)
-                ) : (
-                  <EmptyState icon={CheckCircle2} title="暂无待处理动作" />
-                )}
-              </div>
-            </section>
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold text-foreground">优先处理</h3>
+            <span className="rounded-full bg-muted px-2.5 py-1 font-mono tabular-nums text-xs text-muted-foreground">
+              {data.actions.length}
+            </span>
+          </div>
+          <div className="mt-3 grid gap-2">
+            {data.actions.length ? (
+              data.actions.map((item) => <ActionCard item={item} key={item.id} />)
+            ) : (
+              <EmptyState icon={CheckCircle2} title="暂无待处理动作" />
+            )}
+          </div>
+        </div>
 
-            <section className="border-t border-border pt-5 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0">
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-semibold text-foreground">风险提醒</h3>
-                <span className="rounded-full bg-muted px-2.5 py-1 font-mono tabular-nums text-xs text-muted-foreground">
-                  {data.risks.length}
-                </span>
-              </div>
-              <div className="mt-3 space-y-2">
-                {data.risks.length ? (
-                  data.risks.map((item) => <RiskCard item={item} key={item.id} />)
-                ) : (
-                  <EmptyState icon={CheckCircle2} title="暂无风险项" />
-                )}
-              </div>
-            </section>
+        <div className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold text-foreground">风险提醒</h3>
+            <span className="rounded-full bg-muted px-2.5 py-1 font-mono tabular-nums text-xs text-muted-foreground">
+              {data.risks.length}
+            </span>
+          </div>
+          <div className="mt-3 space-y-2">
+            {data.risks.length ? (
+              data.risks.map((item) => <RiskCard item={item} key={item.id} />)
+            ) : (
+              <EmptyState icon={CheckCircle2} title="暂无风险项" />
+            )}
           </div>
         </div>
 
