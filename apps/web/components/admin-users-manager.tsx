@@ -795,7 +795,7 @@ export function AdminUsersManager() {
           <EmptyState className="m-6" icon={Search} title="当前筛选条件下没有用户" />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px] table-fixed text-sm [&_th]:h-11 [&_th]:align-middle [&_th]:px-3 [&_td]:align-middle [&_td]:px-3 [&_td]:py-2.5">
+            <table className="w-full min-w-[860px] table-fixed text-sm [&_th]:h-11 [&_th]:align-middle [&_th]:px-3 [&_td]:align-middle [&_td]:px-3 [&_td]:py-2.5">
               <thead className="border-b border-border bg-muted/30">
                 <tr>
                   <th
@@ -808,21 +808,12 @@ export function AdminUsersManager() {
                     </button>
                   </th>
                   <th
-                    className="w-[220px] whitespace-nowrap text-left font-medium text-muted-foreground"
+                    className="w-[236px] whitespace-nowrap text-left font-medium text-muted-foreground"
                     aria-sort={sortField === "username" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
                   >
                     <button className="inline-flex items-center gap-1 whitespace-nowrap" onClick={() => handleSort("username")} type="button">
                       用户
                       {renderSortIcon("username")}
-                    </button>
-                  </th>
-                  <th
-                    className="hidden w-[96px] whitespace-nowrap text-left font-medium text-muted-foreground lg:table-cell"
-                    aria-sort={sortField === "role" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
-                  >
-                    <button className="inline-flex items-center gap-1 whitespace-nowrap" onClick={() => handleSort("role")} type="button">
-                      角色
-                      {renderSortIcon("role")}
                     </button>
                   </th>
                   <th
@@ -834,26 +825,17 @@ export function AdminUsersManager() {
                       {renderSortIcon("status")}
                     </button>
                   </th>
-                  <th className="w-[92px] whitespace-nowrap text-left font-medium text-muted-foreground">会话</th>
+                  <th className="w-[88px] whitespace-nowrap text-left font-medium text-muted-foreground">会话</th>
                   <th
-                    className="hidden w-[144px] whitespace-nowrap text-left font-medium text-muted-foreground xl:table-cell"
+                    className="hidden w-[168px] whitespace-nowrap text-left font-medium text-muted-foreground lg:table-cell"
                     aria-sort={sortField === "lastLoginAt" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
                   >
                     <button className="inline-flex items-center gap-1 whitespace-nowrap" onClick={() => handleSort("lastLoginAt")} type="button">
-                      上次登录
+                      时间
                       {renderSortIcon("lastLoginAt")}
                     </button>
                   </th>
-                  <th
-                    className="hidden w-[144px] whitespace-nowrap text-left font-medium text-muted-foreground xl:table-cell"
-                    aria-sort={sortField === "createdAt" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
-                  >
-                    <button className="inline-flex items-center gap-1 whitespace-nowrap" onClick={() => handleSort("createdAt")} type="button">
-                      创建时间
-                      {renderSortIcon("createdAt")}
-                    </button>
-                  </th>
-                  <th className="w-[132px] whitespace-nowrap text-center font-medium text-muted-foreground">操作</th>
+                  <th className="w-[120px] whitespace-nowrap text-center font-medium text-muted-foreground">操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -869,20 +851,20 @@ export function AdminUsersManager() {
                             {user.username.slice(0, 2).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <div className="truncate font-medium text-foreground">{user.username}</div>
+                            <div className="flex items-center gap-2">
+                              <div className="truncate font-medium text-foreground">{user.username}</div>
+                              <span
+                                className={cn(
+                                  "inline-flex h-5 shrink-0 items-center rounded-full px-2 text-[10px] font-medium",
+                                  user.role === "admin" ? "bg-amber-100 text-amber-700" : "bg-muted text-foreground"
+                                )}
+                              >
+                                {user.role === "admin" ? "管理员" : "普通用户"}
+                              </span>
+                            </div>
                             <div className="truncate text-xs text-muted-foreground">{user.email || "未设置邮箱"}</div>
                           </div>
                         </div>
-                      </td>
-                      <td className="hidden lg:table-cell">
-                        <span
-                          className={cn(
-                            "inline-flex h-6 items-center rounded-full px-2.5 text-xs font-medium",
-                            user.role === "admin" ? "bg-amber-100 text-amber-700" : "bg-muted text-foreground"
-                          )}
-                        >
-                          {user.role === "admin" ? "管理员" : "普通用户"}
-                        </span>
                       </td>
                       <td>
                         <div className="flex flex-col justify-center gap-1">
@@ -902,12 +884,15 @@ export function AdminUsersManager() {
                           {user.activeSessionCount > 0 ? `${user.activeSessionCount} 个` : "0"}
                         </span>
                       </td>
-                      <td className="hidden text-sm text-foreground xl:table-cell">{formatDateTime(user.lastLoginAt)}</td>
-                      <td className="hidden text-sm text-foreground xl:table-cell">{formatDateTime(user.createdAt)}</td>
+                      <td className="hidden lg:table-cell">
+                        <div className="space-y-1 text-xs">
+                          <p className="text-foreground">{formatDateTime(user.lastLoginAt)}</p>
+                          <p className="text-muted-foreground">创建 {formatDateTime(user.createdAt)}</p>
+                        </div>
+                      </td>
                       <td>
                         <div className="flex items-center justify-center gap-1">
-                          <IconActionButton className="hidden lg:inline-flex" disabled={actionLoading !== null} icon={PencilLine} label="编辑" onClick={() => openEditModal(user)} />
-                          <IconActionButton className="hidden lg:inline-flex" disabled={actionLoading !== null} icon={KeyRound} label="重置密码" onClick={() => void handleResetPassword(user)} />
+                          <IconActionButton disabled={actionLoading !== null} icon={PencilLine} label="编辑" onClick={() => openEditModal(user)} />
                           <DropdownMenu.Root>
                             <DropdownMenu.Trigger asChild>
                               <button
@@ -1018,7 +1003,7 @@ export function AdminUsersManager() {
       </section>
 
       <ModalFrame
-        className="max-w-xl"
+        className="max-w-lg"
         description="创建新的系统账号，可选择角色并指定初始密码。"
         eyebrow="用户管理"
         onClose={() => setCreateOpen(false)}
@@ -1104,7 +1089,7 @@ export function AdminUsersManager() {
       </ModalFrame>
 
       <ModalFrame
-        className="max-w-lg"
+        className="max-w-md"
         description="仅支持修改邮箱和角色，用户名保持不变。"
         eyebrow="用户管理"
         onClose={() => setEditOpen(false)}
