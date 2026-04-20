@@ -7,6 +7,7 @@ import {
   Boxes,
   ChevronLeft,
   ChevronRight,
+  Circle,
   LayoutDashboard,
   Link2,
   ListOrdered,
@@ -23,6 +24,7 @@ import {
 import { cn } from "@autocashback/ui";
 import { Toaster } from "sonner";
 import type { CurrentUser } from "@autocashback/domain";
+import { BrandMark } from "@/components/brand-mark";
 
 type NavItem = {
   href: string;
@@ -50,6 +52,18 @@ const roleLabels = {
   user: "普通用户"
 } as const;
 
+const pageDescriptions: Record<string, string> = {
+  "/dashboard": "先看当天状态与优先动作，再进入执行。",
+  "/accounts": "集中维护平台账号、状态与挂接关系。",
+  "/offers": "按 Offer 查看佣金阈值、suffix 和绑定账号。",
+  "/link-swap": "管理换链任务、执行记录与异常重试。",
+  "/google-ads": "管理授权账号、客户列表和广告侧配置。",
+  "/click-farm": "查看补点击任务分布、执行状态与历史。",
+  "/settings": "统一维护代理、脚本、账号安全和平台配置。",
+  "/queue": "检查调度器健康、队列积压与运行窗口。",
+  "/admin/users": "维护后台账号、权限和异常用户状态。"
+};
+
 function isActivePath(pathname: string, href: string) {
   if (href === "/dashboard") {
     return pathname === href;
@@ -61,36 +75,54 @@ function NavSection({
   items,
   label,
   pathname,
-  collapsed
+  collapsed,
+  tone = "default"
 }: {
   items: NavItem[];
   label: string;
   pathname: string;
   collapsed: boolean;
+  tone?: "admin" | "default";
 }) {
   return (
     <div>
-      {!collapsed ? <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p> : null}
+      {!collapsed ? (
+        <div className="flex items-center gap-2 px-3 pb-2">
+          {tone === "admin" ? <Shield className="h-3.5 w-3.5 text-violet-700" /> : <Circle className="h-2.5 w-2.5 fill-current text-primary" />}
+          <p className={cn("text-[11px] font-semibold uppercase tracking-[0.22em]", tone === "admin" ? "text-violet-700" : "text-muted-foreground")}>
+            {label}
+          </p>
+        </div>
+      ) : null}
       <nav className="space-y-1">
         {items.map((item) => {
           const Icon = item.icon;
           const active = isActivePath(pathname, item.href);
+          const activeClassName =
+            tone === "admin"
+              ? "border-violet-200 bg-violet-50 text-violet-800"
+              : "border-primary/15 bg-primary/10 text-primary";
+          const inactiveClassName =
+            tone === "admin"
+              ? "border-transparent text-muted-foreground hover:bg-violet-50/80 hover:text-violet-800"
+              : "border-transparent text-muted-foreground hover:bg-primary/5 hover:text-foreground";
+          const activeIconClassName = tone === "admin" ? "text-violet-700" : "text-primary";
 
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "group flex items-center rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
                 collapsed ? "justify-center" : "gap-3",
-                active ? "bg-primary/10 text-primary shadow-sm" : "text-muted-foreground hover:bg-primary/5 hover:text-foreground"
+                active ? activeClassName : inactiveClassName
               )}
               title={collapsed ? item.label : undefined}
             >
               <Icon
                 className={cn(
                   "h-4 w-4 flex-shrink-0",
-                  active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                  active ? activeIconClassName : "text-muted-foreground group-hover:text-current"
                 )}
                 aria-hidden="true"
               />
@@ -121,6 +153,7 @@ export function AppShell({
   const currentNavItem = [...userLinks, ...(user.role === "admin" ? adminLinks : [])].find((item) =>
     isActivePath(pathname, item.href)
   );
+  const currentDescription = pageDescriptions[currentNavItem?.href ?? "/dashboard"] ?? "继续今天的返利后台运营工作。";
   useEffect(() => {
     setMobileNavOpen(false);
   }, [pathname]);
@@ -167,19 +200,19 @@ export function AppShell({
 
   const healthMeta = {
     healthy: {
-      className: "border border-primary/15 bg-primary/10 text-primary",
+      className: "bg-primary",
       label: "系统健康"
     },
     loading: {
-      className: "border border-border bg-muted text-muted-foreground",
+      className: "bg-muted-foreground",
       label: "检查中"
     },
     stale: {
-      className: "border border-amber-200 bg-amber-500/10 text-amber-700",
+      className: "bg-amber-600",
       label: "调度心跳延迟"
     },
     unhealthy: {
-      className: "border border-destructive/15 bg-destructive/10 text-destructive",
+      className: "bg-destructive",
       label: "系统异常"
     }
   }[healthStatus];
@@ -214,9 +247,7 @@ export function AppShell({
             )}
             href="/dashboard"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded bg-gradient-to-br from-emerald-500 to-emerald-600 text-primary-foreground font-bold shadow-sm shadow-emerald-700/20">
-              AC
-            </div>
+            <BrandMark compact />
             {sidebarOpen ? (
               <span className="font-semibold tracking-tight">AutoCashBack</span>
             ) : null}
@@ -237,7 +268,7 @@ export function AppShell({
             <NavSection collapsed={!sidebarOpen} items={userLinks} label="运营中心" pathname={pathname} />
 
             {user.role === "admin" ? (
-              <NavSection collapsed={!sidebarOpen} items={adminLinks} label="系统管理" pathname={pathname} />
+              <NavSection collapsed={!sidebarOpen} items={adminLinks} label="系统管理" pathname={pathname} tone="admin" />
             ) : null}
           </div>
 
@@ -245,13 +276,13 @@ export function AppShell({
             <Link
               href="/settings#account-security-settings"
               className={cn(
-                "mb-2 flex items-center rounded-lg px-3 py-2 transition-colors hover:bg-primary/5",
+                "mb-2 flex items-center rounded-lg border border-transparent px-3 py-2 transition-colors hover:border-border hover:bg-background/50",
                 sidebarOpen ? "justify-between" : "justify-center"
               )}
               title={!sidebarOpen ? "打开账号设置" : undefined}
             >
               <div className={cn("flex items-center gap-2", sidebarOpen ? "" : "justify-center")}>
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary shadow-sm">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-primary/10 text-sm font-medium text-primary shadow-sm">
                   {userInitial}
                 </div>
                 {sidebarOpen ? (
@@ -265,7 +296,7 @@ export function AppShell({
 
             <button
               className={cn(
-                "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive",
+                "flex w-full items-center rounded-lg border border-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-destructive/15 hover:bg-destructive/10 hover:text-destructive",
                 sidebarOpen ? "gap-3" : "justify-center"
               )}
               onClick={logout}
@@ -280,11 +311,11 @@ export function AppShell({
 
       {/* Main Content Area */}
       <div className={cn("min-h-screen transition-[padding] duration-300", sidebarOpen ? "lg:pl-64" : "lg:pl-20")}>
-        <header className="console-topbar sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
+        <header className="console-topbar sticky top-0 z-30 flex min-h-[4.75rem] items-center justify-between border-b bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6 lg:px-8">
+          <div className="flex items-start gap-4">
             <button
               aria-label="打开导航菜单"
-              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+              className="mt-1 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
               onClick={() => setMobileNavOpen(true)}
               type="button"
             >
@@ -292,18 +323,29 @@ export function AppShell({
             </button>
             <button
               aria-label={sidebarOpen ? "收起侧边栏" : "展开侧边栏"}
-              className="hidden rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:block"
+              className="mt-1 hidden rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:block"
               onClick={() => setSidebarOpen((current) => !current)}
               type="button"
             >
               {sidebarOpen ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
             </button>
-            <div className="hidden min-w-0 lg:block">
-              <p className="truncate text-sm font-medium text-foreground">{currentNavItem?.label || "控制台"}</p>
+            <div className="min-w-0">
+              <p className="hidden text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground lg:block">
+                运营控制台
+              </p>
+              <p className="truncate text-base font-semibold tracking-[-0.02em] text-foreground">
+                {currentNavItem?.label || "控制台"}
+              </p>
+              <p className="hidden truncate text-sm text-muted-foreground lg:block">{currentDescription}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium shadow-sm", healthMeta.className)} title={healthMeta.label}>
+          <div className="flex items-center gap-4">
+            <div className="hidden text-right lg:block">
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{roleLabel}</p>
+              <p className="text-sm font-medium text-foreground">{displayName}</p>
+            </div>
+            <span className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground" title={healthMeta.label}>
+              <span className={cn("h-2.5 w-2.5 rounded-sm", healthMeta.className)} />
               {healthMeta.label}
             </span>
           </div>
