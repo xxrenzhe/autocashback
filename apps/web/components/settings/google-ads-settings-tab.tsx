@@ -99,7 +99,7 @@ export function GoogleAdsSettingsTab({
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-3">
             <h3 className="text-sm font-semibold text-foreground">Google Ads 凭证</h3>
-            <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+            <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground">
               {googleAdsConfig.hasRefreshToken ? "已授权" : "待配置"}
             </span>
           </div>
@@ -108,7 +108,7 @@ export function GoogleAdsSettingsTab({
           </p>
         </div>
         <button
-          className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
+          className="rounded-lg border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
           onClick={onOpenGoogleAdsPage}
           type="button"
         >
@@ -132,7 +132,7 @@ export function GoogleAdsSettingsTab({
           <div className="mt-4 flex flex-wrap gap-2">
             {QUICK_LINKS.map((item) => (
               <a
-                className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
                 href={item.href}
                 key={item.label}
                 rel="noreferrer"

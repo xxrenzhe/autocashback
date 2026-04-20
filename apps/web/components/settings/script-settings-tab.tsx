@@ -42,7 +42,7 @@ export function ScriptSettingsTab({
 
       <div className="mt-4 flex flex-wrap gap-3">
         <button
-          className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
+          className="rounded-lg border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
           disabled={rotatingToken}
           onClick={onRotateToken}
           type="button"
@@ -50,7 +50,7 @@ export function ScriptSettingsTab({
           {rotatingToken ? "更换中..." : "更换 Token"}
         </button>
         <button
-          className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+          className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
           disabled={loading || !script.template || rotatingToken}
           onClick={onCopyScriptTemplate}
           type="button"

@@ -9,7 +9,7 @@ export function PlatformNotesSettingsTab({
     <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm" id="platform-settings">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-sm font-semibold text-foreground">平台备注</h3>
-        <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+        <span className="rounded-md border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
           已填写 {overview.noteCount}/3
         </span>
       </div>

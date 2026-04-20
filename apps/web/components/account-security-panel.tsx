@@ -167,7 +167,7 @@ export function AccountSecurityPanel() {
           <div className="flex items-center justify-between gap-4">
             <p className="text-sm font-semibold text-foreground">活跃会话</p>
             <button
-              className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
+              className="rounded-lg border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
               onClick={loadSessions}
               type="button"
             >
@@ -185,7 +185,7 @@ export function AccountSecurityPanel() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 whitespace-nowrap">
                         <p className="text-sm font-semibold text-foreground">{session.isCurrent ? "当前设备" : "其他设备"}</p>
-                        <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[11px] text-muted-foreground">
+                        <span className="shrink-0 rounded-md border border-border bg-muted/60 px-2.5 py-1 text-[11px] text-muted-foreground">
                           {session.ipAddress || "未知 IP"}
                         </span>
                       </div>
@@ -194,7 +194,7 @@ export function AccountSecurityPanel() {
                       </p>
                     </div>
                     <button
-                      className="shrink-0 whitespace-nowrap rounded-full border border-destructive/20 bg-destructive/10 px-4 py-2 text-xs font-semibold text-destructive"
+                      className="shrink-0 whitespace-nowrap rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-2 text-xs font-semibold text-destructive"
                       onClick={() => revokeSession(session.sessionId)}
                       type="button"
                     >

@@ -260,7 +260,7 @@ export function GoogleAdsManager() {
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Google Ads</h1>
-            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+            <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
               {overviewStatusLabel}
             </span>
           </div>
@@ -318,7 +318,7 @@ export function GoogleAdsManager() {
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">账号映射</p>
               <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">可访问账号</h2>
             </div>
-            <span className="rounded-full bg-muted px-3 py-2 font-mono tabular-nums text-xs text-muted-foreground">
+            <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1.5 font-mono tabular-nums text-xs text-muted-foreground">
               {accounts.length} 个账号
             </span>
           </div>
@@ -356,16 +356,16 @@ export function GoogleAdsManager() {
                       <td className="py-3 pr-4">
                         <div className="flex flex-wrap gap-2 text-xs">
                           {account.manager ? (
-                            <span className="rounded-full bg-amber-500/10 px-3 py-1 font-semibold text-amber-600">
+                            <span className="rounded-md border border-amber-200 bg-amber-500/10 px-3 py-1 font-semibold text-amber-600">
                               {typeLabel.primary}
                             </span>
                           ) : (
-                            <span className="rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary">
+                            <span className="rounded-md border border-primary/15 bg-primary/10 px-3 py-1 font-semibold text-primary">
                               {typeLabel.primary}
                             </span>
                           )}
                           {typeLabel.secondary ? (
-                            <span className="rounded-full bg-stone-200 px-3 py-1 font-semibold text-foreground">
+                            <span className="rounded-md border border-border bg-stone-200 px-3 py-1 font-semibold text-foreground">
                               {typeLabel.secondary}
                             </span>
                           ) : null}
@@ -466,8 +466,10 @@ export function GoogleAdsManager() {
                       <td className="py-3 pr-4">
                         <span
                           className={cn(
-                            "rounded-full px-3 py-1 text-xs font-semibold",
-                            customer.ok ? "bg-emerald-50 text-emerald-700" : "bg-destructive/10 text-destructive"
+                            "rounded-md border px-3 py-1 text-xs font-semibold",
+                            customer.ok
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              : "border-destructive/20 bg-destructive/10 text-destructive"
                           )}
                         >
                           {customer.ok ? "读取成功" : customer.error?.code || "失败"}
@@ -477,14 +479,16 @@ export function GoogleAdsManager() {
                         <div className="flex flex-wrap gap-2 text-xs">
                           <span
                             className={cn(
-                              "rounded-full px-3 py-1 font-semibold",
-                              customer.manager ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"
+                              "rounded-md border px-3 py-1 font-semibold",
+                              customer.manager
+                                ? "border-amber-200 bg-amber-500/10 text-amber-600"
+                                : "border-primary/15 bg-primary/10 text-primary"
                             )}
                           >
                             {typeLabel.primary}
                           </span>
                           {typeLabel.secondary ? (
-                            <span className="rounded-full bg-stone-200 px-3 py-1 font-semibold text-foreground">
+                            <span className="rounded-md border border-border bg-stone-200 px-3 py-1 font-semibold text-foreground">
                               {typeLabel.secondary}
                             </span>
                           ) : null}

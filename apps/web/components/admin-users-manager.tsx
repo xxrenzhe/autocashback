@@ -657,7 +657,7 @@ export function AdminUsersManager() {
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">用户管理</h1>
-            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">{pagination.total}</span>
+            <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground">{pagination.total}</span>
           </div>
           <p className="text-sm text-muted-foreground">管理系统用户、访问状态与登录风险。</p>
         </div>
@@ -855,8 +855,10 @@ export function AdminUsersManager() {
                               <div className="truncate font-medium text-foreground">{user.username}</div>
                               <span
                                 className={cn(
-                                  "inline-flex h-5 shrink-0 items-center rounded-full px-2 text-[10px] font-medium",
-                                  user.role === "admin" ? "bg-amber-100 text-amber-700" : "bg-muted text-foreground"
+                                  "inline-flex h-5 shrink-0 items-center rounded-md border px-2 text-[10px] font-medium",
+                                  user.role === "admin"
+                                    ? "border-amber-200 bg-amber-100 text-amber-700"
+                                    : "border-border bg-muted text-foreground"
                                 )}
                               >
                                 {user.role === "admin" ? "管理员" : "普通用户"}
@@ -871,7 +873,7 @@ export function AdminUsersManager() {
                           <div className="flex flex-wrap items-center gap-1.5">
                             <StatusBadge className="h-6 items-center px-2.5 text-[11px]" label={userStatusBadge.label} variant={userStatusBadge.variant} />
                             {user.failedLoginCount > 0 ? (
-                              <span className="inline-flex h-6 items-center rounded-full bg-amber-500/10 px-2.5 text-[11px] font-medium text-amber-700">
+                              <span className="inline-flex h-6 items-center rounded-md border border-amber-200 bg-amber-500/10 px-2.5 text-[11px] font-medium text-amber-700">
                                 失败 {user.failedLoginCount}
                               </span>
                             ) : null}
@@ -880,7 +882,7 @@ export function AdminUsersManager() {
                         </div>
                       </td>
                       <td>
-                        <span className="inline-flex h-6 min-w-[3.5rem] items-center justify-center rounded-full bg-muted px-2 text-[11px] font-medium text-muted-foreground">
+                        <span className="inline-flex h-6 min-w-[3.5rem] items-center justify-center rounded-md border border-border bg-muted/60 px-2 text-[11px] font-medium text-muted-foreground">
                           {user.activeSessionCount > 0 ? `${user.activeSessionCount} 个` : "0"}
                         </span>
                       </td>
@@ -1206,14 +1208,14 @@ export function AdminUsersManager() {
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-2">
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        className={`rounded-md border px-3 py-1 text-xs font-semibold ${
                           record.status === "active"
-                            ? "bg-emerald-50 text-emerald-700"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                             : record.status === "expired"
-                              ? "bg-stone-200 text-foreground"
+                              ? "border-border bg-stone-200 text-foreground"
                               : record.status === "locked"
-                                ? "bg-destructive/10 text-destructive"
-                                : "bg-amber-500/10 text-amber-600"
+                                ? "border-destructive/20 bg-destructive/10 text-destructive"
+                                : "border-amber-200 bg-amber-500/10 text-amber-600"
                         }`}
                       >
                         {getLoginHistoryStatusLabel(record)}
@@ -1528,14 +1530,14 @@ function getLoginHistoryEventLabel(eventType: LoginRecord["eventType"]) {
 
 function getAlertSeverityBadgeClass(severity: SecurityAlert["severity"]) {
   if (severity === "critical") {
-    return "rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-destructive";
+    return "rounded-md border border-destructive/20 bg-red-100 px-3 py-1 text-xs font-semibold text-destructive";
   }
 
   if (severity === "warning") {
-    return "rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-600";
+    return "rounded-md border border-amber-200 bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-600";
   }
 
-  return "rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary";
+  return "rounded-md border border-primary/15 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary";
 }
 
 function getAlertSeverityLabel(severity: SecurityAlert["severity"]) {

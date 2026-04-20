@@ -448,7 +448,7 @@ export function SettingsManager() {
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">设置</h1>
-            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+            <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
               {SETTINGS_TAB_ITEMS.find((tab) => tab.value === activeTab)?.label}
             </span>
           </div>

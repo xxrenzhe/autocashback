@@ -210,7 +210,7 @@ export function ClickFarmManager() {
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">补点击任务</h1>
-            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+            <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
               {allConsole.overview.totalTasks}
             </span>
           </div>
@@ -220,7 +220,7 @@ export function ClickFarmManager() {
         <div className="flex flex-wrap items-center gap-2">
           {allConsole.overview.warningTasks > 0 ? (
             <button
-              className="rounded-full bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-700"
+              className="rounded-lg border border-amber-200 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-700"
               onClick={() => setStatusFilter("paused")}
               type="button"
             >
@@ -417,7 +417,7 @@ export function ClickFarmManager() {
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="font-semibold text-foreground">{row.brandName}</p>
                             {row.country ? (
-                              <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+                              <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                                 {row.country}
                               </span>
                             ) : null}
@@ -457,13 +457,13 @@ export function ClickFarmManager() {
                           <div className="flex flex-wrap items-center gap-2">
                             <span
                               className={cn(
-                                "rounded-full px-2.5 py-1 text-[11px] font-semibold",
+                                "rounded-md px-2.5 py-1 text-[11px] font-semibold",
                                 row.needsAttention ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"
                               )}
                             >
                               成功率 {formatPercent(row.successRate)}
                             </span>
-                            <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+                            <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                               进度 {row.progressPercent.toFixed(0)}%
                             </span>
                           </div>
@@ -473,7 +473,7 @@ export function ClickFarmManager() {
                           <div className="flex items-center gap-2">
                             <span
                               className={cn(
-                                "rounded-full px-2.5 py-1 text-[11px] font-semibold",
+                                "rounded-md px-2.5 py-1 text-[11px] font-semibold",
                                 row.needsAttention ? "bg-amber-500/10 text-amber-600" : "bg-slate-100 text-foreground"
                               )}
                             >
@@ -499,7 +499,7 @@ export function ClickFarmManager() {
                         <div className="flex min-w-[220px] flex-wrap justify-end gap-2">
                           {row.offer ? (
                             <button
-                              className="rounded-full border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground"
+                              className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground"
                               onClick={() => openDialogForOffer(row.offer!)}
                               type="button"
                             >
@@ -509,7 +509,7 @@ export function ClickFarmManager() {
 
                           {(row.task.status === "pending" || row.task.status === "running") && (
                             <button
-                              className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
+                              className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
                               disabled={loadingStop}
                               onClick={() => void handleTaskAction("stop", row.task)}
                               type="button"
@@ -521,7 +521,7 @@ export function ClickFarmManager() {
 
                           {(row.task.status === "paused" || row.task.status === "stopped") && (
                             <button
-                              className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
+                              className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
                               disabled={loadingRestart}
                               onClick={() => void handleTaskAction("restart", row.task)}
                               type="button"
@@ -532,7 +532,7 @@ export function ClickFarmManager() {
                           )}
 
                           <button
-                            className="rounded-full border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive disabled:opacity-60"
+                            className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive disabled:opacity-60"
                             disabled={loadingDelete}
                             onClick={() => void handleTaskAction("delete", row.task)}
                             type="button"

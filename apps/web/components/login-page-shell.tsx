@@ -114,7 +114,7 @@ export function LoginPageShell() {
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
 
   return (
-    <main className="marketing-shell min-h-screen bg-background">
+    <main className="login-shell min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-5 pt-6 lg:px-8">
         <header className="flex items-center justify-between border-b border-border/80 pb-5">
           <Link className="flex items-center gap-3" href="/">

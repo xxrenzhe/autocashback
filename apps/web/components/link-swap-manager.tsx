@@ -406,7 +406,7 @@ export function LinkSwapManager() {
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">换链任务</h1>
-            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+            <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
               {consoleData.stats.totalTasks}
             </span>
           </div>
@@ -416,7 +416,7 @@ export function LinkSwapManager() {
         <div className="flex flex-wrap items-center gap-2">
           {consoleData.stats.warningTasks > 0 ? (
             <button
-              className="rounded-full bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-700"
+              className="rounded-lg border border-amber-200 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-700"
               onClick={() => setStatusFilter("warning")}
               type="button"
             >
@@ -473,7 +473,7 @@ export function LinkSwapManager() {
             </div>
             <div className="flex flex-wrap gap-2">
               <button
-                className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
+                className="rounded-lg border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
                 disabled={rotatingToken}
                 onClick={() => void rotateToken()}
                 type="button"
@@ -481,7 +481,7 @@ export function LinkSwapManager() {
                 {rotatingToken ? "更换中..." : "更换 Token"}
               </button>
               <button
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
                 disabled={!script.template || rotatingToken}
                 onClick={() => void copyScriptTemplate()}
                 type="button"
@@ -490,7 +490,7 @@ export function LinkSwapManager() {
                 复制最新脚本
               </button>
               <button
-                className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
+                className="rounded-lg border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
                 onClick={() => {
                   setHistoryTask(null);
                   setHistoryRecords(runs.slice(0, 20));
@@ -779,7 +779,7 @@ export function LinkSwapManager() {
                 共 {filteredRows.length} 个任务，当前第 {currentPage} / {totalPages} 页
               </p>
               <select
-                className="rounded-full border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground"
+                className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground"
                 onChange={(event) => setPageSize(Number(event.target.value))}
                 value={pageSize}
               >
@@ -842,8 +842,10 @@ export function LinkSwapManager() {
                   </div>
                   <span
                     className={cn(
-                      "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
-                      run.status === "success" ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
+                      "inline-flex rounded-md border px-3 py-1 text-xs font-semibold",
+                      run.status === "success"
+                        ? "border-primary/15 bg-primary/10 text-primary"
+                        : "border-destructive/20 bg-destructive/10 text-destructive"
                     )}
                   >
                     {run.status === "success" ? "成功" : "失败"}

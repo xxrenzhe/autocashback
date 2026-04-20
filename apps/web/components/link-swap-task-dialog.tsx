@@ -358,7 +358,7 @@ export function LinkSwapTaskDialog(props: LinkSwapTaskDialogProps) {
             <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-5 text-sm leading-6 text-destructive">
               <p>{proxyWarning}</p>
               <button
-                className="mt-3 rounded-full border border-destructive/20 bg-background px-4 py-2 text-xs font-semibold text-destructive"
+                className="mt-3 rounded-lg border border-destructive/20 bg-background px-4 py-2 text-xs font-semibold text-destructive"
                 onClick={() => {
                   window.location.href = "/settings";
                 }}

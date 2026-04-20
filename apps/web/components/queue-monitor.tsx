@@ -473,7 +473,7 @@ export function QueueMonitor() {
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">队列</h1>
-            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+            <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
               {activeTab === "monitor" ? "监控" : "配置"}
             </span>
           </div>
@@ -582,7 +582,7 @@ export function QueueMonitor() {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex flex-wrap items-center gap-3">
                   <h2 className="text-sm font-semibold text-foreground">队列任务</h2>
-                  <span className="rounded-full bg-muted px-2.5 py-1 font-mono tabular-nums text-xs text-muted-foreground">
+                  <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 font-mono tabular-nums text-xs text-muted-foreground">
                     {consoleData.rows.length}
                   </span>
                 </div>
@@ -687,14 +687,14 @@ export function QueueMonitor() {
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className="font-mono tabular-nums font-semibold text-foreground">{row.task.id}</span>
-                                <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+                                <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                                   {row.task.type}
                                 </span>
-                                <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+                                <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                                   P{row.task.priority}
                                 </span>
                                 {row.isPendingBacklog ? (
-                                  <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-600">
+                                  <span className="rounded-md border border-amber-200 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-600">
                                     已到执行时间
                                   </span>
                                 ) : null}
@@ -846,7 +846,7 @@ export function QueueMonitor() {
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="text-sm font-semibold text-foreground">队列配置</h2>
                 {configDirty ? (
-                  <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                  <span className="rounded-md border border-amber-200 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-700">
                     未保存
                   </span>
                 ) : null}

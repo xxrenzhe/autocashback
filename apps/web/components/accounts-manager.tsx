@@ -305,7 +305,7 @@ export function AccountsManager() {
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">返利账号</h1>
-            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+            <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
               {allConsole.overview.totalAccounts}
             </span>
           </div>
@@ -315,7 +315,7 @@ export function AccountsManager() {
         <div className="flex flex-wrap items-center gap-2">
           {allConsole.overview.pausedAccounts > 0 ? (
             <button
-              className="rounded-full bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-700"
+              className="rounded-lg border border-amber-200 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-700"
               onClick={() => setStatusFilter("paused")}
               type="button"
             >
@@ -490,7 +490,7 @@ export function AccountsManager() {
                             <div className="min-w-[220px]">
                               <div className="flex flex-wrap items-center gap-2">
                                 <p className="font-semibold text-foreground">{row.account.accountName}</p>
-                                <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+                                <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                                   {row.platformLabel}
                                 </span>
                               </div>
@@ -533,14 +533,14 @@ export function AccountsManager() {
                           <td className="py-4">
                             <div className="flex min-w-[160px] flex-wrap justify-end gap-2">
                               <button
-                                className="rounded-full border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground"
+                                className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground"
                                 onClick={() => handleEdit(row.account)}
                                 type="button"
                               >
                                 编辑
                               </button>
                               <button
-                                className="rounded-full border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive"
+                                className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive"
                                 onClick={() => handleDelete(row.account)}
                                 type="button"
                               >
