@@ -563,11 +563,14 @@ export function AdminUsersManager() {
   const visibleEnd = Math.min(pagination.page * pagination.limit, pagination.total);
 
   return (
-    <div className="space-y-8 p-8">
+    <div className="space-y-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="page-title">用户管理</h1>
-          <p className="page-subtitle">管理系统用户、访问状态与登录风险。</p>
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">用户管理</h1>
+            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">{pagination.total}</span>
+          </div>
+          <p className="text-sm text-muted-foreground">管理系统用户、访问状态与登录风险。</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -590,14 +593,37 @@ export function AdminUsersManager() {
         </div>
       </div>
 
+      <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
+        <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">风险账号</dt>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{summary.riskCount}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">已锁定</dt>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight text-amber-700">{summary.lockedCount}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">已停用</dt>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{summary.disabledCount}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">活跃会话</dt>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{summary.activeSessionUsersCount}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">分页</dt>
+            <dd className="mt-1 text-sm leading-6 text-muted-foreground">第 {pagination.page} / {Math.max(1, pagination.totalPages)} 页</dd>
+          </div>
+        </dl>
+      </section>
+
       <section className="overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-sm">
         <div className="border-b border-border px-6 py-5">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
             <div>
               <p className="text-base font-semibold text-foreground">账号列表</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                风险 {summary.riskCount} 个，锁定 {summary.lockedCount} 个，停用 {summary.disabledCount} 个，活跃会话 {summary.activeSessionUsersCount} 个
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">按角色、状态和登录风险筛选。</p>
             </div>
             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <span>共 {pagination.total} 个用户</span>

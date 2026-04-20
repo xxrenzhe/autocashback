@@ -68,30 +68,6 @@ function statusMeta(task: ClickFarmTask) {
   };
 }
 
-function TaskMetric({
-  label,
-  value,
-  tone = "default"
-}: {
-  label: string;
-  value: string;
-  tone?: "default" | "warning" | "success";
-}) {
-  const toneClassName =
-    tone === "warning"
-      ? "border-amber-200 bg-amber-500/10 text-amber-700"
-      : tone === "success"
-        ? "border-emerald-200 bg-emerald-500/10 text-emerald-700"
-        : "border-border bg-card text-foreground";
-
-  return (
-    <div className={cn("rounded-xl border px-4 py-3", toneClassName)}>
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
-    </div>
-  );
-}
-
 export function ClickFarmManager() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -237,7 +213,7 @@ export function ClickFarmManager() {
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">补点击任务</h1>
-            <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
               {allConsole.overview.totalTasks}
             </span>
           </div>
@@ -266,19 +242,35 @@ export function ClickFarmManager() {
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <TaskMetric label="运行中任务" tone="success" value={String(allConsole.overview.activeTasks)} />
-        <TaskMetric
-          label="暂停 / 异常"
-          tone={allConsole.overview.warningTasks > 0 ? "warning" : "success"}
-          value={String(allConsole.overview.warningTasks)}
-        />
-        <TaskMetric label="累计点击" value={String(allConsole.overview.totalClicks)} />
-        <TaskMetric
-          label="平均成功率"
-          tone={allConsole.overview.averageSuccessRate >= 80 ? "success" : "warning"}
-          value={`${allConsole.overview.averageSuccessRate.toFixed(1)}%`}
-        />
+      <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
+        <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">运行中任务</dt>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.activeTasks}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">暂停 / 异常</dt>
+            <dd className={cn("mt-1 text-2xl font-semibold tracking-tight", allConsole.overview.warningTasks > 0 ? "text-amber-700" : "text-foreground")}>
+              {allConsole.overview.warningTasks}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">累计点击</dt>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{allConsole.overview.totalClicks}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">平均成功率</dt>
+            <dd className={cn("mt-1 text-2xl font-semibold tracking-tight", allConsole.overview.averageSuccessRate >= 80 ? "text-foreground" : "text-amber-700")}>
+              {allConsole.overview.averageSuccessRate.toFixed(1)}%
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">当前视图</dt>
+            <dd className="mt-1 text-sm leading-6 text-muted-foreground">
+              排序 {sortOptions.find((option) => option.value === sort)?.label || "按最新创建"}
+            </dd>
+          </div>
+        </dl>
       </section>
 
       <section className="overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">

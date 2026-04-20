@@ -175,30 +175,6 @@ function statusVariant(status: LinkSwapConsoleStatus) {
   }
 }
 
-function SwapMetric({
-  label,
-  value,
-  tone = "default"
-}: {
-  label: string;
-  value: string;
-  tone?: "default" | "warning" | "success";
-}) {
-  const toneClassName =
-    tone === "warning"
-      ? "border-amber-200 bg-amber-500/10 text-amber-700"
-      : tone === "success"
-        ? "border-emerald-200 bg-emerald-500/10 text-emerald-700"
-        : "border-border bg-card text-foreground";
-
-  return (
-    <div className={cn("rounded-xl border px-4 py-3", toneClassName)}>
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
-    </div>
-  );
-}
-
 export function LinkSwapManager() {
   const searchParams = useSearchParams();
   const selectedOfferId = Number(searchParams.get("offerId") || 0);
@@ -430,7 +406,7 @@ export function LinkSwapManager() {
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">换链任务</h1>
-            <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
               {consoleData.stats.totalTasks}
             </span>
           </div>
@@ -459,16 +435,31 @@ export function LinkSwapManager() {
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <SwapMetric label="总任务" value={`${consoleData.stats.totalTasks}`} />
-        <SwapMetric label="运行中" tone="success" value={`${consoleData.stats.runningTasks}`} />
-        <SwapMetric label="已暂停" value={`${consoleData.stats.pausedTasks}`} />
-        <SwapMetric
-          label="预警 / 异常"
-          tone={consoleData.stats.warningTasks > 0 ? "warning" : "success"}
-          value={`${consoleData.stats.warningTasks}`}
-        />
-        <SwapMetric label="最近成功率" tone="success" value={`${consoleData.stats.recentSuccessRate}%`} />
+      <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
+        <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">总任务</dt>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{consoleData.stats.totalTasks}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">运行中</dt>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{consoleData.stats.runningTasks}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">已暂停</dt>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{consoleData.stats.pausedTasks}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">预警 / 异常</dt>
+            <dd className={cn("mt-1 text-2xl font-semibold tracking-tight", consoleData.stats.warningTasks > 0 ? "text-amber-700" : "text-foreground")}>
+              {consoleData.stats.warningTasks}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">最近成功率</dt>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{consoleData.stats.recentSuccessRate}%</dd>
+          </div>
+        </dl>
       </section>
 
       <section className="overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
