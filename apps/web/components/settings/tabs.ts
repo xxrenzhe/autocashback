@@ -2,8 +2,7 @@ export type SettingsTabValue =
   | "proxy"
   | "google-ads"
   | "script"
-  | "account-security"
-  | "platform-notes";
+  | "account-security";
 
 export type SettingsTabItem = {
   value: SettingsTabValue;
@@ -15,16 +14,14 @@ export const SETTINGS_TAB_ITEMS: SettingsTabItem[] = [
   { value: "proxy", label: "代理", hash: "#proxy-settings" },
   { value: "google-ads", label: "Google Ads", hash: "#google-ads-settings" },
   { value: "script", label: "脚本模板", hash: "#script-settings" },
-  { value: "account-security", label: "账号安全", hash: "#account-security-settings" },
-  { value: "platform-notes", label: "平台备注", hash: "#platform-settings" }
+  { value: "account-security", label: "账号安全", hash: "#account-security-settings" }
 ];
 
 const hashToTabMap: Record<string, SettingsTabValue> = {
   "#proxy-settings": "proxy",
   "#google-ads-settings": "google-ads",
   "#script-settings": "script",
-  "#account-security-settings": "account-security",
-  "#platform-settings": "platform-notes"
+  "#account-security-settings": "account-security"
 };
 
 const tabToHashMap = SETTINGS_TAB_ITEMS.reduce<Record<SettingsTabValue, string>>(
@@ -36,8 +33,7 @@ const tabToHashMap = SETTINGS_TAB_ITEMS.reduce<Record<SettingsTabValue, string>>
     proxy: "#proxy-settings",
     "google-ads": "#google-ads-settings",
     script: "#script-settings",
-    "account-security": "#account-security-settings",
-    "platform-notes": "#platform-settings"
+    "account-security": "#account-security-settings"
   }
 );
 

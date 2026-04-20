@@ -9,7 +9,6 @@ import { toast } from "sonner";
 
 import { AccountSecuritySettingsTab } from "@/components/settings/account-security-settings-tab";
 import { GoogleAdsSettingsTab } from "@/components/settings/google-ads-settings-tab";
-import { PlatformNotesSettingsTab } from "@/components/settings/platform-notes-settings-tab";
 import { ProxySettingsTab } from "@/components/settings/proxy-settings-tab";
 import { ScriptSettingsTab } from "@/components/settings/script-settings-tab";
 import {
@@ -354,13 +353,6 @@ export function SettingsManager() {
     }));
   }, []);
 
-  const updatePlatformNote = useCallback((key: keyof PlatformNotes, value: string) => {
-    setPlatformNotes((current) => ({
-      ...current,
-      [key]: value
-    }));
-  }, []);
-
   function updateProxyEntry(index: number, next: Partial<ProxySettingEntry>) {
     setProxyEntries((current) =>
       current.map((entry, entryIndex) =>
@@ -460,7 +452,7 @@ export function SettingsManager() {
               {SETTINGS_TAB_ITEMS.find((tab) => tab.value === activeTab)?.label}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground">代理、Google Ads、脚本、备注与账户安全。</p>
+          <p className="text-sm text-muted-foreground">代理、Google Ads、脚本与账户安全。</p>
         </div>
 
         <button
@@ -531,14 +523,6 @@ export function SettingsManager() {
 
         <Tabs.Content className="outline-none" value="account-security">
           <AccountSecuritySettingsTab />
-        </Tabs.Content>
-
-        <Tabs.Content className="outline-none" value="platform-notes">
-          <PlatformNotesSettingsTab
-            onPlatformNoteChange={updatePlatformNote}
-            overview={{ noteCount: overview.noteCount }}
-            platformNotes={platformNotes}
-          />
         </Tabs.Content>
       </Tabs.Root>
     </div>
