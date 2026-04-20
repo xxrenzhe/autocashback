@@ -50,6 +50,8 @@ export interface OfferRecord {
   campaignLabel: string;
   commissionCapUsd: number;
   manualRecordedCommissionUsd: number;
+  adSpendCapUsd?: number;
+  manualRecordedAdSpendUsd?: number;
   latestResolvedUrl: string | null;
   latestResolvedSuffix: string | null;
   lastResolvedAt: string | null;

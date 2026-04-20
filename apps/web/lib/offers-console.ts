@@ -25,7 +25,7 @@ export type OfferConsoleRow = {
   accountStatus: CashbackAccount["status"] | null;
   platformLabel: string;
   progressRatio: number;
-  remainingCommissionUsd: number;
+  remainingAdSpendUsd: number;
   thresholdReached: boolean;
   hasResolvedSuffix: boolean;
 };
@@ -58,9 +58,11 @@ export function buildOffersConsole(
 
   const rows = offers.map<OfferConsoleRow>((offer) => {
     const account = accountMap.get(offer.cashbackAccountId) || null;
+    const adSpendCapUsd = offer.adSpendCapUsd ?? offer.commissionCapUsd;
+    const manualRecordedAdSpendUsd = offer.manualRecordedAdSpendUsd ?? offer.manualRecordedCommissionUsd;
     const progressRatio =
-      offer.commissionCapUsd > 0
-        ? Math.min(100, (offer.manualRecordedCommissionUsd / offer.commissionCapUsd) * 100)
+      adSpendCapUsd > 0
+        ? Math.min(100, (manualRecordedAdSpendUsd / adSpendCapUsd) * 100)
         : 0;
 
     return {
@@ -69,12 +71,11 @@ export function buildOffersConsole(
       accountStatus: account?.status || null,
       platformLabel: platformLabelMap[offer.platformCode] || offer.platformCode,
       progressRatio,
-      remainingCommissionUsd: Math.max(
+      remainingAdSpendUsd: Math.max(
         0,
-        Number((offer.commissionCapUsd - offer.manualRecordedCommissionUsd).toFixed(2))
+        Number((adSpendCapUsd - manualRecordedAdSpendUsd).toFixed(2))
       ),
-      thresholdReached:
-        offer.status === "warning" || offer.manualRecordedCommissionUsd >= offer.commissionCapUsd,
+      thresholdReached: offer.status === "warning" || manualRecordedAdSpendUsd >= adSpendCapUsd,
       hasResolvedSuffix: Boolean(offer.latestResolvedSuffix)
     };
   });
@@ -126,7 +127,7 @@ export function buildOffersConsole(
       case "commission-progress":
         return right.progressRatio - left.progressRatio || right.offer.id - left.offer.id;
       case "remaining-cap":
-        return left.remainingCommissionUsd - right.remainingCommissionUsd || right.offer.id - left.offer.id;
+        return left.remainingAdSpendUsd - right.remainingAdSpendUsd || right.offer.id - left.offer.id;
       case "recent":
       default:
         return (

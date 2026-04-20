@@ -154,6 +154,6 @@ describe("buildOffersConsole", () => {
     expect(result.rows).toHaveLength(1);
     expect(result.rows[0]?.offer.brandName).toBe("Alpha");
     expect(result.rows[0]?.hasResolvedSuffix).toBe(true);
-    expect(result.rows[0]?.remainingCommissionUsd).toBe(10);
+    expect(result.rows[0]?.remainingAdSpendUsd).toBe(10);
   });
 });

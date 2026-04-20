@@ -64,7 +64,7 @@ export function buildDashboardConsoleData(input: DashboardConsoleData): Dashboar
     actions.push({
       id: "create-offer",
       title: "创建 Offer",
-      description: "先补齐推广链接、国家和佣金上限，才能开始后续换链和投放处理。",
+      description: "先补齐推广链接、国家和广告费上限，才能开始后续换链和投放处理。",
       href: "/offers",
       tone: "emerald"
     });
@@ -93,8 +93,8 @@ export function buildDashboardConsoleData(input: DashboardConsoleData): Dashboar
   if (overview.warningOffers > 0) {
     actions.push({
       id: "review-warning-offers",
-      title: "处理佣金预警",
-      description: `有 ${overview.warningOffers} 个 Offer 进入预警区间，建议优先复核预算和佣金录入。`,
+      title: "处理广告费预警",
+      description: `有 ${overview.warningOffers} 个 Offer 进入预警区间，建议优先复核广告费花费和暂停策略。`,
       href: "/offers",
       tone: "amber"
     });
@@ -115,7 +115,7 @@ export function buildDashboardConsoleData(input: DashboardConsoleData): Dashboar
       {
         id: "maintain-offers",
         title: "维护 Offer 数据",
-        description: "继续更新品牌、国家和佣金信息，保持后续任务和报表准确。",
+        description: "继续更新品牌、国家和广告费信息，保持后续任务和报表准确。",
         href: "/offers",
         tone: "emerald"
       },
@@ -132,8 +132,8 @@ export function buildDashboardConsoleData(input: DashboardConsoleData): Dashboar
   if (overview.warningOffers > 0) {
     risks.push({
       id: "risk-offer-warning",
-      title: "佣金阈值预警",
-      description: `${overview.warningOffers} 个 Offer 已达到或接近佣金上限，建议立即确认是否暂停或调整预算。`,
+      title: "广告费阈值预警",
+      description: `${overview.warningOffers} 个 Offer 已达到或接近广告费上限，建议立即确认是否暂停或调整预算。`,
       severity: overview.warningOffers >= 3 ? "high" : "medium",
       href: "/offers"
     });

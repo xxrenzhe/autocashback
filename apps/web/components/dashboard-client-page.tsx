@@ -81,6 +81,7 @@ function RiskCard({ item }: { item: DashboardRiskItem }) {
     medium: "bg-amber-500/10 text-amber-600",
     low: "bg-primary/10 text-primary"
   } as const;
+  const severityLabel = item.severity === "high" ? "高" : item.severity === "medium" ? "中" : "低";
 
   return (
     <Link
@@ -94,7 +95,7 @@ function RiskCard({ item }: { item: DashboardRiskItem }) {
         <span className="min-w-0">
           <span className="flex items-center gap-2">
             <span className="truncate text-sm font-semibold text-foreground">{item.title}</span>
-            <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{item.severity}</span>
+            <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{severityLabel}</span>
           </span>
           <span className="block truncate text-xs text-muted-foreground">{item.description}</span>
         </span>
@@ -262,14 +263,14 @@ export function DashboardClientPage({ username }: { username: string }) {
               </dd>
             </div>
             <div>
-              <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">佣金预警</dt>
+              <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">广告费预警</dt>
               <dd className="mt-1 text-2xl font-semibold tracking-tight text-amber-700">{data.overview.warningOffers}</dd>
             </div>
           </dl>
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.85fr,0.85fr,1.3fr]">
+      <section className="grid gap-4 xl:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-semibold text-foreground">优先处理</h3>
@@ -301,7 +302,9 @@ export function DashboardClientPage({ username }: { username: string }) {
             )}
           </div>
         </div>
+      </section>
 
+      <section>
         <div className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>

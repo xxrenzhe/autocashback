@@ -39,7 +39,7 @@ export async function getDashboardSummary(userId: number): Promise<DashboardSumm
       SELECT
         (SELECT ${countAsInt("COUNT(*)", dbType)} FROM offers WHERE user_id = ? AND status <> 'draft') AS active_offers,
         (SELECT ${countAsInt("COUNT(*)", dbType)} FROM link_swap_tasks WHERE user_id = ? AND enabled = TRUE) AS active_tasks,
-        (SELECT ${countAsInt("COUNT(*)", dbType)} FROM offers WHERE user_id = ? AND manual_recorded_commission_usd >= commission_cap_usd) AS warning_offers,
+        (SELECT ${countAsInt("COUNT(*)", dbType)} FROM offers WHERE user_id = ? AND manual_recorded_ad_spend_usd >= ad_spend_cap_usd) AS warning_offers,
         COALESCE((
           SELECT ${successRateExpression(dbType)}
           FROM link_swap_runs
@@ -179,6 +179,7 @@ export async function createOffer(
 ) {
   await ensureDatabaseReady();
   const sql = getSql();
+  const thresholds = normalizeOfferThresholds(input);
   const rows = await sql<DbRow[]>`
     INSERT INTO offers (
       user_id,
@@ -190,6 +191,8 @@ export async function createOffer(
       campaign_label,
       commission_cap_usd,
       manual_recorded_commission_usd,
+      ad_spend_cap_usd,
+      manual_recorded_ad_spend_usd,
       status
     )
     VALUES (
@@ -200,8 +203,10 @@ export async function createOffer(
       ${input.targetCountry},
       ${input.brandName},
       ${input.campaignLabel},
-      ${input.commissionCapUsd},
-      ${input.manualRecordedCommissionUsd},
+      ${thresholds.commissionCapUsd},
+      ${thresholds.manualRecordedCommissionUsd},
+      ${thresholds.adSpendCapUsd},
+      ${thresholds.manualRecordedAdSpendUsd},
       ${computeOfferStatus(input)}
     )
     RETURNING *
@@ -228,6 +233,7 @@ export async function updateOffer(
 ) {
   await ensureDatabaseReady();
   const sql = getSql();
+  const thresholds = normalizeOfferThresholds(input);
   const rows = await sql<DbRow[]>`
     UPDATE offers
     SET platform_code = ${input.platformCode},
@@ -236,8 +242,10 @@ export async function updateOffer(
         target_country = ${input.targetCountry},
         brand_name = ${input.brandName},
         campaign_label = ${input.campaignLabel},
-        commission_cap_usd = ${input.commissionCapUsd},
-        manual_recorded_commission_usd = ${input.manualRecordedCommissionUsd},
+        commission_cap_usd = ${thresholds.commissionCapUsd},
+        manual_recorded_commission_usd = ${thresholds.manualRecordedCommissionUsd},
+        ad_spend_cap_usd = ${thresholds.adSpendCapUsd},
+        manual_recorded_ad_spend_usd = ${thresholds.manualRecordedAdSpendUsd},
         status = ${computeOfferStatus(input)}
     WHERE id = ${offerId} AND user_id = ${userId}
     RETURNING *
@@ -1021,11 +1029,28 @@ function toAccountRecord(row: DbRow): CashbackAccount {
   };
 }
 
-function computeOfferStatus(input: {
-  commissionCapUsd: number;
-  manualRecordedCommissionUsd: number;
+function normalizeOfferThresholds(input: {
+  commissionCapUsd?: number;
+  manualRecordedCommissionUsd?: number;
+  adSpendCapUsd?: number;
+  manualRecordedAdSpendUsd?: number;
 }) {
-  return input.manualRecordedCommissionUsd >= input.commissionCapUsd ? "warning" : "active";
+  return {
+    commissionCapUsd: Number(input.commissionCapUsd ?? 0),
+    manualRecordedCommissionUsd: Number(input.manualRecordedCommissionUsd ?? 0),
+    adSpendCapUsd: Number(input.adSpendCapUsd ?? input.commissionCapUsd ?? 0),
+    manualRecordedAdSpendUsd: Number(input.manualRecordedAdSpendUsd ?? 0)
+  };
+}
+
+function computeOfferStatus(input: {
+  commissionCapUsd?: number;
+  manualRecordedCommissionUsd?: number;
+  adSpendCapUsd?: number;
+  manualRecordedAdSpendUsd?: number;
+}) {
+  const { adSpendCapUsd, manualRecordedAdSpendUsd } = normalizeOfferThresholds(input);
+  return manualRecordedAdSpendUsd >= adSpendCapUsd ? "warning" : "active";
 }
 
 function normalizeProxyEntries(raw: string): ProxySettingEntry[] {
@@ -1073,6 +1098,8 @@ function toOfferRecord(row: DbRow): OfferRecord {
     campaignLabel: String(row.campaign_label),
     commissionCapUsd: Number(row.commission_cap_usd),
     manualRecordedCommissionUsd: Number(row.manual_recorded_commission_usd),
+    adSpendCapUsd: Number(row.ad_spend_cap_usd ?? row.commission_cap_usd ?? 0),
+    manualRecordedAdSpendUsd: Number(row.manual_recorded_ad_spend_usd ?? 0),
     latestResolvedUrl: row.latest_resolved_url ? String(row.latest_resolved_url) : null,
     latestResolvedSuffix: row.latest_resolved_suffix ? String(row.latest_resolved_suffix) : null,
     lastResolvedAt: row.last_resolved_at ? String(row.last_resolved_at) : null,

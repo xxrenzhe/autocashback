@@ -35,8 +35,10 @@ export async function POST(request: NextRequest) {
       targetCountry: String(body.targetCountry || "").toUpperCase(),
       brandName: body.brandName,
       campaignLabel: body.campaignLabel,
-      commissionCapUsd: Number(body.commissionCapUsd),
-      manualRecordedCommissionUsd: Number(body.manualRecordedCommissionUsd)
+      commissionCapUsd: Number(body.commissionCapUsd ?? 0),
+      manualRecordedCommissionUsd: Number(body.manualRecordedCommissionUsd ?? 0),
+      adSpendCapUsd: Number(body.adSpendCapUsd ?? body.commissionCapUsd ?? 0),
+      manualRecordedAdSpendUsd: Number(body.manualRecordedAdSpendUsd ?? 0)
     });
     return NextResponse.json({ offer });
   } catch (error: unknown) {
@@ -67,8 +69,10 @@ export async function PUT(request: NextRequest) {
       targetCountry: String(body.targetCountry || "").toUpperCase(),
       brandName: body.brandName,
       campaignLabel: body.campaignLabel,
-      commissionCapUsd: Number(body.commissionCapUsd),
-      manualRecordedCommissionUsd: Number(body.manualRecordedCommissionUsd)
+      commissionCapUsd: Number(body.commissionCapUsd ?? 0),
+      manualRecordedCommissionUsd: Number(body.manualRecordedCommissionUsd ?? 0),
+      adSpendCapUsd: Number(body.adSpendCapUsd ?? body.commissionCapUsd ?? 0),
+      manualRecordedAdSpendUsd: Number(body.manualRecordedAdSpendUsd ?? 0)
     });
     return NextResponse.json({ offer });
   } catch (error: unknown) {

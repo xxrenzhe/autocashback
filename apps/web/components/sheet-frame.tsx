@@ -10,10 +10,11 @@ export function SheetFrame(props: {
   description?: string;
   eyebrow?: string;
   className?: string;
+  titleClassName?: string;
   onClose: () => void;
   children: React.ReactNode;
 }) {
-  const { children, description, eyebrow, onClose, open, title, className } = props;
+  const { children, description, eyebrow, onClose, open, title, className, titleClassName } = props;
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -74,7 +75,7 @@ export function SheetFrame(props: {
 
         <div className="flex-shrink-0 border-b px-6 py-5">
           {eyebrow && <p className="text-xs font-semibold uppercase tracking-wider text-primary">{eyebrow}</p>}
-          <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+          <h2 className={cn("mt-1 text-lg font-semibold tracking-tight text-foreground", titleClassName)}>{title}</h2>
           {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
         </div>
 

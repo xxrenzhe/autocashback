@@ -60,6 +60,8 @@ type OfferFormState = {
   campaignLabel: string;
   commissionCapUsd: number;
   manualRecordedCommissionUsd: number;
+  adSpendCapUsd: number;
+  manualRecordedAdSpendUsd: number;
 };
 
 const initialForm: OfferFormState = {
@@ -70,14 +72,16 @@ const initialForm: OfferFormState = {
   cashbackAccountId: "",
   campaignLabel: "",
   commissionCapUsd: 200,
-  manualRecordedCommissionUsd: 0
+  manualRecordedCommissionUsd: 0,
+  adSpendCapUsd: 200,
+  manualRecordedAdSpendUsd: 0
 };
 
 const sortOptions: Array<{ value: OfferConsoleSort; label: string }> = [
   { value: "recent", label: "按最新创建" },
   { value: "brand", label: "按品牌名称" },
-  { value: "commission-progress", label: "按佣金进度" },
-  { value: "remaining-cap", label: "按剩余额度" }
+  { value: "commission-progress", label: "按广告费进度" },
+  { value: "remaining-cap", label: "按剩余广告费额度" }
 ];
 function offerStatusVariant(status: OfferRecord["status"]) {
   switch (status) {
@@ -327,7 +331,9 @@ export function OffersManager() {
       cashbackAccountId: Number(form.cashbackAccountId),
       targetCountry: form.targetCountry.trim().toUpperCase(),
       commissionCapUsd: Number(form.commissionCapUsd),
-      manualRecordedCommissionUsd: Number(form.manualRecordedCommissionUsd)
+      manualRecordedCommissionUsd: Number(form.manualRecordedCommissionUsd),
+      adSpendCapUsd: Number(form.adSpendCapUsd),
+      manualRecordedAdSpendUsd: Number(form.manualRecordedAdSpendUsd)
     };
 
     const result = await fetchJson<{ offer: OfferRecord }>("/api/offers", {
@@ -358,7 +364,9 @@ export function OffersManager() {
       cashbackAccountId: String(offer.cashbackAccountId),
       campaignLabel: offer.campaignLabel,
       commissionCapUsd: offer.commissionCapUsd,
-      manualRecordedCommissionUsd: offer.manualRecordedCommissionUsd
+      manualRecordedCommissionUsd: offer.manualRecordedCommissionUsd,
+      adSpendCapUsd: offer.adSpendCapUsd ?? offer.commissionCapUsd,
+      manualRecordedAdSpendUsd: offer.manualRecordedAdSpendUsd ?? 0
     });
             setEditorOpen(true);
   }
@@ -649,7 +657,7 @@ export function OffersManager() {
                     <tr>
                       <th className="pb-3 pr-4">Offer</th>
                       <th className="pb-3 pr-4">账号</th>
-                      <th className="pb-3 pr-4">佣金进度</th>
+                      <th className="pb-3 pr-4">广告费进度</th>
                       <th className="pb-3 pr-4">最新 suffix</th>
                       <th className="pb-3 pr-4">状态</th>
                       <th className="pb-3 text-right">操作</th>
@@ -697,7 +705,7 @@ export function OffersManager() {
                           <td className="py-4 pr-4">
                             <div className="min-w-[180px]">
                               <p className="font-mono tabular-nums text-foreground">
-                                {offer.manualRecordedCommissionUsd.toFixed(2)} / {offer.commissionCapUsd.toFixed(2)}
+                                {(offer.manualRecordedAdSpendUsd ?? 0).toFixed(2)} / {(offer.adSpendCapUsd ?? offer.commissionCapUsd).toFixed(2)}
                               </p>
                               <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-stone-200">
                                 <div
@@ -709,7 +717,7 @@ export function OffersManager() {
                                 />
                               </div>
                               <p className="mt-2 text-xs text-muted-foreground">
-                                还可记录 {row.remainingCommissionUsd.toFixed(2)} USD
+                                剩余可用广告费 {row.remainingAdSpendUsd.toFixed(2)} USD
                               </p>
                             </div>
                           </td>
@@ -827,8 +835,9 @@ export function OffersManager() {
         <SheetFrame
           open={editorOpen}
           onClose={resetForm}
-          eyebrow={editingId ? "编辑 Offer" : "新建 Offer"}
-          title={editingId ? "更新当前 Offer" : "补齐新的投放条目"}
+          eyebrow={editingId ? "编辑 Offer" : undefined}
+          title={editingId ? "更新当前 Offer" : "创建Offer"}
+          titleClassName={editingId ? undefined : "text-2xl"}
         >
           <form className="space-y-4" onSubmit={handleSubmit}>
             <label className="block text-sm font-medium text-foreground">
@@ -933,37 +942,37 @@ export function OffersManager() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm font-medium text-foreground">
-                佣金阈值 USD
+                广告费 USD
                 <input
                   className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono tabular-nums transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
                   min={0}
                   onChange={(event) =>
-                    setForm({ ...form, commissionCapUsd: Number(event.target.value) })
+                    setForm({ ...form, adSpendCapUsd: Number(event.target.value) })
                   }
                   step="0.01"
                   type="number"
-                  value={form.commissionCapUsd}
+                  value={form.adSpendCapUsd}
                 />
               </label>
 
               <label className="block text-sm font-medium text-foreground">
-                已记录佣金 USD
+                已花费广告费 USD
                 <input
                   className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono tabular-nums transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
                   min={0}
                   onChange={(event) =>
-                    setForm({ ...form, manualRecordedCommissionUsd: Number(event.target.value) })
+                    setForm({ ...form, manualRecordedAdSpendUsd: Number(event.target.value) })
                   }
                   step="0.01"
                   type="number"
-                  value={form.manualRecordedCommissionUsd}
+                  value={form.manualRecordedAdSpendUsd}
                 />
               </label>
             </div>
 
-            {form.manualRecordedCommissionUsd >= form.commissionCapUsd ? (
+            {form.manualRecordedAdSpendUsd >= form.adSpendCapUsd ? (
               <div className="rounded-xl border border-amber-200 bg-amber-500/10 p-4 text-sm text-amber-600">
-                当前佣金已达到阈值，保存后 Offer 会进入预警状态，建议尽快核查是否需要停投。
+                当前广告费已达到阈值，保存后 Offer 会进入预警状态，可据此判断是否自动暂停广告系列。
               </div>
             ) : null}
 
