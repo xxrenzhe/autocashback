@@ -27,6 +27,7 @@ import { EmptyState, StatusBadge, TableSkeleton, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { fetchJson } from "@/lib/api-error-handler";
+import { ModalFrame } from "@/components/modal-frame";
 import { SheetFrame } from "./sheet-frame";
 import {
   buildAccountsConsole,
@@ -65,6 +66,7 @@ export function AccountsManager() {
   const [form, setForm] = useState<AccountFormState>(initialForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [pendingDeleteAccount, setPendingDeleteAccount] = useState<CashbackAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [pending, setPending] = useState(false);
@@ -252,11 +254,7 @@ export function AccountsManager() {
     await loadData({ background: true, preserveNotice: true });
   }
 
-  async function handleDelete(accountId: number) {
-    if (!window.confirm("删除账号会同时删除其下 Offer 和换链接任务，确认继续？")) {
-      return;
-    }
-
+  async function deleteAccount(accountId: number) {
     const result = await fetchJson<{ success: boolean }>("/api/cashback-accounts", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -274,6 +272,10 @@ export function AccountsManager() {
 
     toast.success("账号已删除");
     await loadData({ background: true, preserveNotice: true });
+  }
+
+  function handleDelete(account: CashbackAccount) {
+    setPendingDeleteAccount(account);
   }
 
   function handleEdit(account: CashbackAccount) {
@@ -539,7 +541,7 @@ export function AccountsManager() {
                               </button>
                               <button
                                 className="rounded-full border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive"
-                                onClick={() => void handleDelete(row.account.id)}
+                                onClick={() => handleDelete(row.account)}
                                 type="button"
                               >
                                 删除
@@ -687,6 +689,48 @@ export function AccountsManager() {
             </div>
           </form>
         </SheetFrame>
+
+        <ModalFrame
+          className="max-w-md"
+          description="删除账号后，其下 Offer 和换链接任务也会一起删除。"
+          eyebrow="返利账号"
+          onClose={() => {
+            if (!pending) {
+              setPendingDeleteAccount(null);
+            }
+          }}
+          open={Boolean(pendingDeleteAccount)}
+          title="确认删除账号"
+        >
+          <div className="space-y-5">
+            <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm leading-6 text-muted-foreground">
+              {pendingDeleteAccount
+                ? `账号“${pendingDeleteAccount.accountName}”将被永久删除。`
+                : "该账号将被永久删除。"}
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted/60 disabled:opacity-50"
+                disabled={pending}
+                onClick={() => setPendingDeleteAccount(null)}
+                type="button"
+              >
+                取消
+              </button>
+              <button
+                className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-white transition hover:bg-destructive/90 disabled:opacity-50"
+                disabled={pending || !pendingDeleteAccount}
+                onClick={() =>
+                  pendingDeleteAccount &&
+                  void deleteAccount(pendingDeleteAccount.id).finally(() => setPendingDeleteAccount(null))
+                }
+                type="button"
+              >
+                删除账号
+              </button>
+            </div>
+          </div>
+        </ModalFrame>
       </section>
     </div>
   );

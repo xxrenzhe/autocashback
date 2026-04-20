@@ -12,6 +12,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { ModalFrame } from "@/components/modal-frame";
 import { SheetFrame } from "./sheet-frame";
 import {
   CirclePlus,
@@ -104,6 +105,7 @@ export function OffersManager() {
   const searchParams = useSearchParams();
 
   const [editorOpen, setEditorOpen] = useState(false);
+  const [pendingDeleteOffer, setPendingDeleteOffer] = useState<OfferRecord | null>(null);
 
   const [searchQuery, setSearchQueryState] = useState(searchParams.get("q") || "");
   const [platformFilter, setPlatformFilterState] = useState<OfferRecord["platformCode"] | "all">(
@@ -361,12 +363,7 @@ export function OffersManager() {
             setEditorOpen(true);
   }
 
-  async function handleDelete(offerId: number) {
-    if (!window.confirm("删除 Offer 会同步删除换链接任务与执行日志，确认继续？")) {
-      return;
-    }
-
-        
+  async function deleteOffer(offerId: number) {
     const result = await fetchJson<{ success: boolean }>("/api/offers", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -384,6 +381,10 @@ export function OffersManager() {
 
     toast.success("Offer 已删除");
     await loadAll({ background: true, preserveNotice: true });
+  }
+
+  function handleDelete(offer: OfferRecord) {
+    setPendingDeleteOffer(offer);
   }
 
   async function openClickFarmTask(offer: OfferRecord) {
@@ -771,7 +772,7 @@ export function OffersManager() {
                                     <DropdownMenu.Separator className="my-1 h-px bg-border" />
                                     <DropdownMenu.Item
                                       className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive outline-none hover:bg-destructive/10 focus:bg-destructive/10"
-                                      onSelect={() => void handleDelete(offer.id)}
+                                      onSelect={() => handleDelete(offer)}
                                     >
                                       删除 Offer
                                     </DropdownMenu.Item>
@@ -977,6 +978,48 @@ export function OffersManager() {
             </div>
           </form>
         </SheetFrame>
+
+        <ModalFrame
+          className="max-w-md"
+          description="删除 Offer 后，关联的换链接任务和执行日志也会一起移除。"
+          eyebrow="Offer 管理"
+          onClose={() => {
+            if (!pending) {
+              setPendingDeleteOffer(null);
+            }
+          }}
+          open={Boolean(pendingDeleteOffer)}
+          title="确认删除 Offer"
+        >
+          <div className="space-y-5">
+            <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm leading-6 text-muted-foreground">
+              {pendingDeleteOffer
+                ? `Offer“${pendingDeleteOffer.brandName}”将被永久删除。`
+                : "该 Offer 将被永久删除。"}
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted/60 disabled:opacity-50"
+                disabled={pending}
+                onClick={() => setPendingDeleteOffer(null)}
+                type="button"
+              >
+                取消
+              </button>
+              <button
+                className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-white transition hover:bg-destructive/90 disabled:opacity-50"
+                disabled={pending || !pendingDeleteOffer}
+                onClick={() =>
+                  pendingDeleteOffer &&
+                  void deleteOffer(pendingDeleteOffer.id).finally(() => setPendingDeleteOffer(null))
+                }
+                type="button"
+              >
+                删除 Offer
+              </button>
+            </div>
+          </div>
+        </ModalFrame>
       </section>
 
       <ClickFarmTaskDialog

@@ -365,7 +365,7 @@ export function GoogleAdsManager() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-1">
             <h3 className="text-sm font-semibold text-foreground">OAuth / MCC 诊断</h3>
-            <p className="text-xs text-muted-foreground">快速判断 OAuth、MCC 和账号读取异常。</p>
+            <p className="text-xs text-muted-foreground">快速判断 OAuth、MCC 和账号读取异常，只保留排障需要的信息。</p>
           </div>
           <div className="flex flex-wrap gap-3">
             <input
@@ -387,22 +387,22 @@ export function GoogleAdsManager() {
 
         {diagnoseResult ? (
           <div className="mt-4 space-y-4">
-            <dl className="grid gap-3 md:grid-cols-4">
-              <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
+            <dl className="grid gap-3 rounded-lg border border-border bg-muted/20 px-4 py-3 md:grid-cols-4">
+              <div>
                 <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">可访问账号</dt>
-                <dd className="mt-2 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{diagnoseResult.summary.totalAccessible}</dd>
+                <dd className="mt-1 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{diagnoseResult.summary.totalAccessible}</dd>
               </div>
-              <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
+              <div>
                 <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">读取成功</dt>
-                <dd className="mt-2 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{diagnoseResult.summary.okCount}</dd>
+                <dd className="mt-1 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{diagnoseResult.summary.okCount}</dd>
               </div>
-              <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
+              <div>
                 <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">读取失败</dt>
-                <dd className="mt-2 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{diagnoseResult.summary.errorCount}</dd>
+                <dd className="mt-1 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{diagnoseResult.summary.errorCount}</dd>
               </div>
-              <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
+              <div>
                 <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">测试账号</dt>
-                <dd className="mt-2 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{diagnoseResult.summary.testAccountTrue}</dd>
+                <dd className="mt-1 font-mono tabular-nums text-xl font-semibold tracking-tight text-foreground">{diagnoseResult.summary.testAccountTrue}</dd>
               </div>
             </dl>
 
