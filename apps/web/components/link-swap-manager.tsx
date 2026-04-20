@@ -20,6 +20,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import type { LinkSwapRunRecord, LinkSwapTaskRecord, OfferRecord } from "@autocashback/domain";
 import {
   EmptyState,
+  PageHeader,
   StatusBadge,
   TableSkeleton,
   cn,
@@ -402,38 +403,37 @@ export function LinkSwapManager() {
 
   return (
     <div className="space-y-5">
-      <section className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">换链任务</h1>
-            <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-              {consoleData.stats.totalTasks}
-            </span>
-          </div>
-          <p className="text-sm text-muted-foreground">按状态、模式、执行时间和失败次数筛选。</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {consoleData.stats.warningTasks > 0 ? (
+      <PageHeader
+        actions={
+          <>
+            {consoleData.stats.warningTasks > 0 ? (
+              <button
+                className="rounded-lg border border-amber-200 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-700"
+                onClick={() => setStatusFilter("warning")}
+                type="button"
+              >
+                预警 / 异常 {consoleData.stats.warningTasks}
+              </button>
+            ) : null}
             <button
-              className="rounded-lg border border-amber-200 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-700"
-              onClick={() => setStatusFilter("warning")}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-60"
+              disabled={refreshing}
+              onClick={() => void loadAll({ refresh: true })}
               type="button"
             >
-              预警 / 异常 {consoleData.stats.warningTasks}
+              <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
+              {refreshing ? "刷新中" : "刷新"}
             </button>
-          ) : null}
-          <button
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-60"
-            disabled={refreshing}
-            onClick={() => void loadAll({ refresh: true })}
-            type="button"
-          >
-            <RefreshCcw className={cn("h-4 w-4", refreshing ? "animate-spin" : "")} />
-            {refreshing ? "刷新中" : "刷新"}
-          </button>
-        </div>
-      </section>
+          </>
+        }
+        badge={
+          <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+            {consoleData.stats.totalTasks}
+          </span>
+        }
+        description="按状态、模式、执行时间和失败次数筛选。"
+        title="换链任务"
+      />
 
       <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
         <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">

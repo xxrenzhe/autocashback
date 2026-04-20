@@ -23,6 +23,7 @@ import {
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   EmptyState,
+  PageHeader,
   StatusBadge,
   TableSkeleton,
   type StatusBadgeVariant,
@@ -653,34 +654,36 @@ export function AdminUsersManager() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">用户管理</h1>
-            <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground">{pagination.total}</span>
-          </div>
-          <p className="text-sm text-muted-foreground">管理系统用户、访问状态与登录风险。</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground transition hover:border-foreground/20 hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={loading}
-            onClick={() => void loadUsers({ page: pagination.page })}
-            type="button"
-          >
-            <RefreshCcw className={cnIcon(loading)} />
-            刷新列表
-          </button>
-          <button
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:opacity-95"
-            onClick={() => setCreateOpen(true)}
-            type="button"
-          >
-            <Plus className="h-4 w-4" />
-            新建用户
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        actions={
+          <>
+            <button
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground transition hover:border-foreground/20 hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={loading}
+              onClick={() => void loadUsers({ page: pagination.page })}
+              type="button"
+            >
+              <RefreshCcw className={cnIcon(loading)} />
+              刷新列表
+            </button>
+            <button
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:opacity-95"
+              onClick={() => setCreateOpen(true)}
+              type="button"
+            >
+              <Plus className="h-4 w-4" />
+              新建用户
+            </button>
+          </>
+        }
+        badge={
+          <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+            {pagination.total}
+          </span>
+        }
+        description="管理系统用户、访问状态与登录风险。"
+        title="用户管理"
+      />
 
       <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
         <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">

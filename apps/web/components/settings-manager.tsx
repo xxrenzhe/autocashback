@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Save } from "lucide-react";
 
 import type { ProxySettingEntry } from "@autocashback/domain";
+import { PageHeader } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { AccountSecuritySettingsTab } from "@/components/settings/account-security-settings-tab";
@@ -444,27 +445,26 @@ export function SettingsManager() {
 
   return (
     <div className="space-y-3">
-      <section className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">设置</h1>
-            <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-              {SETTINGS_TAB_ITEMS.find((tab) => tab.value === activeTab)?.label}
-            </span>
-          </div>
-          <p className="text-sm text-muted-foreground">代理、Google Ads、脚本与账号安全。</p>
-        </div>
-
-        <button
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-          disabled={loading}
-          onClick={saveSettings}
-          type="button"
-        >
-          <Save className="h-4 w-4" />
-          保存设置
-        </button>
-      </section>
+      <PageHeader
+        actions={
+          <button
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            disabled={loading}
+            onClick={saveSettings}
+            type="button"
+          >
+            <Save className="h-4 w-4" />
+            保存设置
+          </button>
+        }
+        badge={
+          <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+            {SETTINGS_TAB_ITEMS.find((tab) => tab.value === activeTab)?.label}
+          </span>
+        }
+        description="代理、Google Ads、脚本与账号安全。"
+        title="设置"
+      />
 
       <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
         <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">

@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 
 import type { GoogleAdsAccountRecord, GoogleAdsCredentialStatus } from "@autocashback/domain";
-import { EmptyState, TableSkeleton, cn } from "@autocashback/ui";
+import { EmptyState, PageHeader, TableSkeleton, cn } from "@autocashback/ui";
 import { toast } from "sonner";
 
 import { fetchJson } from "@/lib/api-error-handler";
@@ -256,26 +256,23 @@ export function GoogleAdsManager() {
 
   return (
     <div className="space-y-4">
-      <section className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Google Ads</h1>
-            <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-              {overviewStatusLabel}
-            </span>
-          </div>
-          <p className="text-sm text-muted-foreground">查看账号映射与 MCC 诊断；配置和授权统一在设置页处理。</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
+      <PageHeader
+        actions={
           <Link
             className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground"
             href="/settings#google-ads-settings"
           >
             前往设置
           </Link>
-        </div>
-      </section>
+        }
+        badge={
+          <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+            {overviewStatusLabel}
+          </span>
+        }
+        description="查看账号映射与 MCC 诊断；配置和授权统一在设置页处理。"
+        title="Google Ads"
+      />
 
       <section className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
         <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
