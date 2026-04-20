@@ -137,13 +137,18 @@ function LoadingState() {
         </div>
         <div className="h-9 w-20 animate-pulse rounded-lg bg-muted" />
       </section>
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div className="h-24 animate-pulse rounded-xl border border-border bg-card" key={index} />
-        ))}
+      <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div className="space-y-2" key={index}>
+              <div className="h-3 w-16 animate-pulse rounded-full bg-muted" />
+              <div className="h-8 w-20 animate-pulse rounded-full bg-primary/10" />
+            </div>
+          ))}
+        </div>
       </section>
       <section className="grid gap-4 xl:grid-cols-[0.9fr,1.1fr]">
-        {Array.from({ length: 3 }).map((_, index) => (
+        {Array.from({ length: 2 }).map((_, index) => (
           <div className="min-h-40 animate-pulse rounded-xl border border-border bg-card" key={index} />
         ))}
       </section>
@@ -301,7 +306,7 @@ export function DashboardClientPage({ username }: { username: string }) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <h3 className="text-sm font-semibold text-foreground">最近换链结果</h3>
-              <p className="mt-1 text-xs text-muted-foreground">最近 5 条执行记录</p>
+              <p className="mt-1 text-xs text-muted-foreground">最近 5 条</p>
             </div>
             <Link
               className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/40"

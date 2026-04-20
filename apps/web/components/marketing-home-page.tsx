@@ -165,14 +165,9 @@ export default function MarketingHomePage() {
           </div>
 
           <section className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm" id="workflow">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">接入流程</p>
-                <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">最常见的启动路径</h2>
-              </div>
-              <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
-                3 steps
-              </span>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">接入流程</p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">常见启动路径</h2>
             </div>
 
             <div className="mt-4">
@@ -196,14 +191,9 @@ export default function MarketingHomePage() {
 
         <section className="scroll-mt-28 py-6" id="features">
           <div className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">核心模块</p>
-                <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">后台主要业务结构</h2>
-              </div>
-              <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
-                4 modules
-              </span>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">核心模块</p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">后台主要结构</h2>
             </div>
 
             <div className="mt-4 grid gap-x-6 gap-y-4 lg:grid-cols-2">

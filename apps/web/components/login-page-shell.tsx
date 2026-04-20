@@ -94,20 +94,10 @@ export function LoginPageShell() {
             ))}
           </div>
 
-          <div className="mt-8 rounded-xl border border-border bg-background/70 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-foreground">登录后直接处理</p>
-                <p className="mt-1 text-xs text-muted-foreground">保持和后台主页一致的任务入口密度。</p>
-              </div>
-              <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
-                3 areas
-              </span>
-            </div>
-
-            <dl className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="mt-8 rounded-xl border border-border bg-background/70 px-4 py-3">
+            <dl className="grid gap-3 sm:grid-cols-3">
               {loginScopes.map((item) => (
-                <div className="border-l border-border pl-3" key={item.title}>
+                <div className="border-l border-border pl-3 first:border-l-0 first:pl-0 sm:first:border-l sm:first:pl-3" key={item.title}>
                   <dt className="text-sm font-semibold text-foreground">{item.title}</dt>
                   <dd className="mt-1 text-xs leading-6 text-muted-foreground">{item.text}</dd>
                 </div>
