@@ -26,6 +26,7 @@ import type {
   SettingRow
 } from "@/components/settings/types";
 import { fetchJson } from "@/lib/api-error-handler";
+import { getNextProxyCountryCode } from "@/lib/proxy-country-options";
 import { buildSettingsOverview } from "@/lib/settings-overview";
 
 const emptyProxyEntry: ProxySettingEntry = {
@@ -371,17 +372,51 @@ export function SettingsManager() {
           : entry
       )
     );
+    setProxyValidation((current) => {
+      if (!(index in current)) {
+        return current;
+      }
+
+      const nextValidation = { ...current };
+      delete nextValidation[index];
+      return nextValidation;
+    });
   }
 
   function addProxyEntry() {
-    setProxyEntries((current) => [...current, { ...emptyProxyEntry }]);
+    setProxyEntries((current) => [
+      ...current,
+      {
+        ...emptyProxyEntry,
+        country: getNextProxyCountryCode(current.map((entry) => entry.country))
+      }
+    ]);
   }
 
   function removeProxyEntry(index: number) {
     setProxyEntries((current) => current.filter((_, entryIndex) => entryIndex !== index));
+    setProxyValidation((current) =>
+      Object.entries(current).reduce<Record<number, ProxyValidationState>>((nextValidation, [key, value]) => {
+        const numericIndex = Number(key);
+        if (numericIndex === index) {
+          return nextValidation;
+        }
+
+        nextValidation[numericIndex > index ? numericIndex - 1 : numericIndex] = value;
+        return nextValidation;
+      }, {})
+    );
   }
 
   async function validateProxyEntry(index: number, url: string) {
+    if (!url.trim()) {
+      setProxyValidation((current) => ({
+        ...current,
+        [index]: { status: "error", message: "请先填写代理 URL" }
+      }));
+      return;
+    }
+
     setProxyValidation((current) => ({
       ...current,
       [index]: { status: "loading", message: "验证中..." }
