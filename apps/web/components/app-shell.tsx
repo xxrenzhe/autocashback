@@ -83,14 +83,14 @@ function NavSection({
               className={cn(
                 "group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 collapsed ? "justify-center" : "gap-3",
-                active ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                active ? "bg-primary/10 text-primary shadow-sm" : "text-muted-foreground hover:bg-primary/5 hover:text-foreground"
               )}
               title={collapsed ? item.label : undefined}
             >
               <Icon
                 className={cn(
                   "h-4 w-4 flex-shrink-0",
-                  active ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
+                  active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                 )}
                 aria-hidden="true"
               />
@@ -167,25 +167,25 @@ export function AppShell({
 
   const healthMeta = {
     healthy: {
-      className: "text-emerald-700",
+      className: "border border-primary/15 bg-primary/10 text-primary",
       label: "系统健康"
     },
     loading: {
-      className: "text-muted-foreground",
+      className: "border border-border bg-muted text-muted-foreground",
       label: "检查中"
     },
     stale: {
-      className: "text-amber-700",
+      className: "border border-amber-200 bg-amber-500/10 text-amber-700",
       label: "调度心跳延迟"
     },
     unhealthy: {
-      className: "text-destructive",
+      className: "border border-destructive/15 bg-destructive/10 text-destructive",
       label: "系统异常"
     }
   }[healthStatus];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="console-shell min-h-screen bg-background">
       <Toaster position="bottom-right" richColors />
       {/* Mobile Nav Overlay */}
       {mobileNavOpen ? (
@@ -200,7 +200,7 @@ export function AppShell({
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r bg-background transition-transform duration-300 lg:z-40",
+          "console-sidebar fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r bg-background transition-transform duration-300 lg:z-40",
           mobileNavOpen ? "translate-x-0" : "-translate-x-full",
           "lg:translate-x-0",
           sidebarOpen ? "lg:w-64" : "lg:w-20"
@@ -214,7 +214,7 @@ export function AppShell({
             )}
             href="/dashboard"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded bg-primary text-primary-foreground font-bold">
+            <div className="flex h-8 w-8 items-center justify-center rounded bg-gradient-to-br from-emerald-500 to-emerald-600 text-primary-foreground font-bold shadow-sm shadow-emerald-700/20">
               AC
             </div>
             {sidebarOpen ? (
@@ -245,13 +245,13 @@ export function AppShell({
             <Link
               href="/settings#account-security-settings"
               className={cn(
-                "mb-2 flex items-center rounded-lg px-3 py-2 transition-colors hover:bg-muted/70",
+                "mb-2 flex items-center rounded-lg px-3 py-2 transition-colors hover:bg-primary/5",
                 sidebarOpen ? "justify-between" : "justify-center"
               )}
               title={!sidebarOpen ? "打开账号设置" : undefined}
             >
               <div className={cn("flex items-center gap-2", sidebarOpen ? "" : "justify-center")}>
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary shadow-sm">
                   {userInitial}
                 </div>
                 {sidebarOpen ? (
@@ -280,7 +280,7 @@ export function AppShell({
 
       {/* Main Content Area */}
       <div className={cn("min-h-screen transition-[padding] duration-300", sidebarOpen ? "lg:pl-64" : "lg:pl-20")}>
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6 lg:px-8">
+        <header className="console-topbar sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <button
               aria-label="打开导航菜单"
@@ -303,14 +303,14 @@ export function AppShell({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className={cn("rounded-full bg-muted px-2.5 py-1 text-xs font-medium", healthMeta.className)} title={healthMeta.label}>
+            <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium shadow-sm", healthMeta.className)} title={healthMeta.label}>
               {healthMeta.label}
             </span>
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-5 lg:p-8">
-          <div className="mx-auto max-w-7xl">
+        <main className="console-main flex-1 p-4 sm:p-5 lg:p-8">
+          <div className="console-content mx-auto max-w-7xl">
             {children}
           </div>
         </main>

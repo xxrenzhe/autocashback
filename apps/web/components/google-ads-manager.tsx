@@ -50,6 +50,29 @@ type DiagnosePayload = {
   };
 };
 
+function getOverviewStatusLabel(input: { fullyConnected: boolean; needsOAuth: boolean }) {
+  if (input.fullyConnected) {
+    return "已连通";
+  }
+
+  if (input.needsOAuth) {
+    return "待授权";
+  }
+
+  return "待配置";
+}
+
+function getAccountTypeLabel(input: { manager?: boolean | null; testAccount?: boolean | null }) {
+  return {
+    primary: input.manager ? "经理账号" : "普通账号",
+    secondary: input.testAccount ? "测试账号" : null
+  };
+}
+
+function getAccountDisplayName(customerId: string, descriptiveName?: string | null) {
+  return descriptiveName || `账号 ${customerId}`;
+}
+
 function getGoogleAdsStatusMessage(code: string): { tone: MessageTone; text: string } {
   switch (code) {
     case "oauth_connected":
@@ -114,6 +137,7 @@ export function GoogleAdsManager() {
   const [diagnoseResult, setDiagnoseResult] = useState<DiagnosePayload | null>(null);
 
   const overview = useMemo(() => buildGoogleAdsOverview(credentials, accounts), [accounts, credentials]);
+  const overviewStatusLabel = getOverviewStatusLabel(overview);
 
   function showStatusToast(status: { tone: MessageTone; text: string }) {
     if (status.tone === "success") {
@@ -237,7 +261,7 @@ export function GoogleAdsManager() {
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Google Ads</h1>
             <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-              {overview.fullyConnected ? "ready" : overview.needsOAuth ? "oauth" : "setup"}
+              {overviewStatusLabel}
             </span>
           </div>
           <p className="text-sm text-muted-foreground">查看账号映射与 MCC 诊断；配置和授权统一在设置页处理。</p>
@@ -263,7 +287,7 @@ export function GoogleAdsManager() {
                 overview.fullyConnected ? "text-emerald-700" : "text-amber-700"
               )}
             >
-              {overview.fullyConnected ? "ready" : overview.needsOAuth ? "oauth" : "setup"}
+              {overviewStatusLabel}
             </dd>
           </div>
           <div>
@@ -271,7 +295,7 @@ export function GoogleAdsManager() {
             <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{overview.accountCount}</dd>
           </div>
           <div>
-            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Manager 账号</dt>
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">经理账号</dt>
             <dd className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{overview.managerCount}</dd>
           </div>
           <div>
@@ -295,7 +319,7 @@ export function GoogleAdsManager() {
               <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">可访问账号</h2>
             </div>
             <span className="rounded-full bg-muted px-3 py-2 font-mono tabular-nums text-xs text-muted-foreground">
-              {accounts.length} accounts
+              {accounts.length} 个账号
             </span>
           </div>
         </div>
@@ -316,42 +340,45 @@ export function GoogleAdsManager() {
                   </tr>
                 </thead>
                 <tbody>
-                  {accounts.map((account) => (
-                    <tr className="border-b border-border/40 align-top" key={account.id}>
-                      <td className="py-4 pr-4">
+                  {accounts.map((account) => {
+                    const typeLabel = getAccountTypeLabel(account);
+
+                    return (
+                    <tr className="border-b border-border/40 align-middle" key={account.id}>
+                      <td className="py-3 pr-4">
                         <div>
                           <p className="font-semibold text-foreground">
-                            {account.descriptiveName || `Customer ${account.customerId}`}
+                            {getAccountDisplayName(account.customerId, account.descriptiveName)}
                           </p>
                           <p className="mt-1 font-mono tabular-nums text-xs text-muted-foreground">{account.customerId}</p>
                         </div>
                       </td>
-                      <td className="py-4 pr-4">
+                      <td className="py-3 pr-4">
                         <div className="flex flex-wrap gap-2 text-xs">
                           {account.manager ? (
                             <span className="rounded-full bg-amber-500/10 px-3 py-1 font-semibold text-amber-600">
-                              Manager
+                              {typeLabel.primary}
                             </span>
                           ) : (
                             <span className="rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary">
-                              Customer
+                              {typeLabel.primary}
                             </span>
                           )}
-                          {account.testAccount ? (
+                          {typeLabel.secondary ? (
                             <span className="rounded-full bg-stone-200 px-3 py-1 font-semibold text-foreground">
-                              Test
+                              {typeLabel.secondary}
                             </span>
                           ) : null}
                         </div>
                       </td>
-                      <td className="py-4 pr-4 text-foreground">{account.status || "--"}</td>
-                      <td className="py-4 pr-4 text-foreground">
+                      <td className="py-3 pr-4 text-foreground">{account.status || "--"}</td>
+                      <td className="py-3 pr-4 text-foreground">
                         <p>{account.currencyCode || "--"}</p>
                         <p className="mt-1 text-xs text-muted-foreground">{account.timeZone || "--"}</p>
                       </td>
-                      <td className="py-4 text-foreground">{account.lastSyncAt || "--"}</td>
+                      <td className="py-3 text-foreground">{account.lastSyncAt || "--"}</td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             ) : (
@@ -371,7 +398,7 @@ export function GoogleAdsManager() {
             <input
               className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
               onChange={(event) => setProbeCustomerId(event.target.value)}
-              placeholder="可选：额外探测 Customer ID"
+              placeholder="可选：额外探测账号 ID"
               value={probeCustomerId}
             />
             <button
@@ -408,7 +435,7 @@ export function GoogleAdsManager() {
 
             {diagnoseResult.probe?.error ? (
               <div className="rounded-lg border border-amber-200 bg-amber-500/10 px-4 py-3 text-sm text-amber-800">
-                <p className="font-semibold">探测 Customer ID 失败 · {diagnoseResult.probe.error.code}</p>
+                <p className="font-semibold">探测账号 ID 失败 · {diagnoseResult.probe.error.code}</p>
                 {diagnoseResult.probe.error.hint ? <p className="mt-1">{diagnoseResult.probe.error.hint}</p> : null}
               </div>
             ) : null}
@@ -425,15 +452,18 @@ export function GoogleAdsManager() {
                   </tr>
                 </thead>
                 <tbody>
-                  {diagnoseResult.customers.map((customer) => (
-                    <tr className="border-b border-border/40 align-top" key={customer.customerId}>
-                      <td className="py-4 pr-4">
+                  {diagnoseResult.customers.map((customer) => {
+                    const typeLabel = getAccountTypeLabel(customer);
+
+                    return (
+                    <tr className="border-b border-border/40 align-middle" key={customer.customerId}>
+                      <td className="py-3 pr-4">
                         <p className="font-semibold text-foreground">
-                          {customer.descriptiveName || `Customer ${customer.customerId}`}
+                          {getAccountDisplayName(customer.customerId, customer.descriptiveName)}
                         </p>
                         <p className="mt-1 font-mono tabular-nums text-xs text-muted-foreground">{customer.customerId}</p>
                       </td>
-                      <td className="py-4 pr-4">
+                      <td className="py-3 pr-4">
                         <span
                           className={cn(
                             "rounded-full px-3 py-1 text-xs font-semibold",
@@ -443,7 +473,7 @@ export function GoogleAdsManager() {
                           {customer.ok ? "读取成功" : customer.error?.code || "失败"}
                         </span>
                       </td>
-                      <td className="py-4 pr-4 text-foreground">
+                      <td className="py-3 pr-4 text-foreground">
                         <div className="flex flex-wrap gap-2 text-xs">
                           <span
                             className={cn(
@@ -451,20 +481,20 @@ export function GoogleAdsManager() {
                               customer.manager ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"
                             )}
                           >
-                            {customer.manager ? "Manager" : "Customer"}
+                            {typeLabel.primary}
                           </span>
-                          {customer.testAccount ? (
+                          {typeLabel.secondary ? (
                             <span className="rounded-full bg-stone-200 px-3 py-1 font-semibold text-foreground">
-                              Test
+                              {typeLabel.secondary}
                             </span>
                           ) : null}
                         </div>
                       </td>
-                      <td className="py-4 pr-4 text-foreground">
+                      <td className="py-3 pr-4 text-foreground">
                         <p>{customer.currencyCode || "--"}</p>
                         <p className="mt-1 text-xs text-muted-foreground">{customer.timeZone || "--"}</p>
                       </td>
-                      <td className="py-4 text-sm text-muted-foreground">
+                      <td className="py-3 text-sm text-muted-foreground">
                         {customer.ok ? (
                           customer.status || "--"
                         ) : (
@@ -475,7 +505,7 @@ export function GoogleAdsManager() {
                         )}
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>

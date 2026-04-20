@@ -100,7 +100,7 @@ export function GoogleAdsSettingsTab({
           <div className="flex flex-wrap items-center gap-3">
             <h3 className="text-sm font-semibold text-foreground">Google Ads 凭证</h3>
             <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
-              {googleAdsConfig.hasRefreshToken ? "oauth" : "setup"}
+              {googleAdsConfig.hasRefreshToken ? "已授权" : "待配置"}
             </span>
           </div>
           <p className="text-sm text-muted-foreground">

@@ -78,17 +78,17 @@ export function ProxySettingsTab({
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="mt-4 grid gap-3">
             {PROXY_FORMAT_EXAMPLES.map((example) => (
-              <div className={`rounded-xl border p-3 ${example.toneClassName}`} key={example.title}>
+              <div className={`min-w-0 rounded-xl border p-3 ${example.toneClassName}`} key={example.title}>
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-semibold">{example.title}</p>
                   <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${example.badgeClassName}`}>
                     {example.badgeLabel}
                   </span>
                 </div>
-                <p className="mt-2 text-xs leading-5">{example.description}</p>
-                <div className="mt-3 rounded-lg bg-background/80 p-2 font-mono text-[11px] leading-5 text-foreground">
+                <p className="mt-2 break-words text-xs leading-5">{example.description}</p>
+                <div className="mt-3 min-w-0 break-all rounded-lg bg-background/80 p-2 font-mono text-[11px] leading-5 text-foreground">
                   {example.example}
                 </div>
               </div>

@@ -483,7 +483,7 @@ export function SettingsManager() {
                 overview.googleAdsFullyConnected ? "text-emerald-700" : overview.googleAdsNeedsOAuth ? "text-amber-700" : "text-foreground"
               }`}
             >
-              {overview.googleAdsFullyConnected ? "ready" : overview.googleAdsNeedsOAuth ? "oauth" : `${overview.googleAdsBaseConfigCount}/4`}
+              {overview.googleAdsFullyConnected ? "已连通" : overview.googleAdsNeedsOAuth ? "待授权" : `${overview.googleAdsBaseConfigCount}/4`}
             </dd>
           </div>
           <div>
@@ -493,7 +493,7 @@ export function SettingsManager() {
           <div>
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">脚本模板</dt>
             <dd className={`mt-1 text-2xl font-semibold tracking-tight ${overview.scriptReady ? "text-foreground" : "text-amber-700"}`}>
-              {overview.scriptReady ? "ready" : "pending"}
+              {overview.scriptReady ? "已就绪" : "待配置"}
             </dd>
           </div>
         </dl>

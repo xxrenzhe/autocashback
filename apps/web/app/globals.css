@@ -242,3 +242,119 @@
 .hero-tag-float-delay-2 {
   animation-delay: 1.4s;
 }
+
+.console-shell {
+  --background: 150 24% 97%;
+  --foreground: 158 24% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 158 24% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 158 24% 12%;
+  --primary: 152 65% 42%;
+  --primary-foreground: 150 45% 98%;
+  --secondary: 152 30% 95%;
+  --secondary-foreground: 158 24% 12%;
+  --muted: 150 24% 95%;
+  --muted-foreground: 158 12% 39%;
+  --accent: 150 24% 95%;
+  --accent-foreground: 158 24% 12%;
+  --border: 150 22% 85%;
+  --input: 150 22% 85%;
+  --ring: 152 65% 42%;
+  background:
+    radial-gradient(circle at top left, rgba(16, 185, 129, 0.12), transparent 24%),
+    radial-gradient(circle at top right, rgba(245, 158, 11, 0.08), transparent 18%),
+    linear-gradient(180deg, #f8fcf9 0%, #f3f8f5 100%);
+}
+
+.console-shell .console-sidebar {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(245, 251, 247, 0.94) 100%);
+  border-color: hsl(var(--border) / 0.95);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.55) inset,
+    12px 0 30px rgba(15, 23, 42, 0.04);
+}
+
+.console-shell .console-topbar {
+  border-color: hsl(var(--border) / 0.9);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(247, 252, 249, 0.82) 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 10px 30px rgba(16, 185, 129, 0.04);
+}
+
+.console-shell .console-main {
+  position: relative;
+}
+
+.console-shell .console-content {
+  position: relative;
+  isolation: isolate;
+}
+
+.console-shell .console-content::before {
+  content: "";
+  position: absolute;
+  inset: -1rem 0 auto;
+  height: 14rem;
+  border-radius: 2rem;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(16, 185, 129, 0.14), transparent 28%),
+    radial-gradient(circle at 88% 0%, rgba(245, 158, 11, 0.08), transparent 20%);
+  filter: blur(18px);
+  opacity: 0.95;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.console-shell .console-content > * {
+  position: relative;
+  z-index: 1;
+}
+
+.console-shell .console-content .bg-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(247, 252, 249, 0.94) 100%);
+  border-color: hsl(var(--border));
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 14px 32px rgba(15, 23, 42, 0.05),
+    0 8px 22px rgba(16, 185, 129, 0.06);
+}
+
+.console-shell .console-content .bg-background,
+.console-shell .console-content [class*="bg-background/80"],
+.console-shell .console-content [class*="bg-background/95"] {
+  background-color: rgba(255, 255, 255, 0.86);
+}
+
+.console-shell .console-content [class*="bg-muted/20"],
+.console-shell .console-content [class*="bg-muted/30"],
+.console-shell .console-content [class*="bg-muted/40"],
+.console-shell .console-content [class*="bg-primary/10"] {
+  background-color: rgba(233, 246, 238, 0.9);
+}
+
+.console-shell .console-content [class*="border-border"] {
+  border-color: hsl(var(--border));
+}
+
+.console-shell .console-content table thead,
+.console-shell .console-content [class*="bg-background/95"] {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(243, 249, 246, 0.94) 100%);
+}
+
+.console-shell .console-content input,
+.console-shell .console-content select,
+.console-shell .console-content textarea {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 0 0 1px rgba(16, 185, 129, 0.02);
+}
+
+.console-shell .console-content input:focus-visible,
+.console-shell .console-content select:focus-visible,
+.console-shell .console-content textarea:focus-visible {
+  box-shadow:
+    0 0 0 3px rgba(16, 185, 129, 0.12),
+    0 1px 0 rgba(255, 255, 255, 0.7) inset;
+}

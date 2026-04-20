@@ -16,7 +16,9 @@ import { ContactQrDialog } from "@/components/contact-qr-dialog";
 
 const navLinks = [
   { href: "#workflow", label: "接入流程" },
-  { href: "#features", label: "核心模块" }
+  { href: "#features", label: "核心模块" },
+  { href: "#scenarios", label: "适合场景" },
+  { href: "#faq", label: "常见问题" }
 ];
 
 const heroSignals = [
@@ -64,6 +66,83 @@ const modules = [
   }
 ];
 
+const scenarioCards = [
+  {
+    title: "多账号团队",
+    text: "当同一平台下有多个账号覆盖不同国家或品牌时，更适合用统一后台承接协作。"
+  },
+  {
+    title: "多 Offer 维护",
+    text: "Offer 多起来后，佣金、广告费阈值和终链状态放在同一处更容易复核。"
+  },
+  {
+    title: "高频换链场景",
+    text: "活动链路更新频繁时，固定入口比聊天同步更稳，能减少漏改和误改。"
+  },
+  {
+    title: "交接与复盘",
+    text: "交接时直接看系统状态和记录，不用从多个表格里重新拼上下文。"
+  }
+];
+
+const faqItems = [
+  {
+    question: "适合什么样的返利团队？",
+    answer: "适合需要同时管理多个返利账号、多个 Offer、多个国家和高频链接更新的运营团队。"
+  },
+  {
+    question: "上线后最直接的变化是什么？",
+    answer: "先看状态、再做动作，减少来回翻表、漏改链接和阈值遗漏。"
+  },
+  {
+    question: "没有账号时怎么办？",
+    answer: "先申请试用或联系管理员开通，再使用统一入口登录后台。"
+  }
+];
+
+type FooterItem =
+  | {
+      type: "link";
+      href: string;
+      label: string;
+    }
+  | {
+      type: "contact";
+      label: string;
+    };
+
+const footerColumns: Array<{
+  title: string;
+  items: FooterItem[];
+}> = [
+  {
+    title: "产品",
+    items: [
+      { type: "link", href: "#workflow", label: "接入流程" },
+      { type: "link", href: "#features", label: "核心模块" },
+      { type: "link", href: "#scenarios", label: "适合场景" },
+      { type: "link", href: "/login", label: "账号登录" }
+    ]
+  },
+  {
+    title: "场景",
+    items: [
+      { type: "link", href: "#scenarios", label: "多账号协作" },
+      { type: "link", href: "#scenarios", label: "多 Offer 维护" },
+      { type: "link", href: "#features", label: "换链接执行" },
+      { type: "link", href: "#faq", label: "常见问题" }
+    ]
+  },
+  {
+    title: "开始使用",
+    items: [
+      { type: "contact", label: "申请试用" },
+      { type: "contact", label: "联系开通" },
+      { type: "link", href: "/login", label: "进入后台" }
+    ]
+  }
+];
+
 function ContactButton({
   children,
   className,
@@ -77,6 +156,39 @@ function ContactButton({
     <button className={className} onClick={onClick} type="button">
       {children}
     </button>
+  );
+}
+
+function FooterItemLink({
+  item,
+  onContactClick
+}: {
+  item: FooterItem;
+  onContactClick: () => void;
+}) {
+  if (item.type === "contact") {
+    return (
+      <ContactButton
+        className="text-sm text-muted-foreground transition-colors hover:text-primary"
+        onClick={onContactClick}
+      >
+        {item.label}
+      </ContactButton>
+    );
+  }
+
+  if (item.href.startsWith("/")) {
+    return (
+      <Link className="text-sm text-muted-foreground transition-colors hover:text-primary" href={item.href}>
+        {item.label}
+      </Link>
+    );
+  }
+
+  return (
+    <a className="text-sm text-muted-foreground transition-colors hover:text-primary" href={item.href}>
+      {item.label}
+    </a>
   );
 }
 
@@ -216,22 +328,66 @@ export default function MarketingHomePage() {
           </div>
         </section>
 
-        <footer className="border-t border-border/70 py-6 text-sm text-muted-foreground">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <section className="scroll-mt-28 py-6" id="scenarios">
+          <div className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">适合场景</p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">哪些团队更适合收回统一后台</h2>
+            </div>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              {scenarioCards.map((item) => (
+                <article className="rounded-lg border border-border bg-background/70 p-4" key={item.title}>
+                  <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="scroll-mt-28 py-6" id="faq">
+          <div className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">常见问题</p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">开始使用前通常会问什么</h2>
+            </div>
+
+            <div className="mt-4 grid gap-4 lg:grid-cols-3">
+              {faqItems.map((item) => (
+                <article className="rounded-lg border border-border bg-background/70 p-4" key={item.question}>
+                  <h3 className="text-sm font-semibold text-foreground">{item.question}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.answer}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <footer className="border-t border-border/70 py-8 text-sm text-muted-foreground">
+          <div className="grid gap-8 lg:grid-cols-[1.2fr,1.8fr]">
             <div>
               <p className="font-medium text-foreground">AutoCashBack</p>
-              <p className="mt-1">返利运营后台</p>
+              <p className="mt-2 max-w-sm leading-6">
+                返利运营后台。把账号、Offer、广告费阈值和换链接动作收回统一入口，减少零散协作。
+              </p>
             </div>
-            <div className="flex flex-wrap items-center gap-5">
-              <ContactButton
-                className="text-sm text-muted-foreground transition-colors hover:text-primary"
-                onClick={() => setIsContactDialogOpen(true)}
-              >
-                申请试用
-              </ContactButton>
-              <Link className="text-sm text-muted-foreground transition-colors hover:text-primary" href="/login">
-                账号登录
-              </Link>
+
+            <div className="grid gap-6 sm:grid-cols-3">
+              {footerColumns.map((column) => (
+                <div key={column.title}>
+                  <p className="text-sm font-semibold text-foreground">{column.title}</p>
+                  <div className="mt-3 flex flex-col gap-3">
+                    {column.items.map((item) => (
+                      <FooterItemLink
+                        item={item}
+                        key={`${column.title}-${item.label}`}
+                        onContactClick={() => setIsContactDialogOpen(true)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </footer>

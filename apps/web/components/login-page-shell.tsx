@@ -30,6 +30,51 @@ const loginScopes = [
   }
 ];
 
+const securityNotes = [
+  "管理员重置密码后，旧登录会话会自动失效。",
+  "如果最近登录设备或 IP 异常，建议先联系管理员复核账号状态。",
+  "没有账号时，先申请试用或联系开通，再使用统一入口登录。"
+];
+
+type FooterItem =
+  | {
+      type: "link";
+      href: string;
+      label: string;
+    }
+  | {
+      type: "contact";
+      label: string;
+    };
+
+const footerColumns: Array<{
+  title: string;
+  items: FooterItem[];
+}> = [
+  {
+    title: "入口",
+    items: [
+      { type: "link", href: "/", label: "返回首页" },
+      { type: "link", href: "/login", label: "账号登录" },
+      { type: "contact", label: "申请试用" }
+    ]
+  },
+  {
+    title: "登录后",
+    items: [
+      { type: "link", href: "/", label: "查看产品结构" },
+      { type: "contact", label: "联系开通" }
+    ]
+  },
+  {
+    title: "支持",
+    items: [
+      { type: "contact", label: "联系管理员" },
+      { type: "contact", label: "申请试用" }
+    ]
+  }
+];
+
 function ContactButton(props: {
   className: string;
   onClick: () => void;
@@ -39,6 +84,28 @@ function ContactButton(props: {
     <button className={props.className} onClick={props.onClick} type="button">
       {props.children}
     </button>
+  );
+}
+
+function FooterItemLink(props: {
+  item: FooterItem;
+  onContactClick: () => void;
+}) {
+  if (props.item.type === "contact") {
+    return (
+      <ContactButton
+        className="text-sm text-muted-foreground transition-colors hover:text-primary"
+        onClick={props.onContactClick}
+      >
+        {props.item.label}
+      </ContactButton>
+    );
+  }
+
+  return (
+    <Link className="text-sm text-muted-foreground transition-colors hover:text-primary" href={props.item.href}>
+      {props.item.label}
+    </Link>
   );
 }
 
@@ -104,6 +171,18 @@ export function LoginPageShell() {
               ))}
             </dl>
           </div>
+
+          <div className="mt-6 rounded-xl border border-border bg-background/70 p-4">
+            <p className="text-sm font-semibold text-foreground">登录前提醒</p>
+            <div className="mt-3 space-y-3 text-sm leading-6 text-muted-foreground">
+              {securityNotes.map((item) => (
+                <p className="flex items-start gap-2" key={item}>
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span>{item}</span>
+                </p>
+              ))}
+            </div>
+          </div>
         </section>
 
         <div className="flex h-full w-full lg:justify-self-end">
@@ -111,6 +190,36 @@ export function LoginPageShell() {
             <LoginForm className="h-full" onContactClick={() => setIsContactDialogOpen(true)} />
           </div>
         </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-5 pb-10 lg:px-8">
+        <footer className="border-t border-border/70 py-8 text-sm text-muted-foreground">
+          <div className="grid gap-8 lg:grid-cols-[1.1fr,1.9fr]">
+            <div>
+              <p className="font-medium text-foreground">AutoCashBack</p>
+              <p className="mt-2 max-w-sm leading-6">
+                统一登录入口。已有账号直接进入后台，没有账号时先联系管理员或申请试用。
+              </p>
+            </div>
+
+            <div className="grid gap-6 sm:grid-cols-3">
+              {footerColumns.map((column) => (
+                <div key={column.title}>
+                  <p className="text-sm font-semibold text-foreground">{column.title}</p>
+                  <div className="mt-3 flex flex-col gap-3">
+                    {column.items.map((item) => (
+                      <FooterItemLink
+                        item={item}
+                        key={`${column.title}-${item.label}`}
+                        onContactClick={() => setIsContactDialogOpen(true)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </footer>
       </div>
 
       <ContactQrDialog onClose={() => setIsContactDialogOpen(false)} open={isContactDialogOpen} />
