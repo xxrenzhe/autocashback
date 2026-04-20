@@ -1,18 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useState } from "react";
-import {
-  ArrowRight,
-  Coins,
-  Link2,
-  Radar,
-  ShieldCheck,
-  WalletCards
-} from "lucide-react";
+import { ArrowRight, Coins, Link2, Radar, ShieldCheck, WalletCards } from "lucide-react";
 
 import { BrandMark } from "@/components/brand-mark";
 import { ContactQrDialog } from "@/components/contact-qr-dialog";
+import { OpsStructureIllustration } from "@/components/ops-structure-illustration";
 
 const navLinks = [
   { href: "#workflow", label: "接入流程" },
@@ -22,10 +17,25 @@ const navLinks = [
 ];
 
 const heroSignals = [
-  "先开通试用账号，再进入后台",
-  "账号、Offer、佣金和换链统一收口",
-  "适合多平台、多账号、多国家协作",
-  "高频变更时先看状态，再做动作"
+  "先开通试用账号，再进入后台。",
+  "账号、Offer、佣金和换链统一收口。",
+  "适合多平台、多账号、多国家协作。",
+  "高频变更时先看状态，再做动作。"
+];
+
+const heroPanels = [
+  {
+    title: "统一入口",
+    text: "把账号、Offer、佣金与执行入口收在一个后台。"
+  },
+  {
+    title: "状态先行",
+    text: "风险、阈值和待处理动作先露出，再进入操作。"
+  },
+  {
+    title: "多人协作",
+    text: "适合多账号、多国家、多平台的运营团队。"
+  }
 ];
 
 const workflowSteps = [
@@ -143,51 +153,44 @@ const footerColumns: Array<{
   }
 ];
 
-function ContactButton({
-  children,
-  className,
-  onClick
-}: {
-  children: React.ReactNode;
+function ContactButton(props: {
+  children: ReactNode;
   className: string;
   onClick: () => void;
 }) {
   return (
-    <button className={className} onClick={onClick} type="button">
-      {children}
+    <button className={props.className} onClick={props.onClick} type="button">
+      {props.children}
     </button>
   );
 }
 
-function FooterItemLink({
-  item,
-  onContactClick
-}: {
+function FooterItemLink(props: {
   item: FooterItem;
   onContactClick: () => void;
 }) {
-  if (item.type === "contact") {
+  if (props.item.type === "contact") {
     return (
       <ContactButton
-        className="text-sm text-muted-foreground transition-colors hover:text-primary"
-        onClick={onContactClick}
+        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+        onClick={props.onContactClick}
       >
-        {item.label}
+        {props.item.label}
       </ContactButton>
     );
   }
 
-  if (item.href.startsWith("/")) {
+  if (props.item.href.startsWith("/")) {
     return (
-      <Link className="text-sm text-muted-foreground transition-colors hover:text-primary" href={item.href}>
-        {item.label}
+      <Link className="text-sm text-muted-foreground transition-colors hover:text-foreground" href={props.item.href}>
+        {props.item.label}
       </Link>
     );
   }
 
   return (
-    <a className="text-sm text-muted-foreground transition-colors hover:text-primary" href={item.href}>
-      {item.label}
+    <a className="text-sm text-muted-foreground transition-colors hover:text-foreground" href={props.item.href}>
+      {props.item.label}
     </a>
   );
 }
@@ -196,175 +199,171 @@ export default function MarketingHomePage() {
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_28%),radial-gradient(circle_at_top_right,rgba(245,158,11,0.14),transparent_24%),linear-gradient(180deg,#fafaf9_0%,#f5f5f4_100%)]">
-      <header className="fixed inset-x-0 top-0 z-50">
-        <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
-          <div className="flex h-[4.5rem] items-center justify-between rounded-full border border-border/80 bg-background/88 px-4 backdrop-blur sm:px-5 sm:shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-            <Link className="flex items-center gap-3" href="/">
-              <BrandMark compact />
-              <div>
-                <p className="text-sm font-semibold text-foreground">AutoCashBack</p>
-                <p className="text-xs text-muted-foreground">返利运营后台</p>
-              </div>
-            </Link>
-
-            <nav aria-label="首页导航" className="hidden items-center gap-8 lg:flex">
-              {navLinks.map((item) => (
-                <a
-                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-                  href={item.href}
-                  key={item.href}
-                >
-                  {item.label}
-                </a>
-              ))}
-            </nav>
-
-            <div className="flex items-center gap-2 sm:gap-3">
-              <ContactButton
-                className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-emerald-700/20 transition hover:-translate-y-0.5 hover:bg-emerald-500 motion-reduce:transform-none"
-                onClick={() => setIsContactDialogOpen(true)}
-              >
-                申请试用
-              </ContactButton>
-              <Link
-                className="hidden text-sm font-semibold text-foreground transition-colors hover:text-primary md:inline-flex"
-                href="/login"
-              >
-                账号登录
-              </Link>
+    <main className="marketing-shell min-h-screen bg-background">
+      <header className="sticky top-0 z-50 border-b border-border/80 bg-background/90 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
+          <Link className="flex items-center gap-3" href="/">
+            <BrandMark compact />
+            <div>
+              <p className="text-sm font-semibold text-foreground">AutoCashBack</p>
+              <p className="text-xs text-muted-foreground">返利运营后台</p>
             </div>
+          </Link>
+
+          <nav aria-label="首页导航" className="hidden items-center gap-8 lg:flex">
+            {navLinks.map((item) => (
+              <a
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                href={item.href}
+                key={item.href}
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <ContactButton className="button-primary hidden sm:inline-flex" onClick={() => setIsContactDialogOpen(true)}>
+              申请试用
+            </ContactButton>
+            <Link className="button-secondary" href="/login">
+              账号登录
+            </Link>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-5 pb-12 pt-24 lg:px-8 lg:pt-28">
-        <section className="grid gap-6 pb-10 pt-4 lg:grid-cols-[1.06fr,0.94fr] lg:items-start lg:pt-8">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">返利运营后台</p>
-            <h1 className="mt-5 max-w-4xl text-5xl font-semibold leading-tight tracking-tight text-foreground lg:text-7xl">
+      <div className="mx-auto max-w-7xl px-5 pb-12 pt-10 lg:px-8 lg:pt-14">
+        <section className="grid gap-10 border-b border-border/80 pb-14 lg:grid-cols-[0.92fr,1.08fr] lg:pb-16">
+          <div className="max-w-xl">
+            <p className="label-kicker">返利运营后台</p>
+            <h1 className="mt-5 font-display text-5xl font-semibold leading-tight tracking-[-0.05em] text-foreground lg:text-7xl">
               把返利运营
               <span className="block text-primary">收回一个后台</span>
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground lg:text-lg lg:leading-8">
+            <p className="mt-5 text-base leading-8 text-muted-foreground lg:text-lg">
               AutoCashBack 把账号、Offer、佣金状态和换链接动作收进同一工作台，让团队先看状态，再进入当天任务。
             </p>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <ContactButton
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-semibold text-white shadow-md shadow-emerald-700/20 transition hover:-translate-y-0.5 hover:bg-emerald-500 motion-reduce:transform-none sm:w-auto"
-                onClick={() => setIsContactDialogOpen(true)}
-              >
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <ContactButton className="button-primary sm:w-auto" onClick={() => setIsContactDialogOpen(true)}>
                 申请试用
                 <ArrowRight className="h-4 w-4" />
               </ContactButton>
-              <Link
-                className="inline-flex w-full items-center justify-center rounded-full border border-border bg-background px-6 py-3 text-base font-semibold text-foreground transition hover:border-primary hover:text-primary sm:w-auto"
-                href="/login"
-              >
+              <Link className="button-secondary sm:w-auto" href="/login">
                 进入后台
               </Link>
             </div>
 
-            <div className="mt-6 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+            <dl className="mt-10 grid gap-3 sm:grid-cols-3">
+              {heroPanels.map((item) => (
+                <div className="rounded-2xl border border-border bg-card/70 p-4" key={item.title}>
+                  <dt className="text-sm font-semibold text-foreground">{item.title}</dt>
+                  <dd className="mt-2 text-sm leading-6 text-muted-foreground">{item.text}</dd>
+                </div>
+              ))}
+            </dl>
+
+            <div className="mt-8 grid gap-3 sm:grid-cols-2">
               {heroSignals.map((item) => (
-                <p className="inline-flex items-start gap-2" key={item}>
-                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <p className="flex items-start gap-2 text-sm leading-6 text-muted-foreground" key={item}>
+                  <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-primary" />
                   <span>{item}</span>
                 </p>
               ))}
             </div>
           </div>
 
-          <section className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm" id="workflow">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">接入流程</p>
-              <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">常见启动路径</h2>
+          <section className="surface-panel overflow-hidden" id="workflow">
+            <div className="flex flex-col gap-4 border-b border-border/80 px-6 py-5 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="label-kicker">工作结构</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-foreground">先看状态，再执行动作</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                  右侧主视觉使用结构型 SVG 示意后台工作台：统一入口、状态区、动作区和执行结果。
+                </p>
+              </div>
+              <span className="info-chip">结构示意图</span>
             </div>
 
-            <div className="mt-4">
-              {workflowSteps.map((item, index) => (
-                <article
-                  className="flex items-start gap-3 border-t border-border px-1 py-3 first:border-t-0 first:pt-0 last:pb-0"
-                  key={item.title}
-                >
-                  <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">
-                      {index + 1}
-                  </span>
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{item.text}</p>
+            <div className="space-y-6 px-6 py-6">
+              <OpsStructureIllustration className="rounded-2xl border border-border bg-white/70 p-3" />
+
+              <dl className="grid gap-3 border-t border-border/80 pt-5 sm:grid-cols-3">
+                {workflowSteps.map((item, index) => (
+                  <div className="rounded-2xl border border-border bg-secondary/30 p-4" key={item.title}>
+                    <dt className="text-sm font-semibold text-foreground">
+                      0{index + 1} · {item.title}
+                    </dt>
+                    <dd className="mt-2 text-sm leading-6 text-muted-foreground">{item.text}</dd>
                   </div>
-                </article>
-              ))}
+                ))}
+              </dl>
             </div>
           </section>
         </section>
 
-        <section className="scroll-mt-28 py-6" id="features">
-          <div className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">核心模块</p>
-              <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">后台主要结构</h2>
-            </div>
+        <section className="grid gap-8 border-b border-border/80 py-14 lg:grid-cols-[18rem,1fr]" id="features">
+          <div>
+            <p className="label-kicker">核心模块</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-foreground">后台的主要结构</h2>
+            <p className="mt-4 text-sm leading-7 text-muted-foreground">
+              页面重点不在展示炫技，而在于让账号、Offer、执行和风险形成稳定的工作节奏。
+            </p>
+          </div>
 
-            <div className="mt-4 grid gap-x-6 gap-y-4 lg:grid-cols-2">
-          {modules.map((module) => {
-            const Icon = module.icon;
+          <div className="grid gap-4 lg:grid-cols-2">
+            {modules.map((module) => {
+              const Icon = module.icon;
 
-            return (
-              <article className="flex items-start gap-3 border-t border-border pt-4 first:border-t-0 first:pt-0" key={module.title}>
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Icon className="h-4 w-4" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-sm font-semibold text-foreground">{module.title}</h3>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{module.text}</p>
-                </div>
+              return (
+                <article className="surface-panel flex items-start gap-4 px-5 py-5" key={module.title}>
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary/35 text-primary">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-foreground">{module.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{module.text}</p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="grid gap-8 border-b border-border/80 py-14 lg:grid-cols-[18rem,1fr]" id="scenarios">
+          <div>
+            <p className="label-kicker">适合场景</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-foreground">哪些团队更适合收回统一后台</h2>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {scenarioCards.map((item) => (
+              <article className="rounded-2xl border border-border bg-card/80 p-5" key={item.title}>
+                <h3 className="text-base font-semibold text-foreground">{item.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-muted-foreground">{item.text}</p>
               </article>
-            );
-          })}
-            </div>
+            ))}
           </div>
         </section>
 
-        <section className="scroll-mt-28 py-6" id="scenarios">
-          <div className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">适合场景</p>
-              <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">哪些团队更适合收回统一后台</h2>
-            </div>
+        <section className="grid gap-8 py-14 lg:grid-cols-[18rem,1fr]" id="faq">
+          <div>
+            <p className="label-kicker">常见问题</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-foreground">开始使用前通常会问什么</h2>
+          </div>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              {scenarioCards.map((item) => (
-                <article className="rounded-lg border border-border bg-background/70 p-4" key={item.title}>
-                  <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.text}</p>
-                </article>
-              ))}
-            </div>
+          <div className="grid gap-4 lg:grid-cols-3">
+            {faqItems.map((item) => (
+              <article className="rounded-2xl border border-border bg-card/80 p-5" key={item.question}>
+                <h3 className="text-base font-semibold text-foreground">{item.question}</h3>
+                <p className="mt-3 text-sm leading-7 text-muted-foreground">{item.answer}</p>
+              </article>
+            ))}
           </div>
         </section>
 
-        <section className="scroll-mt-28 py-6" id="faq">
-          <div className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">常见问题</p>
-              <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">开始使用前通常会问什么</h2>
-            </div>
-
-            <div className="mt-4 grid gap-4 lg:grid-cols-3">
-              {faqItems.map((item) => (
-                <article className="rounded-lg border border-border bg-background/70 p-4" key={item.question}>
-                  <h3 className="text-sm font-semibold text-foreground">{item.question}</h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.answer}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <footer className="border-t border-border/70 py-8 text-sm text-muted-foreground">
+        <footer className="border-t border-border/80 py-8 text-sm text-muted-foreground">
           <div className="grid gap-8 lg:grid-cols-[1.2fr,1.8fr]">
             <div>
               <p className="font-medium text-foreground">AutoCashBack</p>

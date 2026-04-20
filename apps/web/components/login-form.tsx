@@ -47,14 +47,21 @@ export function LoginForm(props: {
   };
 
   return (
-    <form className={cn("overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm", props.className)} onSubmit={handleSubmit}>
-      <div className="px-6 pb-6 pt-6 sm:px-8 sm:pb-8 sm:pt-8">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground">账号登录</h2>
-          <p className="mt-1 text-sm text-muted-foreground">输入账号信息，继续进入后台。</p>
-        </div>
+    <form
+      className={cn(
+        "surface-panel overflow-hidden rounded-[1.4rem] border-border/80 bg-card/95",
+        props.className
+      )}
+      onSubmit={handleSubmit}
+    >
+      <div className="border-b border-border/80 px-6 py-5 sm:px-8">
+        <p className="label-kicker">内部登录</p>
+        <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-foreground">账号登录</h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">输入已有账号信息，继续进入后台控制台。</p>
+      </div>
 
-        <div className="space-y-4">
+      <div className="space-y-5 px-6 py-6 sm:px-8 sm:py-8">
+        <div className="space-y-2">
           <label className="block text-sm font-medium text-foreground" htmlFor="username">
             用户名或邮箱
           </label>
@@ -62,15 +69,17 @@ export function LoginForm(props: {
             id="username"
             name="username"
             autoComplete="username"
-            className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-md border border-border bg-secondary/35 px-3 py-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             ref={usernameInputRef}
             onChange={(event) => setUsername(event.target.value)}
             placeholder="name@company.com"
-            value={username}
             required
+            value={username}
           />
-          
-          <label className="mt-4 block text-sm font-medium text-foreground" htmlFor="password">
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-foreground" htmlFor="password">
             密码
           </label>
           <input
@@ -78,34 +87,34 @@ export function LoginForm(props: {
             name="password"
             type="password"
             autoComplete="current-password"
-            className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-md border border-border bg-secondary/35 px-3 py-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="••••••••"
-            value={password}
+            placeholder="输入密码"
             required
+            value={password}
           />
         </div>
 
         {error ? (
-          <div className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm font-medium text-destructive" role="alert" aria-live="polite">
+          <div
+            aria-live="polite"
+            className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-3 text-sm font-medium text-destructive"
+            role="alert"
+          >
             {error}
           </div>
         ) : null}
 
-        <button
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={pending}
-          type="submit"
-        >
-          {pending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
-          {pending ? "正在验证…" : "登录"}
-          {!pending ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : null}
+        <button className="button-primary mt-2 flex w-full" disabled={pending} type="submit">
+          {pending ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
+          {pending ? "正在验证…" : "登录进入后台"}
+          {!pending ? <ArrowRight aria-hidden="true" className="h-4 w-4" /> : null}
         </button>
 
-        <div className="mt-6 text-sm text-muted-foreground">
+        <div className="rounded-2xl border border-border bg-secondary/30 px-4 py-4 text-sm leading-6 text-muted-foreground">
           还没有账号？
           <button
-            className="ml-1 rounded-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="ml-1 rounded-sm font-medium text-foreground underline decoration-border underline-offset-4 transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             onClick={props.onContactClick}
             type="button"
           >
