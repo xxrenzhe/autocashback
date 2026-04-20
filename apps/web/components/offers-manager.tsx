@@ -43,6 +43,7 @@ import {
   buildOffersConsole,
   type OfferConsoleSort
 } from "@/lib/offers-console";
+import { getCountryLabel, getCountryOptions } from "@/lib/proxy-country-options";
 import {
   resolveClickFarmTaskMode,
   resolveLinkSwapTaskMode
@@ -164,6 +165,10 @@ export function OffersManager() {
   const filteredAccounts = useMemo(
     () => accounts.filter((account) => account.platformCode === form.platformCode),
     [accounts, form.platformCode]
+  );
+  const selectableCountryOptions = useMemo(
+    () => getCountryOptions([form.targetCountry, ...offers.map((offer) => offer.targetCountry)]),
+    [form.targetCountry, offers]
   );
 
   const allConsole = useMemo(
@@ -561,7 +566,7 @@ export function OffersManager() {
                 <option value="all">全部国家</option>
                 {allConsole.countryOptions.map((country) => (
                   <option key={country} value={country}>
-                    {country}
+                    {getCountryLabel(country)}
                   </option>
                 ))}
               </select>
@@ -665,7 +670,7 @@ export function OffersManager() {
                                   {row.platformLabel}
                                 </span>
                                 <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
-                                  {offer.targetCountry}
+                                  <span title={getCountryLabel(offer.targetCountry)}>{offer.targetCountry}</span>
                                 </span>
                               </div>
                               <p className="mt-2 text-xs text-muted-foreground">
@@ -838,14 +843,20 @@ export function OffersManager() {
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm font-medium text-foreground">
                 推广国家
-                <input
-                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
-                  maxLength={8}
-                  onChange={(event) =>
-                    setForm({ ...form, targetCountry: event.target.value.toUpperCase() })
-                  }
+                <select
+                  className="mt-2 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+                  onChange={(event) => setForm({ ...form, targetCountry: event.target.value.toUpperCase() })}
                   value={form.targetCountry}
-                />
+                >
+                  {selectableCountryOptions.map((country) => (
+                    <option key={country.code} value={country.code}>
+                      {country.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  统一使用两位国家码；列表与代理设置保持一致。
+                </span>
               </label>
 
               <label className="block text-sm font-medium text-foreground">

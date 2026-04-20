@@ -23,6 +23,7 @@ import {
   buildClickFarmConsole,
   type ClickFarmConsoleSort
 } from "@/lib/click-farm-console";
+import { getCountryLabel } from "@/lib/proxy-country-options";
 
 
 const sortOptions: Array<{ value: ClickFarmConsoleSort; label: string }> = [
@@ -340,7 +341,7 @@ export function ClickFarmManager() {
                 <option value="all">全部国家</option>
                 {allConsole.countryOptions.map((country) => (
                   <option key={country} value={country}>
-                    {country}
+                    {getCountryLabel(country)}
                   </option>
                 ))}
               </select>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  getCountryOptions,
   getNextProxyCountryCode,
   getProxyCountryLabel,
   getProxyCountryOptions
@@ -22,6 +23,14 @@ describe("proxy country options", () => {
     expect(getNextProxyCountryCode([])).toBe("GLOBAL");
     expect(getNextProxyCountryCode(["global"])).toBe("US");
     expect(getNextProxyCountryCode(["GLOBAL", "US", "CA"])).toBe("MX");
+  });
+
+  it("exposes standard country lists without the GLOBAL fallback", () => {
+    const options = getCountryOptions(["GLOBAL", "US", "JP"]);
+
+    expect(options.some((option) => option.code === "GLOBAL")).toBe(false);
+    expect(options.some((option) => option.code === "US")).toBe(true);
+    expect(options.some((option) => option.code === "JP")).toBe(true);
   });
 
   it("renders readable labels for both fallback and regional entries", () => {

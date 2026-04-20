@@ -87,7 +87,7 @@ function normalizeCountryCode(value: string) {
   return String(value || "").trim().toUpperCase();
 }
 
-export function getProxyCountryLabel(value: string) {
+export function getCountryLabel(value: string) {
   const code = normalizeCountryCode(value);
   if (!code) {
     return "未选择国家";
@@ -105,6 +105,28 @@ export function getProxyCountryLabel(value: string) {
   return `国家/地区 (${code})`;
 }
 
+export function getCountryOptions(extraCodes: string[] = []): ProxyCountryOption[] {
+  const seen = new Set<string>();
+  const orderedCodes = [...BASE_PROXY_COUNTRY_CODES, ...extraCodes.map(normalizeCountryCode)];
+
+  return orderedCodes.reduce<ProxyCountryOption[]>((options, code) => {
+    if (!code || code === "GLOBAL" || seen.has(code)) {
+      return options;
+    }
+
+    seen.add(code);
+    options.push({
+      code,
+      label: getCountryLabel(code)
+    });
+    return options;
+  }, []);
+}
+
+export function getProxyCountryLabel(value: string) {
+  return getCountryLabel(value);
+}
+
 export function getProxyCountryOptions(extraCodes: string[] = []): ProxyCountryOption[] {
   const seen = new Set<string>();
   const orderedCodes = ["GLOBAL", ...BASE_PROXY_COUNTRY_CODES, ...extraCodes.map(normalizeCountryCode)];
@@ -117,7 +139,7 @@ export function getProxyCountryOptions(extraCodes: string[] = []): ProxyCountryO
     seen.add(code);
     options.push({
       code,
-      label: getProxyCountryLabel(code)
+      label: getCountryLabel(code)
     });
     return options;
   }, []);
