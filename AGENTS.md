@@ -125,6 +125,8 @@ For more details, see README.md and docs/QUICKSTART.md.
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
 
+**HTTP push only**: code push operations MUST use the repository's HTTP/HTTPS remote. Do NOT use SSH remotes or `git@github.com:...` style push commands for this repository.
+
 **MANDATORY WORKFLOW:**
 
 1. **File issues for remaining work** - Create issues for anything that needs follow-up
