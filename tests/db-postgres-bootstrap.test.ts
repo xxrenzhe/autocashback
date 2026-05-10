@@ -51,6 +51,24 @@ describe("postgres database bootstrap", () => {
     expect(sqlTag.end).toHaveBeenCalledTimes(1);
   });
 
+  it("normalizes unescaped password fragments before connecting to the admin database", async () => {
+    sqlTag.mockResolvedValueOnce([{ exists: true }]);
+
+    await ensurePostgresDatabaseExists(
+      "postgresql://dbuser:raw#password@postgres.example.com:25544/autocashback"
+    );
+
+    expect(postgresMock).toHaveBeenCalledWith(
+      "postgresql://dbuser:raw%23password@postgres.example.com:25544/postgres",
+      expect.objectContaining({
+        max: 1,
+        idle_timeout: 5,
+        prepare: false
+      })
+    );
+    expect(sqlTag.end).toHaveBeenCalledTimes(1);
+  });
+
   it("creates the target database when it is missing", async () => {
     sqlTag.mockResolvedValueOnce([{ exists: false }]);
     sqlTag.unsafe.mockResolvedValueOnce([]);

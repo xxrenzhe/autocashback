@@ -1,10 +1,12 @@
 import postgres from "postgres";
 
+import { normalizePostgresConnectionString } from "./postgres-url";
+
 const POSTGRES_ADMIN_DATABASE = "postgres";
 const DUPLICATE_DATABASE_ERROR = "42P04";
 
 function getTargetDatabaseName(connectionString: string) {
-  const url = new URL(connectionString);
+  const url = new URL(normalizePostgresConnectionString(connectionString));
   const databaseName = decodeURIComponent(url.pathname.replace(/^\/+/, ""));
 
   if (!databaseName) {
@@ -15,7 +17,7 @@ function getTargetDatabaseName(connectionString: string) {
 }
 
 function getAdminConnectionString(connectionString: string) {
-  const url = new URL(connectionString);
+  const url = new URL(normalizePostgresConnectionString(connectionString));
   url.pathname = `/${POSTGRES_ADMIN_DATABASE}`;
   return url.toString();
 }

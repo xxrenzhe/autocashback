@@ -4,27 +4,11 @@ import {
   createServiceLogger,
   ensureDatabaseReady,
   ensurePostgresDatabaseExists,
-  getServerEnv
+  getServerEnv,
+  parsePostgresConnectionTarget
 } from "@autocashback/db";
 
 const logger = createServiceLogger("autocashback-db-bootstrap");
-
-function parseDatabaseTarget(databaseUrl: string) {
-  try {
-    const parsed = new URL(databaseUrl);
-    return {
-      postgresHost: parsed.hostname,
-      postgresPort: parsed.port || null,
-      postgresDatabase: parsed.pathname.replace(/^\//, "") || null
-    };
-  } catch {
-    return {
-      postgresHost: null,
-      postgresPort: null,
-      postgresDatabase: null
-    };
-  }
-}
 
 async function main() {
   const env = getServerEnv();
@@ -37,7 +21,7 @@ async function main() {
     });
   }
   if (env.DB_TYPE === "postgres") {
-    logger.info("db_bootstrap_target", parseDatabaseTarget(env.DATABASE_URL || ""));
+    logger.info("db_bootstrap_target", parsePostgresConnectionTarget(env.DATABASE_URL || ""));
     await ensurePostgresDatabaseExists(env.DATABASE_URL as string);
   }
   await ensureDatabaseReady();

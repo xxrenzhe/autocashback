@@ -21,6 +21,26 @@ describe("getServerEnv", () => {
     expect(env.NEXT_PUBLIC_APP_URL).toBe("https://www.autocashback.dev");
   });
 
+  it("normalizes postgres urls with unescaped password fragments", () => {
+    const env = getServerEnv({
+      DATABASE_URL:
+        "postgresql://dbuser:raw#password@postgres.example.com:25544/autocashback",
+      REDIS_URL: "redis://127.0.0.1:6379",
+      JWT_SECRET: "12345678901234567890123456789012",
+      ENCRYPTION_KEY: "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      NEXT_PUBLIC_APP_URL: "https://www.autocashback.dev",
+      INTERNAL_APP_URL: "http://127.0.0.1:3000",
+      NODE_ENV: "production",
+      TZ: "Asia/Shanghai",
+      DEFAULT_ADMIN_PASSWORD: "password"
+    });
+
+    expect(env.DB_TYPE).toBe("postgres");
+    expect(env.DATABASE_URL).toBe(
+      "postgresql://dbuser:raw%23password@postgres.example.com:25544/autocashback"
+    );
+  });
+
   it("defaults to sqlite in development when postgres url is absent", () => {
     const env = getServerEnv({
       REDIS_URL: "redis://127.0.0.1:6379",

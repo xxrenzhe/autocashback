@@ -5,6 +5,7 @@ import Database from "better-sqlite3";
 import postgres from "postgres";
 
 import { getServerEnv, type DatabaseType } from "./env";
+import { normalizePostgresConnectionString } from "./postgres-url";
 
 type QueryRow = Record<string, unknown>;
 
@@ -87,7 +88,7 @@ class PostgresAdapter implements DatabaseAdapter {
   private sql: postgres.Sql;
 
   constructor(connectionString: string) {
-    this.sql = postgres(connectionString, {
+    this.sql = postgres(normalizePostgresConnectionString(connectionString), {
       max: 5,
       idle_timeout: 20,
       prepare: false

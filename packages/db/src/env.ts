@@ -2,6 +2,8 @@ import path from "node:path";
 
 import { z } from "zod";
 
+import { normalizePostgresConnectionString } from "./postgres-url";
+
 const serverEnvSchema = z.object({
   DATABASE_URL: z.string().min(1).optional(),
   DATABASE_PATH: z.string().min(1).optional(),
@@ -69,6 +71,10 @@ export function getServerEnv(overrides?: Partial<NodeJS.ProcessEnv>): ServerEnv 
   const env = result.data;
   const dbType = resolveDatabaseType(env.DATABASE_URL, env.DATABASE_PATH);
   const databasePath = resolveDatabasePath(env.DATABASE_URL, env.DATABASE_PATH);
+  const databaseUrl =
+    dbType === "postgres" && env.DATABASE_URL
+      ? normalizePostgresConnectionString(env.DATABASE_URL)
+      : env.DATABASE_URL;
 
   if (env.NODE_ENV === "production" && dbType !== "postgres") {
     throw new Error("DATABASE_URL with a PostgreSQL connection string is required in production");
@@ -76,6 +82,7 @@ export function getServerEnv(overrides?: Partial<NodeJS.ProcessEnv>): ServerEnv 
 
   return {
     ...env,
+    DATABASE_URL: databaseUrl,
     DATABASE_PATH: databasePath,
     DB_TYPE: dbType
   };
